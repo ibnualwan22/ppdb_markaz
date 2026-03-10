@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Tetap gunakan PostgreSQL (Supabase)
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. MASTER DATA LOKASI (Bisa ditambah/edit/hapus dari Menu Admin)
+// ==========================================
+
+model Sakan {
+  id        String   @id @default(uuid())
+  nama      String   // Contoh: "Balfaqih", "Ibn Sina"
+  kamar     Kamar[]  // Relasi: 1 Sakan punya banyak Kamar
+  createdAt DateTime @default(now())
+}
+
+model Kamar {
+  id        String   @id @default(uuid())
+  nama      String   // Contoh: "A", "B", "C"
+  sakanId   String   // Kunci tamu (Foreign Key) ke tabel Sakan
+  sakan     Sakan    @relation(fields: [sakanId], references: [id], onDelete: Cascade)
+  lemari    Lemari[] // Relasi: 1 Kamar punya banyak Lemari
+}
+
+model Lemari {
+  id        String   @id @default(uuid())
+  nomor     String   // Contoh: "A1", "A2", "B1"
+  kamarId   String   // Kunci tamu ke tabel Kamar
+  kamar     Kamar    @relation(fields: [kamarId], references: [id], onDelete: Cascade)
+  penghuni  RiwayatDufah[] // Relasi ke riwayat santri yang menempati
+}
+
+// ==========================================
+// 2. DATA UTAMA (Santri & Periode Waktu)
+// ==========================================
+
+model Santri {
+  id        String   @id @default(uuid())
+  nama      String
+  kategori  String   // "BARU", "LAMA", "KSU"
+  riwayat   RiwayatDufah[]
+  createdAt DateTime @default(now())
+}
+
+model Dufah {
+  id           Int      @id @default(autoincrement())
+  nama         String   // Contoh: "Duf'ah 87"
+  isActive     Boolean  @default(false) // Penanda bulan yang sedang berjalan
+  
+  // Fitur Time-bound untuk link pendaftaran santri lama
+  tanggalBuka  DateTime? 
+  tanggalTutup DateTime? 
+  
+  riwayat      RiwayatDufah[]
+}
+
+// ==========================================
+// 3. TABEL TRANSAKSI (Penghubung Santri, Waktu, dan Lokasi)
+// ==========================================
+
+model RiwayatDufah {
+  id              String   @id @default(uuid())
+  santriId        String
+  dufahId         Int
+  
+  // Relasi Langsung ke Lemari (Otomatis mengetahui Kamar & Sakan)
+  lemariId        String?  
+  lemari          Lemari?  @relation(fields: [lemariId], references: [id])
+  
+  // Status Alur PPDB
+  status          String   @default("PRE_LIST") // "PRE_LIST", "ASSIGNED", "CHECKED_IN"
+  isIdCardTaken   Boolean  @default(false)
+  
+  // Relasi Utama
+  santri          Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  dufah           Dufah    @relation(fields: [dufahId], references: [id], onDelete: Cascade)
+
+  @@unique([santriId, dufahId]) // Mencegah 1 santri terdaftar 2 kali di bulan yang sama
+}
