@@ -3,28 +3,39 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Fungsi GET: Mengambil semua Sakan beserta isi Kamar dan Lemarinya
+
+
 export async function GET() {
   try {
+    // Cari duf'ah aktif
+    const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
+
     const dataSakan = await prisma.sakan.findMany({
       include: {
         kamar: {
           include: {
-            lemari: true // Tarik juga data lemari di dalam kamar
+            lemari: {
+              include: {
+                // Tarik data penghuni KHUSUS untuk bulan ini
+                penghuni: {
+                  where: {
+                    dufahId: dufahAktif?.id || -1
+                  }
+                }
+              }
+            }
           }
         }
       },
-      orderBy: {
-        nama: 'asc' // Urutkan sesuai abjad
-      }
+      orderBy: { nama: 'asc' }
     });
     
-    // Data yang keluar sudah berbentuk "Pohon" (Tree), sangat sempurna untuk UI Denah Muasis
     return NextResponse.json(dataSakan);
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data Sakan" }, { status: 500 });
   }
 }
+
 
 // Fungsi POST: Untuk Admin menambah gedung/Sakan baru
 export async function POST(request: Request) {

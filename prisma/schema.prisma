@@ -42,6 +42,7 @@ model Santri {
   id        String   @id @default(uuid())
   nama      String
   kategori  String   // "BARU", "LAMA", "KSU"
+  isAktif   Boolean  @default(true)
   riwayat   RiwayatDufah[]
   createdAt DateTime @default(now())
 }
