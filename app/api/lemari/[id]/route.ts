@@ -5,12 +5,12 @@ const prisma = new PrismaClient();
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const update = await prisma.kamar.update({ where: { id }, data: body });
+  const update = await prisma.lemari.update({ where: { id }, data: body });
   return NextResponse.json(update);
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await prisma.kamar.delete({ where: { id } });
-  return NextResponse.json({ message: "Kamar dihapus" });
+  await prisma.lemari.delete({ where: { id } });
+  return NextResponse.json({ message: "Lemari dihapus" });
 }

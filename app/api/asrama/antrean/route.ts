@@ -20,7 +20,7 @@ export async function GET() {
       },
       include: {
         santri: {
-          select: { id: true, nama: true, kategori: true }
+          select: { id: true, nama: true, kategori: true, gender: true }
         }
       },
       orderBy: {

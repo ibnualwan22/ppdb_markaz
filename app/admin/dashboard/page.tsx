@@ -4,17 +4,13 @@ import { useState, useEffect } from "react";
 
 export default function DashboardMuasisPage() {
   const [dataSakan, setDataSakan] = useState<any[]>([]);
-  const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
 
   const muatData = async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/sakan");
       if (res.ok) setDataSakan(await res.json());
-    } catch (error) {
-      console.error("Gagal memuat denah", error);
-    }
+    } catch (error) { console.error("Gagal memuat data", error); }
     setLoading(false);
   };
 
@@ -22,163 +18,215 @@ export default function DashboardMuasisPage() {
     muatData();
   }, []);
 
-  // Fungsi Toggle Kunci Kamar
-  const toggleKunciKamar = async (kamarId: string, statusSaatIni: boolean, namaKamar: string) => {
-    const aksi = statusSaatIni ? "membuka kunci" : "mengunci";
-    if (!confirm(`Yakin ingin ${aksi} Kamar ${namaKamar}? Panitia asrama tidak akan bisa memasukkan santri ke kamar yang dikunci.`)) return;
+  // =========================================
+  // FUNGSI SAKLAR KUNCI UNTUK MUASIS
+  // =========================================
+  const toggleLock = async (jenis: "sakan" | "kamar" | "lemari", id: string, statusKunciSaatIni: boolean) => {
+    const aksi = statusKunciSaatIni ? "MEMBUKA" : "MENGUNCI";
+    if (!confirm(`Yakin ingin ${aksi} ${jenis} ini?`)) return;
 
-    const res = await fetch(`/api/kamar/${kamarId}/lock`, {
+    await fetch(`/api/${jenis}/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isLocked: !statusSaatIni })
+      body: JSON.stringify({ isLocked: !statusKunciSaatIni }),
     });
-
-    if (res.ok) {
-      muatData(); // Refresh UI
-    } else {
-      alert("Gagal merubah status kamar");
-    }
-  };
-  const toggleKunciLemari = async (lemariId: string, statusSaatIni: boolean, nomorLemari: string) => {
-    const aksi = statusSaatIni ? "membuka kunci" : "mengunci";
-    if (!confirm(`Yakin ingin ${aksi} Lemari ${nomorLemari}?`)) return;
-
-    const res = await fetch(`/api/lemari/${lemariId}/lock`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isLocked: !statusSaatIni })
-    });
-
-    if (res.ok) {
-      muatData(); // Refresh UI
-    } else {
-      alert("Gagal merubah status lemari");
-    }
+    muatData();
   };
 
-  return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen text-gray-900">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-300 pb-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Muasis</h1>
-          <p className="text-gray-500 mt-1">Pemantauan Real-time & Kontrol Asrama</p>
-        </div>
+  const sakanBanin = dataSakan.filter(s => s.kategori !== "BANAT");
+  const sakanBanat = dataSakan.filter(s => s.kategori === "BANAT");
 
-        {/* Search Bar Besar */}
-        <div className="w-full md:w-96">
-          <input
-            type="text"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="🔍 Cari nama santri / loker..."
-            className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900 shadow-sm"
-          />
-        </div>
-      </div>
+  if (loading) return <div className="p-10 text-center font-bold text-gray-500">Memuat Visualisasi Asrama...</div>;
 
-      {loading ? (
-        <div className="text-center p-10 text-gray-500 font-bold">Memuat data asrama...</div>
-      ) : (
-        <div className="space-y-8">
-          {dataSakan.map((sakan) => {
-            
-            // Logika Pencarian: Hanya tampilkan Sakan/Kamar/Lemari yang cocok dengan keyword
-            const kamarDifilter = sakan.kamar.map((kamar: any) => {
-              const lemariDifilter = kamar.lemari.filter((lemari: any) => {
-                if (!keyword) return true; // Tampil semua jika tidak mencari
-                const cari = keyword.toLowerCase();
-                const namaSantri = lemari.penghuni[0]?.santri?.nama?.toLowerCase() || "";
-                return lemari.nomor.toLowerCase().includes(cari) || namaSantri.includes(cari);
+  const RenderSakanBlock = ({ data, judul, warnaTema }: { data: any[], judul: string, warnaTema: 'biru' | 'pink' }) => {
+    const isBiru = warnaTema === 'biru';
+    const bgHeader = isBiru ? 'bg-blue-800' : 'bg-pink-700';
+    const textWarna = isBiru ? 'text-blue-800' : 'text-pink-800';
+    const bgProgress = isBiru ? 'bg-blue-500' : 'bg-pink-500';
+    const bgLemariTerisi = isBiru ? 'bg-blue-50 border-blue-200' : 'bg-pink-50 border-pink-200';
+
+    return (
+      <div className="mb-12">
+        <h2 className={`text-2xl font-black mb-6 ${textWarna} border-b-2 ${isBiru ? 'border-blue-200' : 'border-pink-200'} pb-2 flex items-center gap-2`}>
+          {isBiru ? '👨' : '🧕'} {judul}
+        </h2>
+        
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {data.map((sakan) => {
+            let totalLemariSakan = 0;
+            let terisiSakan = 0;
+
+            sakan.kamar.forEach((kamar: any) => {
+              const lemariAktif = kamar.lemari.filter((l: any) => !l.isLocked && !kamar.isLocked && !sakan.isLocked);
+              totalLemariSakan += lemariAktif.length;
+              
+              kamar.lemari.forEach((lemari: any) => {
+                if (lemari.penghuni && lemari.penghuni.length > 0) terisiSakan++;
               });
-              return { ...kamar, lemari: lemariDifilter };
-            }).filter((kamar: any) => kamar.lemari.length > 0 || !keyword);
+            });
 
-            // Jika sedang mencari dan tidak ada kecocokan di sakan ini, sembunyikan sakan
-            if (keyword && kamarDifilter.length === 0) return null;
+            const persentaseSakan = totalLemariSakan === 0 ? 0 : Math.round((terisiSakan / totalLemariSakan) * 100);
+            const sakanGembokStyle = sakan.isLocked ? "grayscale opacity-90" : "";
 
             return (
-              <div key={sakan.id} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                {/* Header Sakan */}
-                <div className="bg-green-800 text-white p-4">
-                  <h2 className="text-2xl font-bold">🏢 Sakan {sakan.nama}</h2>
+              <div key={sakan.id} className={`bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex flex-col ${sakanGembokStyle}`}>
+                
+                <div className={`${sakan.isLocked ? 'bg-gray-700' : bgHeader} p-5 text-white relative`}>
+                  {/* TOMBOL KUNCI SAKAN */}
+                  <button 
+                    onClick={() => toggleLock('sakan', sakan.id, sakan.isLocked)} 
+                    className={`absolute top-4 right-4 text-xs font-bold px-3 py-1.5 rounded shadow-sm transition-all ${sakan.isLocked ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-black/30 hover:bg-black/50 text-white'}`}
+                  >
+                    {sakan.isLocked ? '🔓 Buka Sakan' : '🔒 Kunci Sakan'}
+                  </button>
+
+                  <div className="flex justify-between items-end mb-3 mt-4">
+                    <div>
+                      <h3 className={`text-2xl font-black flex items-center gap-2 ${sakan.isLocked ? 'line-through text-gray-400' : ''}`}>
+                        {sakan.isLocked && '🔒'} {sakan.nama}
+                      </h3>
+                      <p className="text-sm opacity-80 mt-1">{sakan.kamar.length} Kamar {sakan.isLocked && '(DITUTUP)'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-black">{sakan.isLocked ? '0' : persentaseSakan}%</p>
+                      <p className="text-xs opacity-80 font-medium">Terisi: {terisiSakan} / {totalLemariSakan}</p>
+                    </div>
+                  </div>
+                  <div className="w-full bg-white/30 rounded-full h-2">
+                    <div className={`${sakan.isLocked ? 'bg-gray-400' : bgProgress} h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]`} style={{ width: `${sakan.isLocked ? 0 : persentaseSakan}%` }}></div>
+                  </div>
                 </div>
 
-                <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {kamarDifilter.map((kamar: any) => (
-                    <div 
-                      key={kamar.id} 
-                      className={`border-2 rounded-xl overflow-hidden shadow-sm transition ${kamar.isLocked ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}
-                    >
-                      {/* Header Kamar */}
-                      <div className={`p-3 border-b flex justify-between items-center ${kamar.isLocked ? 'bg-red-100 border-red-200' : 'bg-gray-100 border-gray-200'}`}>
-                        <h3 className="font-bold text-lg text-gray-800">Kamar {kamar.nama}</h3>
-                        
-                        {/* Saklar Interaktif Kunci Kamar */}
-                        <button
-                          onClick={() => toggleKunciKamar(kamar.id, kamar.isLocked, kamar.nama)}
-                          className={`text-xs font-bold px-3 py-1.5 rounded-full transition shadow-sm ${kamar.isLocked ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-100 text-green-800 hover:bg-green-200 border border-green-300'}`}
-                        >
-                          {kamar.isLocked ? '🔒 DIKUNCI' : '✅ AKTIF'}
-                        </button>
-                      </div>
+                <div className="p-5 bg-gray-50 flex-1 flex flex-col gap-4">
+                  {sakan.kamar.length === 0 ? (
+                    <p className="text-center text-gray-400 italic py-4">Belum ada kamar.</p>
+                  ) : (
+                    sakan.kamar.map((kamar: any) => {
+                      const lemariAktifKamar = kamar.lemari.filter((l:any) => !l.isLocked && !kamar.isLocked && !sakan.isLocked);
+                      const totalLemariKamar = lemariAktifKamar.length;
+                      const terisiKamar = kamar.lemari.filter((l: any) => l.penghuni && l.penghuni.length > 0).length;
 
-                      {/* Tabel Lemari & Nama Santri */}
-                      <div className="p-0 overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                          <thead className="bg-gray-50 border-b">
-                            <tr>
-                              <th className="p-2 font-semibold text-gray-600 w-16 text-center">Lemari</th>
-                              <th className="p-2 font-semibold text-gray-600">Penghuni</th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                      const isKamarLocked = kamar.isLocked || sakan.isLocked;
+
+                      return (
+                        <div key={kamar.id} className={`p-4 rounded-xl border shadow-sm transition-all ${isKamarLocked ? 'bg-gray-200 border-gray-300' : 'bg-white border-gray-200'}`}>
+                          <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-3">
+                            <h4 className={`font-bold text-lg flex items-center gap-2 ${isKamarLocked ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                              {isKamarLocked && '🔒'} Kamar {kamar.nama}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              {/* TOMBOL KUNCI KAMAR */}
+                              <button 
+                                onClick={() => toggleLock('kamar', kamar.id, kamar.isLocked)} 
+                                disabled={sakan.isLocked} // Disable jika sakan-nya sudah dikunci
+                                className={`text-[10px] font-bold px-2 py-1 rounded border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${kamar.isLocked ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200' : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'}`}
+                              >
+                                {kamar.isLocked ? '🔓 Buka' : '🔒 Kunci'}
+                              </button>
+                              
+                              {!isKamarLocked && (
+                                <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded-md">
+                                  Isi: {terisiKamar} / {totalLemariKamar}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {kamar.lemari.map((lemari: any) => {
-                              const terisi = lemari.penghuni && lemari.penghuni.length > 0;
-                              const namaSantri = terisi ? lemari.penghuni[0].santri.nama : "Kosong";
-                              const kategoriSantri = terisi ? lemari.penghuni[0].santri.kategori : "";
+                              const isTerisi = lemari.penghuni && lemari.penghuni.length > 0;
+                              const dataSantri = isTerisi ? lemari.penghuni[0].santri : null;
+                              const isLemariLocked = lemari.isLocked || isKamarLocked;
 
-                              return (
-                                <tr key={lemari.id} className="border-b last:border-0 hover:bg-gray-50">
-                                  <td className="p-2 text-center">
-                                    <div className="flex flex-col items-center gap-1">
-                                      <span className={`px-2 py-1 rounded font-bold text-xs ${lemari.isLocked ? 'bg-red-100 text-red-800 line-through' : terisi ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500'}`}>
+                              // RENDER JIKA LEMARI DIKUNCI
+                              if (isLemariLocked) {
+                                return (
+                                  <div key={lemari.id} className="p-2 rounded-lg border bg-gray-300 border-gray-400 flex flex-col justify-between min-h-[70px] relative group">
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className="text-[10px] font-black text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded shadow-sm line-through">
                                         {lemari.nomor}
                                       </span>
-                                      <button
-                                        onClick={() => toggleKunciLemari(lemari.id, lemari.isLocked, lemari.nomor)}
-                                        className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm transition ${lemari.isLocked ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                                        title={lemari.isLocked ? "Buka Kunci" : "Kunci Lemari"}
+                                      {/* TOMBOL BUKA LEMARI */}
+                                      <button 
+                                        onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)}
+                                        disabled={isKamarLocked}
+                                        className="text-[10px] bg-yellow-400 hover:bg-yellow-500 text-black px-1.5 py-0.5 rounded shadow-sm font-bold disabled:hidden"
                                       >
-                                        {lemari.isLocked ? '🔒' : '🔓'}
+                                        🔓
                                       </button>
                                     </div>
-                                  </td>
-                                  <td className="p-2">
-                                    {terisi ? (
-                                      <div>
-                                        <p className="font-bold text-gray-900">{namaSantri}</p>
-                                        <p className="text-[10px] text-blue-600 font-bold uppercase">{kategoriSantri}</p>
-                                      </div>
+                                    <div className="mt-auto text-center opacity-70">
+                                      <span className="text-xl">🔒</span>
+                                      <p className="text-[10px] text-gray-600 font-bold uppercase mt-1">Ditutup</p>
+                                    </div>
+                                  </div>
+                                )
+                              }
+
+                              // RENDER JIKA LEMARI TERBUKA NORMAL
+                              return (
+                                <div key={lemari.id} className={`p-2 rounded-lg border ${isTerisi ? bgLemariTerisi : 'bg-gray-100 border-gray-200 border-dashed'} flex flex-col justify-between min-h-[70px] group relative`}>
+                                  <div className="flex justify-between items-start mb-1">
+                                    <span className="text-[10px] font-black text-gray-500 bg-white px-1.5 py-0.5 rounded shadow-sm">
+                                      {lemari.nomor}
+                                    </span>
+                                    
+                                    <div className="flex items-center gap-1">
+                                      {isTerisi && (
+                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded text-white ${dataSantri.kategori === 'KSU' ? 'bg-purple-600' : dataSantri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
+                                          {dataSantri.kategori}
+                                        </span>
+                                      )}
+                                      {/* TOMBOL KUNCI LEMARI (Muncul saat di-hover/disentuh) */}
+                                      {!isTerisi && (
+                                        <button 
+                                          onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)}
+                                          className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                          title="Kunci Lemari"
+                                        >
+                                          🔒
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mt-auto">
+                                    {isTerisi ? (
+                                      <p className={`font-bold text-xs leading-tight truncate ${textWarna}`} title={dataSantri.nama}>
+                                        {dataSantri.nama}
+                                      </p>
                                     ) : (
-                                      <p className="text-gray-400 italic">Belum ada penghuni</p>
+                                      <p className="text-xs text-gray-400 italic font-medium text-center group-hover:hidden">Kosong</p>
                                     )}
-                                  </td>
-                                </tr>
+                                  </div>
+                                </div>
                               );
                             })}
-                            {kamar.lemari.length === 0 && (
-                              <tr><td colSpan={2} className="p-3 text-center text-gray-400 italic">Belum ada data lemari</td></tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-4 md:p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen">
+      <div className="mb-10 border-b border-gray-300 pb-4">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard Visual Muasis</h1>
+        <p className="text-gray-500 mt-1">Pemantauan denah Sakan, kapasitas, dan kontrol akses kamar santri secara real-time.</p>
+      </div>
+
+      {sakanBanin.length > 0 && <RenderSakanBlock data={sakanBanin} judul="Area Asrama Banin (Putra)" warnaTema="biru" />}
+      {sakanBanat.length > 0 && <RenderSakanBlock data={sakanBanat} judul="Area Asrama Banat (Putri)" warnaTema="pink" />}
+      {sakanBanin.length === 0 && sakanBanat.length === 0 && (
+        <div className="text-center py-20 text-gray-400 font-medium">Belum ada data Sakan di Master Lokasi.</div>
       )}
     </div>
   );

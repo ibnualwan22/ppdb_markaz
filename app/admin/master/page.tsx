@@ -4,196 +4,211 @@ import { useState, useEffect } from "react";
 
 export default function MasterLokasiPage() {
   const [dataSakan, setDataSakan] = useState<any[]>([]);
-  
-  // State form Sakan
-  const [namaSakanBaru, setNamaSakanBaru] = useState("");
-  
-  // State form Kamar
-  const [sakanTerpilihKamar, setSakanTerpilihKamar] = useState("");
-  const [namaKamarBaru, setNamaKamarBaru] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // State form Lemari
-  const [sakanTerpilihLemari, setSakanTerpilihLemari] = useState("");
-  const [kamarTerpilihLemari, setKamarTerpilihLemari] = useState("");
-  const [nomorLemariBaru, setNomorLemariBaru] = useState("");
+  // State Form
+  const [namaSakan, setNamaSakan] = useState("");
+  const [kategoriSakan, setKategoriSakan] = useState("BANIN");
+  const [namaKamar, setNamaKamar] = useState("");
+  const [sakanIdKamar, setSakanIdKamar] = useState("");
+  const [nomorLemari, setNomorLemari] = useState("");
+  const [kamarIdLemari, setKamarIdLemari] = useState("");
 
-  const muatData = () => {
-    fetch("/api/sakan")
-      .then((res) => res.json())
-      .then((data) => setDataSakan(data));
+  const muatData = async () => {
+    try {
+      const res = await fetch("/api/sakan");
+      if (res.ok) setDataSakan(await res.json());
+    } catch (error) {
+      console.error("Gagal memuat data", error);
+    }
   };
 
-  useEffect(() => {
-    muatData();
-  }, []);
-
-  const sakanUntukLemari = dataSakan.find((s) => s.id === sakanTerpilihLemari);
-  const daftarKamarUntukLemari = sakanUntukLemari ? sakanUntukLemari.kamar : [];
+  useEffect(() => { muatData(); }, []);
 
   const tambahSakan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!namaSakanBaru) return;
-    await fetch("/api/sakan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama: namaSakanBaru }),
+    e.preventDefault(); setLoading(true);
+    const res = await fetch("/api/sakan", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nama: namaSakan, kategori: kategoriSakan }),
     });
-    setNamaSakanBaru("");
-    muatData();
+    if (res.ok) { setNamaSakan(""); muatData(); }
+    setLoading(false);
   };
 
   const tambahKamar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!sakanTerpilihKamar || !namaKamarBaru) return;
-    await fetch("/api/kamar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama: namaKamarBaru, sakanId: sakanTerpilihKamar }),
+    e.preventDefault(); setLoading(true);
+    const res = await fetch("/api/kamar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nama: namaKamar, sakanId: sakanIdKamar }),
     });
-    setNamaKamarBaru("");
-    muatData();
+    if (res.ok) { setNamaKamar(""); muatData(); }
+    setLoading(false);
   };
 
   const tambahLemari = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!kamarTerpilihLemari || !nomorLemariBaru) return;
-    await fetch("/api/lemari", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nomor: nomorLemariBaru, kamarId: kamarTerpilihLemari }),
+    e.preventDefault(); setLoading(true);
+    const res = await fetch("/api/lemari", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nomor: nomorLemari, kamarId: kamarIdLemari }),
     });
-    setNomorLemariBaru("");
+    if (res.ok) { setNomorLemari(""); muatData(); }
+    setLoading(false);
+  };
+
+  const aksiData = async (jenis: "sakan" | "kamar" | "lemari", aksi: "edit" | "hapus", id: string, dataLama: string, kategoriLama?: string) => {
+    if (aksi === "hapus") {
+      if (!confirm(`YAKIN HAPUS ${jenis.toUpperCase()} ${dataLama}? Semua isinya akan ikut terhapus permanen!`)) return;
+      await fetch(`/api/${jenis}/${id}`, { method: "DELETE" });
+      muatData();
+    } 
+    
+    if (aksi === "edit") {
+      const namaBaru = prompt(`Masukkan nama/nomor baru untuk ${dataLama}:`, dataLama);
+      if (!namaBaru || namaBaru === dataLama) return;
+
+      let bodyData: any = { nama: namaBaru };
+      if (jenis === "lemari") bodyData = { nomor: namaBaru };
+      if (jenis === "sakan") {
+        const katBaru = prompt(`Kategori Sakan (BANIN/BANAT):`, kategoriLama)?.toUpperCase();
+        if (katBaru === "BANIN" || katBaru === "BANAT") bodyData.kategori = katBaru;
+      }
+      await fetch(`/api/${jenis}/${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData),
+      });
+      muatData();
+    }
+  };
+
+  // =========================================
+  // FUNGSI BARU: TOGGLE KUNCI (LOCK/UNLOCK)
+  // =========================================
+  const toggleLock = async (jenis: "sakan" | "kamar" | "lemari", id: string, statusKunciSaatIni: boolean) => {
+    await fetch(`/api/${jenis}/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isLocked: !statusKunciSaatIni }),
+    });
     muatData();
   };
 
   return (
     <div className="p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen text-gray-900">
-      <h1 className="text-3xl font-bold mb-8 text-gray-900 border-b border-gray-300 pb-4">Pengaturan Master Lokasi</h1>
-      
-      {/* AREA FORM INPUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        
-        {/* 1. Form Sakan */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-          <h2 className="text-xl font-bold mb-4 text-green-700">1. Tambah Sakan</h2>
-          <form onSubmit={tambahSakan} className="flex flex-col gap-3">
-            <input
-              type="text"
-              value={namaSakanBaru}
-              onChange={(e) => setNamaSakanBaru(e.target.value)}
-              placeholder="Cth: Balfaqih"
-              className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900 placeholder-gray-500 font-medium"
-            />
-            <button className="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 font-bold transition shadow-sm">
-              Simpan Sakan
-            </button>
-          </form>
-        </div>
+      <h1 className="text-3xl font-bold mb-8 text-gray-900 border-b border-gray-300 pb-4">Master Lokasi Asrama</h1>
 
-        {/* 2. Form Kamar */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-          <h2 className="text-xl font-bold mb-4 text-blue-700">2. Tambah Kamar</h2>
-          <form onSubmit={tambahKamar} className="flex flex-col gap-3">
-            <select
-              value={sakanTerpilihKamar}
-              onChange={(e) => setSakanTerpilihKamar(e.target.value)}
-              className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium"
-            >
-              <option value="" className="text-gray-500">-- Pilih Sakan --</option>
-              {dataSakan.map((s) => (
-                <option key={s.id} value={s.id} className="text-gray-900">{s.nama}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={namaKamarBaru}
-              onChange={(e) => setNamaKamarBaru(e.target.value)}
-              placeholder="Nama Kamar (Cth: A)"
-              className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500 font-medium"
-            />
-            <button className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 font-bold transition shadow-sm">
-              Simpan Kamar
-            </button>
-          </form>
-        </div>
+      {/* FORM TAMBAH DATA (Tetap sama) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <form onSubmit={tambahSakan} className="bg-white p-5 rounded-xl shadow-md border border-gray-200">
+          <h2 className="font-bold text-lg mb-4 text-green-700">1. Tambah Sakan</h2>
+          <input type="text" value={namaSakan} onChange={(e) => setNamaSakan(e.target.value)} placeholder="Nama Sakan (Cth: Alkaf)" className="w-full p-2 mb-3 border rounded" required />
+          <select value={kategoriSakan} onChange={(e) => setKategoriSakan(e.target.value)} className="w-full p-2 mb-3 border rounded font-bold" >
+            <option value="BANIN">👨 Putra (BANIN)</option>
+            <option value="BANAT">🧕 Putri (BANAT)</option>
+          </select>
+          <button type="submit" disabled={loading} className="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Simpan Sakan</button>
+        </form>
 
-        {/* 3. Form Lemari */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-          <h2 className="text-xl font-bold mb-4 text-purple-700">3. Tambah Lemari</h2>
-          <form onSubmit={tambahLemari} className="flex flex-col gap-3">
-            <select
-              value={sakanTerpilihLemari}
-              onChange={(e) => {
-                setSakanTerpilihLemari(e.target.value);
-                setKamarTerpilihLemari("");
-              }}
-              className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 font-medium"
-            >
-              <option value="" className="text-gray-500">-- Pilih Sakan --</option>
-              {dataSakan.map((s) => (
-                <option key={s.id} value={s.id} className="text-gray-900">{s.nama}</option>
-              ))}
-            </select>
-            
-            <select
-              value={kamarTerpilihLemari}
-              onChange={(e) => setKamarTerpilihLemari(e.target.value)}
-              disabled={!sakanTerpilihLemari}
-              className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 disabled:bg-gray-200 font-medium"
-            >
-              <option value="" className="text-gray-500">-- Pilih Kamar --</option>
-              {daftarKamarUntukLemari.map((k: any) => (
-                <option key={k.id} value={k.id} className="text-gray-900">Kamar {k.nama}</option>
-              ))}
-            </select>
+        <form onSubmit={tambahKamar} className="bg-white p-5 rounded-xl shadow-md border border-gray-200">
+          <h2 className="font-bold text-lg mb-4 text-green-700">2. Tambah Kamar</h2>
+          <select value={sakanIdKamar} onChange={(e) => setSakanIdKamar(e.target.value)} className="w-full p-2 mb-3 border rounded" required >
+            <option value="">-- Pilih Sakan --</option>
+            {dataSakan.map((s) => <option key={s.id} value={s.id}>{s.nama} ({s.kategori})</option>)}
+          </select>
+          <input type="text" value={namaKamar} onChange={(e) => setNamaKamar(e.target.value)} placeholder="Nama Kamar (Cth: A)" className="w-full p-2 mb-3 border rounded" required />
+          <button type="submit" disabled={loading} className="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Simpan Kamar</button>
+        </form>
 
-            <input
-              type="text"
-              value={nomorLemariBaru}
-              onChange={(e) => setNomorLemariBaru(e.target.value)}
-              placeholder="Nomor Lemari (Cth: A1)"
-              className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-500 font-medium"
-            />
-            <button className="bg-purple-600 text-white p-3 rounded-lg hover:bg-purple-700 font-bold transition shadow-sm">
-              Simpan Lemari
-            </button>
-          </form>
-        </div>
-
+        <form onSubmit={tambahLemari} className="bg-white p-5 rounded-xl shadow-md border border-gray-200">
+          <h2 className="font-bold text-lg mb-4 text-green-700">3. Tambah Lemari</h2>
+          <select value={kamarIdLemari} onChange={(e) => setKamarIdLemari(e.target.value)} className="w-full p-2 mb-3 border rounded" required >
+            <option value="">-- Pilih Kamar --</option>
+            {dataSakan.map((s) => s.kamar.map((k: any) => <option key={k.id} value={k.id}>{s.nama} - Kamar {k.nama}</option>))}
+          </select>
+          <input type="text" value={nomorLemari} onChange={(e) => setNomorLemari(e.target.value)} placeholder="Nomor Lemari (Cth: A1)" className="w-full p-2 mb-3 border rounded" required />
+          <button type="submit" disabled={loading} className="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Simpan Lemari</button>
+        </form>
       </div>
 
-      {/* AREA TAMPILAN STRUKTUR LOKASI */}
-      <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Struktur Asrama Saat Ini</h2>
-        <div className="space-y-6">
-          {dataSakan.length === 0 && <p className="text-gray-500 italic">Belum ada data Sakan.</p>}
-          
-          {dataSakan.map((sakan) => (
-            <div key={sakan.id} className="p-5 bg-gray-50 rounded-xl border border-gray-300 shadow-sm">
-              <h3 className="font-bold text-green-800 text-2xl mb-4 border-b border-gray-300 pb-2">🏢 {sakan.nama}</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sakan.kamar.length === 0 && <p className="text-sm text-gray-500 italic">Belum ada kamar.</p>}
-                
-                {sakan.kamar.map((kamar: any) => (
-                  <div key={kamar.id} className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                    <h4 className="font-bold text-blue-800 text-lg mb-2">🚪 Kamar {kamar.nama}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {kamar.lemari.length === 0 && <span className="text-xs text-gray-500 italic">Lemari kosong</span>}
-                      
-                      {kamar.lemari.map((lemari: any) => (
-                        <span key={lemari.id} className="px-3 py-1 bg-purple-100 text-purple-900 border border-purple-300 rounded-md text-sm font-bold">
-                          {lemari.nomor}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Denah Sakan Saat Ini</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {dataSakan.map((sakan) => (
+          // Jika Sakan digembok, warnanya jadi abu-abu kusam
+          <div key={sakan.id} className={`rounded-xl shadow-md border overflow-hidden transition-all ${sakan.isLocked ? 'bg-gray-200 border-gray-400 opacity-80' : 'bg-white border-gray-200'}`}>
+            
+            {/* Header Sakan */}
+            <div className={`p-4 flex justify-between items-center ${sakan.isLocked ? 'bg-gray-600' : sakan.kategori === 'BANAT' ? 'bg-pink-700' : 'bg-green-800'} text-white`}>
+              <div>
+                <h3 className={`font-bold text-xl flex items-center gap-2 ${sakan.isLocked ? 'line-through text-gray-300' : ''}`}>
+                  {sakan.isLocked && '🔒'} {sakan.nama}
+                </h3>
+                <span className="text-xs font-bold bg-white text-gray-900 px-2 py-0.5 rounded opacity-80 uppercase">
+                  {sakan.kategori || "BANIN"}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                {/* Tombol Kunci Sakan */}
+                <button onClick={() => toggleLock('sakan', sakan.id, sakan.isLocked)} className={`text-xs px-2 py-1 rounded font-bold ${sakan.isLocked ? 'bg-yellow-500 hover:bg-yellow-600 text-black' : 'bg-gray-900 hover:bg-black'}`}>
+                  {sakan.isLocked ? '🔓 Buka' : '🔒 Kunci'}
+                </button>
+                <button onClick={() => aksiData('sakan', 'edit', sakan.id, sakan.nama, sakan.kategori)} className="text-xs bg-white/20 hover:bg-white/40 px-2 py-1 rounded">✏️</button>
+                <button onClick={() => aksiData('sakan', 'hapus', sakan.id, sakan.nama)} className="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded">🗑️</button>
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* List Kamar & Lemari */}
+            <div className="p-4 bg-gray-50/50">
+              {sakan.kamar.length === 0 ? (
+                <p className="text-sm text-gray-500 italic">Belum ada kamar.</p>
+              ) : (
+                <div className="space-y-4">
+                  {sakan.kamar.map((kamar: any) => (
+                    // Jika kamar digembok, background jadi merah muda pudar
+                    <div key={kamar.id} className={`p-3 rounded-lg border shadow-sm transition-all ${kamar.isLocked ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
+                      <div className="flex justify-between items-center border-b pb-2 mb-2">
+                        <span className={`font-bold flex items-center gap-1 ${kamar.isLocked ? 'text-red-700 line-through' : 'text-gray-800'}`}>
+                          {kamar.isLocked && '🔒'} Kamar {kamar.nama}
+                        </span>
+                        <div className="flex gap-1">
+                          {/* Tombol Kunci Kamar */}
+                          <button onClick={() => toggleLock('kamar', kamar.id, kamar.isLocked)} className={`text-[10px] px-2 py-1 rounded border font-bold ${kamar.isLocked ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}>
+                            {kamar.isLocked ? '🔓 Buka' : '🔒 Kunci'}
+                          </button>
+                          <button onClick={() => aksiData('kamar', 'edit', kamar.id, kamar.nama)} className="text-[10px] text-blue-600 hover:bg-blue-50 px-2 py-1 rounded border border-blue-200">Edit</button>
+                          <button onClick={() => aksiData('kamar', 'hapus', kamar.id, kamar.nama)} className="text-[10px] text-red-600 hover:bg-red-50 px-2 py-1 rounded border border-red-200">Hapus</button>
+                        </div>
+                      </div>
+                      
+                      {kamar.lemari.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic">Kosong</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {kamar.lemari.map((lemari: any) => (
+                            // Jika lemari digembok, dicoret dan warna merah
+                            <div key={lemari.id} className={`flex items-center gap-1 border px-2 py-1 rounded group transition-all ${lemari.isLocked ? 'bg-red-100 border-red-300 opacity-75' : 'bg-gray-100 border-gray-300'}`}>
+                              <span className={`text-xs font-bold flex items-center gap-1 ${lemari.isLocked ? 'text-red-700 line-through' : 'text-gray-700'}`}>
+                                {lemari.isLocked && '🔒'} {lemari.nomor}
+                              </span>
+                              <div className="hidden group-hover:flex gap-1 ml-1">
+                                {/* Tombol Kunci Lemari */}
+                                <button onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)} className="text-[10px] hover:scale-110 bg-white rounded px-1 shadow-sm">
+                                  {lemari.isLocked ? '🔓' : '🔒'}
+                                </button>
+                                <button onClick={() => aksiData('lemari', 'edit', lemari.id, lemari.nomor)} className="text-[10px] hover:scale-110">✏️</button>
+                                <button onClick={() => aksiData('lemari', 'hapus', lemari.id, lemari.nomor)} className="text-[10px] hover:scale-110">❌</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
+
     </div>
   );
 }

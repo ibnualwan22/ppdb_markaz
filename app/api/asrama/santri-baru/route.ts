@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama, lemariId, kategori, bulanKe } = body; 
+    const { nama, lemariId, kategori, bulanKe, gender } = body; 
 
     if (!nama || !lemariId || !kategori) {
       return NextResponse.json({ error: "Nama, Kategori, dan Lemari wajib diisi" }, { status: 400 });
@@ -24,14 +24,19 @@ export async function POST(request: Request) {
       data: {
         nama: nama,
         kategori: kategori,
+        gender: gender || "BANIN",
         isAktif: true,
         riwayat: {
           create: {
             dufahId: dufahAktif.id,
             lemariId: lemariId,
             status: "ASSIGNED",
-            isIdCardTaken: false,
-            // Simpan angka durasi yang diinput panitia
+            
+            // ==========================================
+            // SOLUSI: BYPASS MEJA ID CARD KHUSUS KSU
+            // ==========================================
+            isIdCardTaken: kategori === "KSU" ? true : false, 
+            
             bulanKe: kategori === "LAMA" ? parseInt(bulanKe) : 1
           }
         }
@@ -40,7 +45,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-      message: `${nama} berhasil didata (Bulan ke-${santriBaru.riwayat[0].bulanKe}).`,
+      message: `${nama} berhasil didata. ${kategori === "KSU" ? "(KSU otomatis Bypass ID Card)" : ""}`,
       data: santriBaru
     }, { status: 201 });
 

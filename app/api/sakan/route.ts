@@ -3,11 +3,9 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
-
 export async function GET() {
   try {
-    // Cari duf'ah aktif
+    // Cari Duf'ah yang sedang aktif
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
 
     const dataSakan = await prisma.sakan.findMany({
@@ -16,42 +14,40 @@ export async function GET() {
           include: {
             lemari: {
               include: {
-                // Tarik data penghuni KHUSUS untuk bulan ini
-                penghuni: {
-                  where: {
-                    dufahId: dufahAktif?.id || -1
-                  },
-                  include: { santri: { select: { nama: true, kategori: true } } }
-                }
-              }
+                // HANYA tarik penghuni di bulan ini, lengkapi dengan data santrinya
+                penghuni: dufahAktif ? {
+                  where: { dufahId: dufahAktif.id },
+                  include: { santri: true }
+                } : false
+              },
+              orderBy: { nomor: 'asc' }
             }
-          }
+          },
+          orderBy: { nama: 'asc' }
         }
       },
       orderBy: { nama: 'asc' }
     });
-    
     return NextResponse.json(dataSakan);
   } catch (error) {
-    return NextResponse.json({ error: "Gagal mengambil data Sakan" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal memuat Sakan" }, { status: 500 });
   }
 }
 
-
-// Fungsi POST: Untuk Admin menambah gedung/Sakan baru
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama } = body;
+    const { nama, kategori } = body; 
 
     const sakanBaru = await prisma.sakan.create({
-      data: {
-        nama
+      data: { 
+        nama, 
+        kategori: kategori || "BANIN" 
       }
     });
 
     return NextResponse.json(sakanBaru, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Gagal membuat Sakan baru" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal membuat Sakan" }, { status: 500 });
   }
 }
