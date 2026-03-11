@@ -52,66 +52,59 @@ export async function POST(request: Request) {
     const dataSantri = await prisma.santri.findUnique({ where: { id: santriId } });
     if (!dataSantri) return NextResponse.json({ error: "Santri tidak ditemukan" }, { status: 404 });
 
-    // Cek apakah sudah daftar di bulan ini
     const cekSudahDaftar = await prisma.riwayatDufah.findUnique({
       where: { santriId_dufahId: { santriId, dufahId: dufahAktif.id } },
     });
     if (cekSudahDaftar) return NextResponse.json({ error: "Anda sudah terdaftar" }, { status: 400 });
 
     // ==========================================
-    // LOGIKA BARU: PENGHITUNG MASA TINGGAL (ROLLING)
+    // LOGIKA BARU: BACA KOLOM "bulanKe"
     // ==========================================
     
-    // 1. Ambil riwayat penempatan lemari santri ke belakang (maksimal 12 bulan terakhir)
-    const riwayatLama = await prisma.riwayatDufah.findMany({
+    // 1. Ambil data kamar BULAN LALU (Duf'ah terakhir)
+    const riwayatBulanLalu = await prisma.riwayatDufah.findFirst({
       where: { santriId: santriId, lemariId: { not: null } },
       orderBy: { dufahId: 'desc' },
-      take: 12
     });
 
-    let lemariTerakhir = riwayatLama.length > 0 ? riwayatLama[0].lemariId : null;
-    let hitungBulanBeruntun = 0;
-
-    // 2. Hitung berapa kali berturut-turut dia di lemari yang sama
-    if (lemariTerakhir) {
-      for (const riwayat of riwayatLama) {
-        if (riwayat.lemariId === lemariTerakhir) {
-          hitungBulanBeruntun++;
-        } else {
-          break; // Berhenti menghitung jika lemarinya beda
-        }
-      }
-    }
-
-    // 3. Tentukan batas maksimal berdasarkan kategori
     const batasMaksimal = dataSantri.kategori === "KSU" ? 12 : 3;
     
-    // 4. Putuskan Status dan Lemari Baru
     let lemariBaru = null;
-    let statusBaru = "PRE_LIST"; // Default: Harus cari kamar baru
+    let statusBaru = "PRE_LIST"; 
+    let bulanKeBaru = 1;
 
-    // Jika belum melewati batas maksimal, otomatis perpanjang lemari yang sama
-    if (lemariTerakhir && hitungBulanBeruntun < batasMaksimal) {
-      lemariBaru = lemariTerakhir;
-      statusBaru = "ASSIGNED";
+    // Jika bulan lalu dia punya kamar, mari kita cek durasinya
+    if (riwayatBulanLalu) {
+      const durasiBerjalan = riwayatBulanLalu.bulanKe; // Ambil durasi dari database
+
+      if (durasiBerjalan < batasMaksimal) {
+        // BELUM LIMIT: Perpanjang kamarnya, tambahkan 1 bulan
+        lemariBaru = riwayatBulanLalu.lemariId;
+        statusBaru = "ASSIGNED";
+        bulanKeBaru = durasiBerjalan + 1;
+      } else {
+        // SUDAH LIMIT (Contoh: sudah bulan ke-3): Kosongkan kamarnya
+        lemariBaru = null;
+        statusBaru = "PRE_LIST";
+        bulanKeBaru = 1; // Reset jadi 1 untuk persiapan kamar barunya nanti
+      }
     }
-
-    // ==========================================
 
     // Eksekusi Pendaftaran
     const pendaftaranBerhasil = await prisma.riwayatDufah.create({
       data: {
         santriId: santriId,
         dufahId: dufahAktif.id,
-        lemariId: lemariBaru, // Akan terisi otomatis jika belum 3 bulan, dan null jika sudah waktunya rolling
+        lemariId: lemariBaru, 
         status: statusBaru,
         isIdCardTaken: false,
+        bulanKe: bulanKeBaru // Simpan durasi terbarunya
       },
     });
 
     const pesan = statusBaru === "ASSIGNED" 
-      ? "Pendaftaran berhasil. Sakan Anda otomatis diperpanjang." 
-      : "Pendaftaran berhasil. Masa tinggal Anda habis, silakan menuju Meja Asrama untuk Sakan baru.";
+      ? `Sakan diperpanjang. (Bulan ke-${bulanKeBaru})` 
+      : "Masa tinggal habis, silakan menuju Meja Asrama untuk Sakan baru.";
 
     return NextResponse.json({ message: pesan, data: pendaftaranBerhasil }, { status: 201 });
 

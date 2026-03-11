@@ -6,40 +6,24 @@ const prisma = new PrismaClient();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // Tambahkan kategori dan bulanKe untuk keperluan rilis perdana
     const { nama, lemariId, kategori, bulanKe } = body; 
 
     if (!nama || !lemariId || !kategori) {
       return NextResponse.json({ error: "Nama, Kategori, dan Lemari wajib diisi" }, { status: 400 });
     }
 
-    const dufahAktif = await prisma.dufah.findFirst({
-      where: { isActive: true },
-    });
+    const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
+    if (!dufahAktif) return NextResponse.json({ error: "Tidak ada Duf'ah yang aktif." }, { status: 400 });
 
-    if (!dufahAktif) {
-      return NextResponse.json({ error: "Tidak ada Duf'ah yang aktif." }, { status: 400 });
-    }
-
-    // CEK KAPASITAS LEMARI (1 Lemari = 1 Orang)
     const cekLemari = await prisma.riwayatDufah.findFirst({
-      where: {
-        lemariId: lemariId,
-        dufahId: dufahAktif.id
-      }
+      where: { lemariId: lemariId, dufahId: dufahAktif.id }
     });
+    if (cekLemari) return NextResponse.json({ error: "Gagal: Lemari ini sudah terisi!" }, { status: 400 });
 
-    if (cekLemari) {
-      return NextResponse.json({ error: "Gagal: Lemari ini sudah terisi oleh orang lain di bulan ini!" }, { status: 400 });
-    }
-
-    // EKSEKUSI PEMBUATAN DATA
-    // Jika panitia mengisi bulanKe = 2, kita bisa memanipulasi riwayatnya (opsional) atau menyimpannya di frontend.
-    // Untuk saat ini, kita buat santrinya dan langsung tempatkan di lemari.
     const santriBaru = await prisma.santri.create({
       data: {
         nama: nama,
-        kategori: kategori, // Bisa "BARU", "LAMA", atau "KSU" sesuai pilihan panitia
+        kategori: kategori,
         isAktif: true,
         riwayat: {
           create: {
@@ -47,6 +31,8 @@ export async function POST(request: Request) {
             lemariId: lemariId,
             status: "ASSIGNED",
             isIdCardTaken: false,
+            // Simpan angka durasi yang diinput panitia
+            bulanKe: kategori === "LAMA" ? parseInt(bulanKe) : 1
           }
         }
       },
@@ -54,7 +40,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-      message: `${nama} (Kategori: ${kategori}) berhasil didaftarkan ke lemari.`,
+      message: `${nama} berhasil didata (Bulan ke-${santriBaru.riwayat[0].bulanKe}).`,
       data: santriBaru
     }, { status: 201 });
 

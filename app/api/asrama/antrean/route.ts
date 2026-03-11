@@ -16,7 +16,7 @@ export async function GET() {
     const antrean = await prisma.riwayatDufah.findMany({
       where: {
         dufahId: dufahAktif.id,
-        status: "PRE_LIST",
+        lemariId: null,
       },
       include: {
         santri: {

@@ -75,6 +75,8 @@ model RiwayatDufah {
   // Status Alur PPDB
   status          String   @default("PRE_LIST") // "PRE_LIST", "ASSIGNED", "CHECKED_IN"
   isIdCardTaken   Boolean  @default(false)
+
+  bulanKe         Int      @default(1)
   
   // Relasi Utama
   santri          Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)
