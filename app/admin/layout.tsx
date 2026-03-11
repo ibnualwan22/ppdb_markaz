@@ -7,11 +7,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-64 bg-green-900 text-white flex flex-col shadow-xl">
         <div className="p-6 text-center border-b border-green-800">
-          <h2 className="text-2xl font-bold tracking-wider">PPDB Pusat</h2>
+          <h2 className="text-2xl font-bold tracking-wider">PPDB Markaz Arabiyyah</h2>
           <p className="text-sm text-green-300 mt-1">Portal Admin</p>
         </div>
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          <Link href="/admin/" className="block p-3 rounded-lg hover:bg-green-800 transition">
+            📊 Halaman Utama
+          </Link>
           <Link href="/admin/dashboard" className="block p-3 rounded-lg hover:bg-green-800 transition">
             📊 Dashboard Muasis
           </Link>
