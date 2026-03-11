@@ -20,7 +20,8 @@ export async function GET() {
                 penghuni: {
                   where: {
                     dufahId: dufahAktif?.id || -1
-                  }
+                  },
+                  include: { santri: { select: { nama: true, kategori: true } } }
                 }
               }
             }

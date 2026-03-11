@@ -28,6 +28,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link href="/admin/dufah" className="block p-3 rounded-lg hover:bg-green-800 transition text-white">
   🗓️ Manajemen Duf'ah
 </Link>
+<Link href="/admin/santri" className="block p-3 rounded-lg hover:bg-green-800 transition text-blue-300 mt-2">
+              🎓 Master Santri
+            </Link>
           </div>
         </nav>
       </aside>

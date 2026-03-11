@@ -4,42 +4,56 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // ==========================================
-// 1. GET: Fitur Pencarian Nama (Auto-suggest)
+// FUNGSI PENCARIAN (Mencari Santri Terkena Auto-CO)
 // ==========================================
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const keyword = searchParams.get("nama");
 
-    if (!keyword) {
-      return NextResponse.json({ error: "Masukkan nama untuk mencari" }, { status: 400 });
-    }
+    if (!keyword || keyword.length < 3) return NextResponse.json([]);
 
-    // Mencari santri berdasarkan nama yang diketik (minimal 3 huruf disarankan di frontend)
-    const hasilPencarian = await prisma.santri.findMany({
-      where: {
-        nama: {
-          contains: keyword,
-          mode: "insensitive", // Mengabaikan huruf besar/kecil (khusus PostgreSQL)
-        },
-      },
-      // Hanya tampilkan id, nama, dan kategori agar data yang dikirim ringan
-      select: {
-        id: true,
-        nama: true,
-        kategori: true,
-      },
-      take: 10, // Batasi maksimal 10 nama agar tidak membebani server
+    const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
+    if (!dufahAktif) return NextResponse.json([]);
+
+    const dufahLama = await prisma.dufah.findFirst({
+      where: { id: { lt: dufahAktif.id } },
+      orderBy: { id: 'desc' }
     });
 
-    return NextResponse.json(hasilPencarian);
+    const santriDitemukan = await prisma.santri.findMany({
+      where: {
+        nama: { contains: keyword, mode: "insensitive" },
+        kategori: "LAMA",
+        riwayat: {
+          none: { dufahId: dufahAktif.id } // Mutlak: Belum daftar bulan ini!
+        },
+        OR: [
+          // JALUR 1 (Normal): Terkena Auto-CO dan aktif di bulan lalu
+          {
+            isAktif: false,
+            riwayat: {
+              some: { dufahId: dufahLama?.id || -1 }
+            }
+          },
+          // JALUR 2 (Comeback): Diaktifkan manual oleh panitia dari Master Santri
+          {
+            isAktif: true
+          }
+        ]
+      },
+      take: 10,
+      select: { id: true, nama: true, kategori: true }
+    });
+
+    return NextResponse.json(santriDitemukan);
   } catch (error) {
-    return NextResponse.json({ error: "Gagal mencari nama" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal mencari data" }, { status: 500 });
   }
 }
 
 // ==========================================
-// 2. POST: Eksekusi Pendaftaran (Submit)
+// FUNGSI SUBMIT PENDAFTARAN (Pembangkit Status)
 // ==========================================
 export async function POST(request: Request) {
   try {
@@ -52,45 +66,45 @@ export async function POST(request: Request) {
     const dataSantri = await prisma.santri.findUnique({ where: { id: santriId } });
     if (!dataSantri) return NextResponse.json({ error: "Santri tidak ditemukan" }, { status: 404 });
 
-    const cekSudahDaftar = await prisma.riwayatDufah.findUnique({
-      where: { santriId_dufahId: { santriId, dufahId: dufahAktif.id } },
-    });
-    if (cekSudahDaftar) return NextResponse.json({ error: "Anda sudah terdaftar" }, { status: 400 });
-
-    // ==========================================
-    // LOGIKA BARU: BACA KOLOM "bulanKe"
-    // ==========================================
-    
-    // 1. Ambil data kamar BULAN LALU (Duf'ah terakhir)
-    const riwayatBulanLalu = await prisma.riwayatDufah.findFirst({
-      where: { santriId: santriId, lemariId: { not: null } },
-      orderBy: { dufahId: 'desc' },
+    const dufahLama = await prisma.dufah.findFirst({
+      where: { id: { lt: dufahAktif.id } },
+      orderBy: { id: 'desc' }
     });
 
-    const batasMaksimal = dataSantri.kategori === "KSU" ? 12 : 3;
-    
+    let riwayatBulanLalu = null;
+    if (dufahLama) {
+      riwayatBulanLalu = await prisma.riwayatDufah.findUnique({
+        where: { santriId_dufahId: { santriId: santriId, dufahId: dufahLama.id } }
+      });
+    }
+
+    const batasMaksimal = 3;
     let lemariBaru = null;
     let statusBaru = "PRE_LIST"; 
     let bulanKeBaru = 1;
+    let kategoriBaru = dataSantri.kategori; // Default kategori tetap
 
-    // Jika bulan lalu dia punya kamar, mari kita cek durasinya
-    if (riwayatBulanLalu) {
-      const durasiBerjalan = riwayatBulanLalu.bulanKe; // Ambil durasi dari database
-
+    // Logika Terputus & Reset
+    if (riwayatBulanLalu && riwayatBulanLalu.lemariId) {
+      // TIDAK TERPUTUS
+      const durasiBerjalan = riwayatBulanLalu.bulanKe;
       if (durasiBerjalan < batasMaksimal) {
-        // BELUM LIMIT: Perpanjang kamarnya, tambahkan 1 bulan
         lemariBaru = riwayatBulanLalu.lemariId;
         statusBaru = "ASSIGNED";
         bulanKeBaru = durasiBerjalan + 1;
       } else {
-        // SUDAH LIMIT (Contoh: sudah bulan ke-3): Kosongkan kamarnya
         lemariBaru = null;
         statusBaru = "PRE_LIST";
-        bulanKeBaru = 1; // Reset jadi 1 untuk persiapan kamar barunya nanti
+        bulanKeBaru = 1; 
       }
+    } else {
+      // TERPUTUS! Hukumannya: Reset kamar, Reset bulan, Reset Kategori
+      lemariBaru = null;
+      statusBaru = "PRE_LIST";
+      bulanKeBaru = 1;
+      kategoriBaru = "BARU"; // <--- INI OBATNYA
     }
 
-    // Eksekusi Pendaftaran
     const pendaftaranBerhasil = await prisma.riwayatDufah.create({
       data: {
         santriId: santriId,
@@ -98,13 +112,22 @@ export async function POST(request: Request) {
         lemariId: lemariBaru, 
         status: statusBaru,
         isIdCardTaken: false,
-        bulanKe: bulanKeBaru // Simpan durasi terbarunya
+        bulanKe: bulanKeBaru 
       },
+    });
+
+    // BANGKITKAN STATUS SEKALIGUS UPDATE KATEGORI
+    await prisma.santri.update({
+      where: { id: santriId },
+      data: { 
+        isAktif: true,
+        kategori: kategoriBaru 
+      }
     });
 
     const pesan = statusBaru === "ASSIGNED" 
       ? `Sakan diperpanjang. (Bulan ke-${bulanKeBaru})` 
-      : "Masa tinggal habis, silakan menuju Meja Asrama untuk Sakan baru.";
+      : "Silakan menuju Meja Asrama untuk antrean Sakan baru.";
 
     return NextResponse.json({ message: pesan, data: pendaftaranBerhasil }, { status: 201 });
 

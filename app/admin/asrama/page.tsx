@@ -37,16 +37,21 @@ export default function MejaAsramaPage() {
 
   // Logika Dropdown untuk Form Kiri
   const sakanTerpilih = dataLokasi.find((s) => s.id === sakanId);
-  const kamarTerpilih = sakanTerpilih?.kamar.find((k: any) => k.id === kamarId);
+  // TAMBAHAN: Buat daftarKamar dan filter yang isLocked == false
+  const daftarKamar = sakanTerpilih ? sakanTerpilih.kamar.filter((k: any) => !k.isLocked) : [];
+  const kamarTerpilih = daftarKamar.find((k: any) => k.id === kamarId);
   const daftarLemariTersedia = kamarTerpilih 
-    ? kamarTerpilih.lemari.filter((l: any) => !l.penghuni || l.penghuni.length === 0) 
+    ? kamarTerpilih.lemari.filter((l: any) => !l.isLocked && (!l.penghuni || l.penghuni.length === 0)) 
     : [];
+  
 
   // Logika Dropdown untuk Modal Kanan
   const modalSakan = dataLokasi.find((s) => s.id === modalSakanId);
-  const modalKamar = modalSakan?.kamar.find((k: any) => k.id === modalKamarId);
+  // TAMBAHAN: Buat modalDaftarKamar dan filter yang isLocked == false
+  const modalDaftarKamar = modalSakan ? modalSakan.kamar.filter((k: any) => !k.isLocked) : [];
+  const modalKamar = modalDaftarKamar.find((k: any) => k.id === modalKamarId);
   const modalLemariTersedia = modalKamar 
-    ? modalKamar.lemari.filter((l: any) => !l.penghuni || l.penghuni.length === 0) 
+    ? modalKamar.lemari.filter((l: any) => !l.isLocked && (!l.penghuni || l.penghuni.length === 0)) 
     : [];
 
   // Submit Santri Manual
@@ -153,7 +158,7 @@ export default function MejaAsramaPage() {
                 <label className="block text-sm font-bold text-gray-700 mb-1">Pilih Kamar</label>
                 <select value={kamarId} onChange={(e) => { setKamarId(e.target.value); setLemariId(""); }} disabled={!sakanId} className="w-full p-3 border border-gray-300 rounded-lg outline-none bg-white disabled:bg-gray-100">
                   <option value="">-- Kamar --</option>
-                  {sakanTerpilih?.kamar.map((k: any) => <option key={k.id} value={k.id}>Kamar {k.nama}</option>)}
+                  {daftarKamar.map((k: any) => <option key={k.id} value={k.id}>Kamar {k.nama}</option>)}
                 </select>
               </div>
             </div>

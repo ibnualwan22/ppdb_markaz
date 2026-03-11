@@ -20,16 +20,18 @@ model Sakan {
 
 model Kamar {
   id        String   @id @default(uuid())
-  nama      String   // Contoh: "A", "B", "C"
-  sakanId   String   // Kunci tamu (Foreign Key) ke tabel Sakan
+  nama      String
+  sakanId   String
+  isLocked  Boolean  @default(false) // <--- TAMBAHKAN BARIS INI
   sakan     Sakan    @relation(fields: [sakanId], references: [id], onDelete: Cascade)
-  lemari    Lemari[] // Relasi: 1 Kamar punya banyak Lemari
+  lemari    Lemari[]
 }
 
 model Lemari {
   id        String   @id @default(uuid())
   nomor     String   // Contoh: "A1", "A2", "B1"
   kamarId   String   // Kunci tamu ke tabel Kamar
+  isLocked  Boolean  @default(false)
   kamar     Kamar    @relation(fields: [kamarId], references: [id], onDelete: Cascade)
   penghuni  RiwayatDufah[] // Relasi ke riwayat santri yang menempati
 }

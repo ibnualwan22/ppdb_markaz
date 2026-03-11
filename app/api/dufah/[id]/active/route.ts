@@ -9,33 +9,65 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const dufahId = parseInt(id);
+    const dufahIdBaru = parseInt(id);
 
-    // 1. Matikan semua Duf'ah
+    // 1. Cari Duf'ah Lama (Untuk patokan copy data KSU)
+    const dufahLama = await prisma.dufah.findFirst({ where: { isActive: true } });
+
+    // 2. Matikan semua Duf'ah
     await prisma.dufah.updateMany({ data: { isActive: false } });
 
-    // 2. Aktifkan Duf'ah yang dipilih
+    // 3. Aktifkan Duf'ah yang baru dipilih
     const dufahAktif = await prisma.dufah.update({
-      where: { id: dufahId },
+      where: { id: dufahIdBaru },
       data: { isActive: true }
     });
 
     // ==========================================
-    // LOGIKA BARU: NAIK KELAS (BARU -> LAMA)
+    // LOGIKA BARU: AUTO-CO MASSAL (KECUALI KSU)
     // ==========================================
-    // Ubah semua santri berstatus BARU menjadi LAMA (Kecuali KSU dan santri tidak aktif)
     await prisma.santri.updateMany({
       where: { 
-        kategori: "BARU",
-        isAktif: true
+        kategori: { not: "KSU" } // Semua santri BARU & LAMA akan dieksekusi
       },
       data: { 
-        kategori: "LAMA" 
+        isAktif: false,   // Sapu bersih! (Otomatis Boyong sementara)
+        kategori: "LAMA"  // Semua yang tadinya BARU otomatis naik kelas
       }
     });
 
+    // 4. AUTO-MIGRASI KSU (Mereka kebal Auto-CO dan kamarnya diperpanjang otomatis)
+    if (dufahLama) {
+      const riwayatKsuLama = await prisma.riwayatDufah.findMany({
+        where: {
+          dufahId: dufahLama.id,
+          santri: { kategori: "KSU", isAktif: true },
+          lemariId: { not: null }
+        }
+      });
+
+      for (const ksu of riwayatKsuLama) {
+        const cekDuplikat = await prisma.riwayatDufah.findUnique({
+          where: { santriId_dufahId: { santriId: ksu.santriId, dufahId: dufahAktif.id } }
+        });
+
+        if (!cekDuplikat) {
+          await prisma.riwayatDufah.create({
+            data: {
+              santriId: ksu.santriId,
+              dufahId: dufahAktif.id,
+              lemariId: ksu.lemariId,
+              status: "ASSIGNED",
+              isIdCardTaken: true, 
+              bulanKe: ksu.bulanKe + 1
+            }
+          });
+        }
+      }
+    }
+
     return NextResponse.json({ 
-      message: `${dufahAktif.nama} aktif. Semua Santri Baru otomatis menjadi Santri Lama.`,
+      message: `${dufahAktif.nama} aktif. Santri reguler di-Auto-CO, KSU dimigrasi aman.`,
       data: dufahAktif 
     });
   } catch (error) {
