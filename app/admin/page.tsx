@@ -13,19 +13,22 @@ export default function AdminDashboardHome() {
   const [filterAkhir, setFilterAkhir] = useState("");
   const [filterGender, setFilterGender] = useState("ALL"); 
 
+  const muatData = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
+    try {
+      const res = await fetch("/api/dashboard");
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data.stats); setGrafikData(data.grafikData);
+      }
+    } catch (error) {}
+    if (!isBackground) setLoading(false);
+  };
+
   useEffect(() => {
-    const muatData = async () => {
-      try {
-        const res = await fetch("/api/dashboard");
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data.stats);
-          setGrafikData(data.grafikData);
-        }
-      } catch (error) { console.error("Gagal memuat dashboard", error); }
-      setLoading(false);
-    };
     muatData();
+    const interval = setInterval(() => { muatData(true); }, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const copyLaporanWA = () => {

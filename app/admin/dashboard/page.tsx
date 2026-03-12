@@ -6,18 +6,20 @@ export default function DashboardMuasisPage() {
   const [dataSakan, setDataSakan] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const muatData = async () => {
+  const muatData = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     try {
       const res = await fetch("/api/sakan");
       if (res.ok) setDataSakan(await res.json());
-    } catch (error) { console.error("Gagal memuat data", error); }
-    setLoading(false);
+    } catch (error) {}
+    if (!isBackground) setLoading(false);
   };
 
   useEffect(() => {
     muatData();
+    const interval = setInterval(() => { muatData(true); }, 3000);
+    return () => clearInterval(interval);
   }, []);
-
   // =========================================
   // FUNGSI SAKLAR KUNCI UNTUK MUASIS
   // =========================================
