@@ -19,6 +19,7 @@ export async function GET() {
       totalBanat: 0,
       idCardBaru: 0,
       idCardLama: 0,
+      totalKSU: 0, // <-- STATE BARU UNTUK KSU
     };
 
     if (dufahAktif) {
@@ -50,17 +51,34 @@ export async function GET() {
 
       stats.totalMasukSakan = stats.totalBanin + stats.totalBanat;
 
+      // 1. Hitung MURNI Santri Baru di Meja ID Card
       stats.idCardBaru = await prisma.riwayatDufah.count({
         where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, santri: { kategori: 'BARU' } }
       });
-      stats.idCardLama = await prisma.riwayatDufah.count({
-        where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, santri: { kategori: { in: ['LAMA', 'KSU'] } } }
-      });
-      stats.totalAmbilIdCard = stats.idCardBaru + stats.idCardLama;
-      stats.selisih = stats.totalMasukSakan - stats.totalAmbilIdCard;
 
+      // 2. Hitung MURNI Santri Lama di Meja ID Card (KSU DIKELUARKAN!)
+      stats.idCardLama = await prisma.riwayatDufah.count({
+        where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, santri: { kategori: 'LAMA' } }
+      });
+
+      // 3. Hitung Total KSU yang menempati Sakan
+      stats.totalKSU = await prisma.riwayatDufah.count({
+        where: { dufahId: dufahAktif.id, lemariId: { not: null }, santri: { kategori: 'KSU' } }
+      });
+
+      stats.totalAmbilIdCard = stats.idCardBaru + stats.idCardLama;
+      
+      // 4. Selisih Murni = Total Keseluruhan - (Yang sudah ID Card + Pengurus KSU)
+      stats.selisih = stats.totalMasukSakan - stats.totalAmbilIdCard - stats.totalKSU;
+
+      // 5. Daftar Selisih (Pastikan KSU tidak masuk ke sini)
       stats.listBelumIdCard = await prisma.riwayatDufah.findMany({
-        where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: false },
+        where: { 
+          dufahId: dufahAktif.id, 
+          lemariId: { not: null }, 
+          isIdCardTaken: false,
+          santri: { kategori: { not: 'KSU' } } // KSU Dikecualikan
+        },
         include: {
           santri: { select: { nama: true, kategori: true, gender: true } },
           lemari: { include: { kamar: { include: { sakan: true } } } }
@@ -69,39 +87,26 @@ export async function GET() {
       });
     }
 
-    // ==========================================
-    // LOGIKA BARU: HITUNG HISTORI GENDER PER DUF'AH
-    // ==========================================
     const historiDufahRaw = await prisma.dufah.findMany({
       select: { 
         id: true, 
         nama: true, 
         tanggalBuka: true, 
-        riwayat: {
-          select: {
-            santri: { select: { gender: true } }
-          }
-        }
+        riwayat: { select: { santri: { select: { gender: true } } } }
       },
       orderBy: { id: 'asc' }
     });
 
     const grafikData = historiDufahRaw.map(d => {
-      let totalBanin = 0;
-      let totalBanat = 0;
-      
+      let totalBanin = 0; let totalBanat = 0;
       d.riwayat.forEach(r => {
         if (r.santri.gender === 'BANAT') totalBanat++;
         else totalBanin++;
       });
-
       return {
-        id: d.id, 
-        nama: d.nama,
+        id: d.id, nama: d.nama,
         tahun: d.tanggalBuka ? new Date(d.tanggalBuka).getFullYear() : new Date().getFullYear(),
-        totalPendaftar: d.riwayat.length,
-        totalBanin,
-        totalBanat
+        totalPendaftar: d.riwayat.length, totalBanin, totalBanat
       };
     });
 

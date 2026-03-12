@@ -4,16 +4,25 @@ import { useState, useEffect } from "react";
 
 export default function MasterSantriPage() {
   const [dataSantri, setDataSantri] = useState<any[]>([]);
+  const [daftarDufah, setDaftarDufah] = useState<any[]>([]);
+  
   const [keyword, setKeyword] = useState("");
+  // STATE BARU: Default sekarang adalah "AKTIF"
+  const [filterDufah, setFilterDufah] = useState("AKTIF"); 
   const [loading, setLoading] = useState(true);
   
-  // State untuk Pop-up Riwayat
   const [riwayatTerpilih, setRiwayatTerpilih] = useState<any | null>(null);
 
-  const muatData = async () => {
+  const muatDaftarDufah = async () => {
+    const res = await fetch("/api/dufah");
+    if (res.ok) setDaftarDufah(await res.json());
+  };
+
+  const muatDataSantri = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/santri");
+      // Membawa parameter filter ke API
+      const res = await fetch(`/api/santri?filter=${filterDufah}`);
       if (res.ok) setDataSantri(await res.json());
     } catch (error) {
       console.error("Gagal memuat master santri", error);
@@ -22,10 +31,13 @@ export default function MasterSantriPage() {
   };
 
   useEffect(() => {
-    muatData();
+    muatDaftarDufah();
   }, []);
 
-  // Fungsi Toggle Cek Out / Aktifkan Kembali
+  useEffect(() => {
+    muatDataSantri();
+  }, [filterDufah]);
+
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
     const aksi = statusSaatIni ? "MENGELUARKAN (Boyong)" : "MENGAKTIFKAN KEMBALI";
     if (!confirm(`Yakin ingin ${aksi} santri bernama ${nama}?`)) return;
@@ -36,14 +48,10 @@ export default function MasterSantriPage() {
       body: JSON.stringify({ isAktif: !statusSaatIni })
     });
 
-    if (res.ok) {
-      muatData();
-    } else {
-      alert("Gagal merubah status santri");
-    }
+    if (res.ok) muatDataSantri();
+    else alert("Gagal merubah status santri");
   };
 
-  // Filter Lokal untuk Pencarian Cepat
   const dataDitampilkan = dataSantri.filter((santri) => 
     santri.nama.toLowerCase().includes(keyword.toLowerCase())
   );
@@ -56,14 +64,31 @@ export default function MasterSantriPage() {
           <p className="text-gray-500 mt-1">Kelola status aktif, boyong, dan riwayat penempatan asrama.</p>
         </div>
 
-        {/* Search Bar */}
-        <div className="w-full md:w-80">
+        {/* Filter Area */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <select
+            value={filterDufah}
+            onChange={(e) => setFilterDufah(e.target.value)}
+            className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-bold text-gray-700 shadow-sm cursor-pointer"
+          >
+            <optgroup label="Data Terkini">
+              <option value="AKTIF">🟢 Santri Aktif Saat Ini</option>
+              <option value="ALL">📚 Semua Data Global (Termasuk Boyong)</option>
+            </optgroup>
+            
+            <optgroup label="Histori Per Duf'ah">
+              {daftarDufah.map((d) => (
+                <option key={d.id} value={d.id}>🗓️ Riwayat {d.nama}</option>
+              ))}
+            </optgroup>
+          </select>
+
           <input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="🔍 Cari nama santri..."
-            className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+            className="p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm sm:w-64"
           />
         </div>
       </div>
@@ -87,19 +112,21 @@ export default function MasterSantriPage() {
                 </tr>
               ) : dataDitampilkan.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-10 text-center text-gray-500 font-medium">Tidak ada santri ditemukan.</td>
+                  <td colSpan={4} className="p-10 text-center text-gray-500 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
                 </tr>
               ) : (
                 dataDitampilkan.map((santri) => (
                   <tr key={santri.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${!santri.isAktif ? 'bg-red-50 opacity-75' : ''}`}>
                     <td className="p-4">
-                      <p className={`font-bold text-lg ${!santri.isAktif ? 'text-red-700 line-through' : 'text-gray-900'}`}>
-                        {santri.nama}
+                      <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-700 line-through' : 'text-gray-900'}`}>
+                        {santri.nama} <span className="text-sm">{santri.gender === 'BANAT' ? '🧕' : '👨'}</span>
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
+                      </p>
                     </td>
                     <td className="p-4">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-md shadow-sm">
+                      <span className={`px-3 py-1 text-xs font-bold rounded-md shadow-sm text-white ${santri.kategori === 'KSU' ? 'bg-purple-600' : santri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
                         {santri.kategori}
                       </span>
                     </td>
@@ -116,7 +143,6 @@ export default function MasterSantriPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex justify-center gap-2">
-                        {/* Tombol Lihat Riwayat */}
                         <button
                           onClick={() => setRiwayatTerpilih(santri)}
                           className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition text-sm font-bold shadow-sm"
@@ -124,10 +150,9 @@ export default function MasterSantriPage() {
                           Lihat Riwayat
                         </button>
                         
-                        {/* Tombol Saklar Status */}
                         <button
                           onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
-                          className={`px-4 py-2 rounded-lg transition text-sm font-bold shadow-sm text-white ${santri.isAktif ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                          className={`px-4 py-2 rounded-lg transition text-sm font-bold shadow-sm text-white ${santri.isAktif ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                         >
                           {santri.isAktif ? 'Set Boyong' : 'Aktifkan'}
                         </button>
@@ -141,9 +166,7 @@ export default function MasterSantriPage() {
         </div>
       </div>
 
-      {/* ========================================== */}
-      {/* OVERLAY MODAL RIWAYAT DUF'AH                 */}
-      {/* ========================================== */}
+      {/* OVERLAY MODAL RIWAYAT (Tetap sama seperti sebelumnya) */}
       {riwayatTerpilih && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -162,7 +185,6 @@ export default function MasterSantriPage() {
                 <div className="space-y-4">
                   {riwayatTerpilih.riwayat.map((rekamJejejak: any, index: number) => (
                     <div key={rekamJejejak.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-start gap-4">
-                      {/* Nomor Urut (Timeline) */}
                       <div className="bg-blue-100 text-blue-800 font-bold w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-blue-200">
                         #{riwayatTerpilih.riwayat.length - index}
                       </div>

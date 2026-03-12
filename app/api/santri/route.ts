@@ -3,23 +3,40 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET: Mengambil daftar semua santri beserta riwayat lengkapnya
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const filter = searchParams.get("filter") || "AKTIF"; // Default adalah AKTIF
+
+    let filterPencarian: any = {};
+
+    if (filter === "AKTIF") {
+      // MODE 1: Hanya santri yang saat ini masih di pondok
+      filterPencarian = { isAktif: true };
+    } else if (filter === "ALL") {
+      // MODE 2: Global (Termasuk yang sudah boyong)
+      filterPencarian = {}; 
+    } else {
+      // MODE 3: Historis (Siapa saja yang mendaftar di Duf'ah X)
+      const dufahId = parseInt(filter);
+      if (!isNaN(dufahId)) {
+        filterPencarian = {
+          riwayat: {
+            some: { dufahId: dufahId }
+          }
+        };
+      }
+    }
+
     const dataSantri = await prisma.santri.findMany({
+      where: filterPencarian,
       include: {
         riwayat: {
           include: {
             dufah: true,
-            lemari: {
-              include: {
-                kamar: {
-                  include: { sakan: true }
-                }
-              }
-            }
+            lemari: { include: { kamar: { include: { sakan: true } } } }
           },
-          orderBy: { dufahId: 'desc' } // Urutkan dari riwayat terbaru
+          orderBy: { dufahId: 'desc' }
         }
       },
       orderBy: { nama: 'asc' }
@@ -28,29 +45,5 @@ export async function GET() {
     return NextResponse.json(dataSantri);
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data master santri" }, { status: 500 });
-  }
-}
-
-// POST: Jika sewaktu-waktu butuh input santri murni TANPA penempatan kamar
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { nama, kategori } = body;
-
-    if (!nama || !kategori) {
-      return NextResponse.json({ error: "Nama dan kategori wajib diisi" }, { status: 400 });
-    }
-
-    const santriBaru = await prisma.santri.create({
-      data: {
-        nama,
-        kategori,
-        isAktif: true
-      }
-    });
-
-    return NextResponse.json(santriBaru, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Gagal membuat data santri" }, { status: 500 });
   }
 }

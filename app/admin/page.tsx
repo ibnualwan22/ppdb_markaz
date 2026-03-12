@@ -8,7 +8,6 @@ export default function AdminDashboardHome() {
   const [grafikData, setGrafikData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter Grafik
   const [filterTahun, setFilterTahun] = useState("ALL");
   const [filterMulai, setFilterMulai] = useState("");
   const [filterAkhir, setFilterAkhir] = useState("");
@@ -49,15 +48,20 @@ export default function AdminDashboardHome() {
     text += `*Data santri dari ID Card*\n\n`;
     text += `1. Santri baru: *${stats.idCardBaru} Santri*\n`;
     text += `2. Santri lama: *${stats.idCardLama} Santri*\n`;
-    text += `3. Jumlah keseluruhan: *${stats.totalAmbilIdCard} Santri*\n\n`;
+    text += `3. Jumlah keseluruhan (ID Card): *${stats.totalAmbilIdCard} Santri*\n\n`;
+
+    // TAMBAHAN KETERANGAN KSU DI LAPORAN WA
+    if (stats.totalKSU > 0) {
+      text += `Catatan: Terdapat *${stats.totalKSU} Santri Pengurus (KSU)* yang menetap di sakan.\n\n`;
+    }
 
     if (stats.listBelumIdCard.length > 0) {
-      text += `Ada selisih ${stats.selisih} santri yang belum cek in/ sudah cek out\n\n`;
+      text += `Ada selisih ${stats.selisih} santri yang belum cek in/ sudah cek out:\n\n`;
       const grupSelisih: any = {};
       stats.listBelumIdCard.forEach((row: any) => {
         const sakan = row.lemari?.kamar?.sakan?.nama || "Tanpa Sakan";
         if (!grupSelisih[sakan]) grupSelisih[sakan] = [];
-        grupSelisih[sakan].push(`${row.santri.nama} ${row.lemari?.kamar?.nama || ""}${row.lemari?.nomor || ""}`);
+        grupSelisih[sakan].push(`${row.santri.nama} ${row.lemari?.nomor || ""}`);
       });
       Object.keys(grupSelisih).forEach(sakan => {
         text += `${sakan}\n`;
@@ -119,6 +123,14 @@ export default function AdminDashboardHome() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-green-500 flex flex-col justify-center relative overflow-hidden">
           <p className="text-gray-500 font-bold text-sm z-10">Selesai ID Card & Check-in</p>
           <p className="text-4xl font-black text-green-600 mt-2 z-10">{stats?.totalAmbilIdCard} <span className="text-lg font-medium text-gray-400">Santri</span></p>
+          
+          {/* KETERANGAN TAMBAHAN KSU DI KARTU */}
+          {stats?.totalKSU > 0 && (
+            <p className="text-xs font-bold text-purple-600 mt-1 z-10 bg-purple-50 inline-block px-2 py-0.5 rounded-md self-start border border-purple-200">
+              + {stats?.totalKSU} Pengurus (KSU)
+            </p>
+          )}
+
           <div className="absolute -right-4 -bottom-4 text-7xl opacity-5">💳</div>
         </div>
 
@@ -135,8 +147,6 @@ export default function AdminDashboardHome() {
         
         {/* KOLOM KIRI: GRAFIK */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-md border border-gray-200 p-6 flex flex-col">
-          
-          {/* HEADER GRAFIK & FILTER (Dirapikan) */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 mb-6 gap-4">
             <h2 className="text-xl font-bold text-gray-800">📊 Grafik Pendaftar per Duf'ah</h2>
             
@@ -166,7 +176,6 @@ export default function AdminDashboardHome() {
             </div>
           </div>
 
-          {/* AREA RENDER GRAFIK BARS */}
           <div className="flex-1 flex items-end gap-2 h-64 mt-4 overflow-x-auto pb-2">
             {grafikDitampilkan.length === 0 ? (
               <div className="w-full text-center text-gray-400 italic mb-10">Tidak ada data untuk filter ini.</div>
@@ -177,7 +186,6 @@ export default function AdminDashboardHome() {
                 if (filterGender === "BANIN") topNumber = item.totalBanin;
                 if (filterGender === "BANAT") topNumber = item.totalBanat;
 
-                // Proporsi Tinggi Tiang
                 const tinggiTotal = maxPendaftar === 0 ? 0 : (item.totalPendaftar / maxPendaftar) * 100;
                 const tinggiBanin = maxPendaftar === 0 ? 0 : (item.totalBanin / maxPendaftar) * 100;
                 const tinggiBanat = maxPendaftar === 0 ? 0 : (item.totalBanat / maxPendaftar) * 100;
@@ -195,13 +203,11 @@ export default function AdminDashboardHome() {
                       </span>
                     </div>
 
-                    {/* Pembungkus Tiang Grafik (Fix Layout) */}
                     <div className="w-full flex-1 flex flex-col justify-end items-center">
                       <span className={`text-xs font-bold mb-1 ${filterGender === 'BANAT' ? 'text-pink-600' : filterGender === 'BANIN' ? 'text-blue-600' : 'text-gray-700'}`}>
                         {topNumber}
                       </span>
                       
-                      {/* Tiang Warna */}
                       <div className="w-full flex-1 flex flex-col justify-end relative">
                         {filterGender === "ALL" && topNumber > 0 && (
                           <div className="w-full absolute bottom-0 flex flex-col justify-end transition-all" style={{ height: `${tinggiTotal}%`, minHeight: '4px' }}>
@@ -268,7 +274,6 @@ export default function AdminDashboardHome() {
             )}
           </div>
 
-          {/* TOMBOL LINK ID CARD (DIKEMBALIKAN) */}
           {stats?.listBelumIdCard.length > 0 && (
             <div className="p-4 border-t border-red-100 bg-red-50 text-center rounded-b-2xl">
               <Link href="/admin/id-card" className="text-red-700 font-bold text-sm hover:underline flex items-center justify-center gap-1">
