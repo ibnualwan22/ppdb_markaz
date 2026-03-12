@@ -31,7 +31,7 @@ export async function PATCH(
         kategori: { not: "KSU" } // Semua santri BARU & LAMA akan dieksekusi
       },
       data: { 
-        isAktif: false,   // Sapu bersih! (Otomatis Boyong sementara)
+        isAktif: false,   // Sapu bersih! (Otomatis Check Out sementara)
         kategori: "LAMA"  // Semua yang tadinya BARU otomatis naik kelas
       }
     });

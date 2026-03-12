@@ -11,10 +11,10 @@ export async function GET(request: Request) {
     let filterPencarian: any = {};
 
     if (filter === "AKTIF") {
-      // MODE 1: Hanya santri yang saat ini masih di pondok
+      // MODE 1: Hanya santri yang saat ini masih di Markaz
       filterPencarian = { isAktif: true };
     } else if (filter === "ALL") {
-      // MODE 2: Global (Termasuk yang sudah boyong)
+      // MODE 2: Global (Termasuk yang sudah Check Out)
       filterPencarian = {}; 
     } else {
       // MODE 3: Historis (Siapa saja yang mendaftar di Duf'ah X)

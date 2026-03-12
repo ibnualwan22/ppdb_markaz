@@ -39,7 +39,7 @@ export default function MasterSantriPage() {
   }, [filterDufah]);
 
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
-    const aksi = statusSaatIni ? "MENGELUARKAN (Boyong)" : "MENGAKTIFKAN KEMBALI";
+    const aksi = statusSaatIni ? "MENGELUARKAN (Check Out)" : "MENGAKTIFKAN KEMBALI";
     if (!confirm(`Yakin ingin ${aksi} santri bernama ${nama}?`)) return;
 
     const res = await fetch(`/api/santri/${id}`, {
@@ -61,7 +61,7 @@ export default function MasterSantriPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-300 pb-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Master Data Santri</h1>
-          <p className="text-gray-500 mt-1">Kelola status aktif, boyong, dan riwayat penempatan asrama.</p>
+          <p className="text-gray-500 mt-1">Kelola status aktif, Check Out, dan riwayat penempatan asrama.</p>
         </div>
 
         {/* Filter Area */}
@@ -73,7 +73,7 @@ export default function MasterSantriPage() {
           >
             <optgroup label="Data Terkini">
               <option value="AKTIF">🟢 Santri Aktif Saat Ini</option>
-              <option value="ALL">📚 Semua Data Global (Termasuk Boyong)</option>
+              <option value="ALL">📚 Semua Data Global (Termasuk Check Out)</option>
             </optgroup>
             
             <optgroup label="Histori Per Duf'ah">
@@ -133,11 +133,11 @@ export default function MasterSantriPage() {
                     <td className="p-4">
                       {santri.isAktif ? (
                         <span className="px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-sm font-bold shadow-sm">
-                          ✅ Aktif di Pondok
+                          ✅ Aktif di Markaz
                         </span>
                       ) : (
                         <span className="px-3 py-1 bg-red-100 text-red-800 border border-red-300 rounded-full text-sm font-bold shadow-sm">
-                          ❌ Boyong / Keluar
+                          ❌ Check Out / Keluar
                         </span>
                       )}
                     </td>
@@ -154,7 +154,7 @@ export default function MasterSantriPage() {
                           onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
                           className={`px-4 py-2 rounded-lg transition text-sm font-bold shadow-sm text-white ${santri.isAktif ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                         >
-                          {santri.isAktif ? 'Set Boyong' : 'Aktifkan'}
+                          {santri.isAktif ? 'Set Check Out' : 'Aktifkan'}
                         </button>
                       </div>
                     </td>

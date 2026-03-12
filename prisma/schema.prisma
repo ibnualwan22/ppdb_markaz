@@ -82,6 +82,8 @@ model RiwayatDufah {
   isIdCardTaken   Boolean  @default(false)
 
   bulanKe         Int      @default(1)
+  updatedAt     DateTime @default(now()) @updatedAt
+  waktuAmbilKartu DateTime?
   
   // Relasi Utama
   santri          Santri   @relation(fields: [santriId], references: [id], onDelete: Cascade)

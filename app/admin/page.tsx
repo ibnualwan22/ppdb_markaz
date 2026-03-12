@@ -52,7 +52,7 @@ export default function AdminDashboardHome() {
 
     // TAMBAHAN KETERANGAN KSU DI LAPORAN WA
     if (stats.totalKSU > 0) {
-      text += `Catatan: Terdapat *${stats.totalKSU} Santri Pengurus (KSU)* yang menetap di sakan.\n\n`;
+      text += `Catatan: Terdapat *${stats.totalKSU} Santri (KSU)* yang menetap di sakan.\n\n`;
     }
 
     if (stats.listBelumIdCard.length > 0) {
@@ -127,7 +127,7 @@ export default function AdminDashboardHome() {
           {/* KETERANGAN TAMBAHAN KSU DI KARTU */}
           {stats?.totalKSU > 0 && (
             <p className="text-xs font-bold text-purple-600 mt-1 z-10 bg-purple-50 inline-block px-2 py-0.5 rounded-md self-start border border-purple-200">
-              + {stats?.totalKSU} Pengurus (KSU)
+              + {stats?.totalKSU} (KSU)
             </p>
           )}
 

@@ -19,7 +19,7 @@ export async function PATCH(
     });
 
     // 2. LOGIKA PENGUSIRAN KAMAR
-    // Jika dia di-set Boyong (isAktif = false), kita harus kosongkan kamarnya di Duf'ah yang sedang berjalan
+    // Jika dia di-set Check Out (isAktif = false), kita harus kosongkan kamarnya di Duf'ah yang sedang berjalan
     if (isAktif === false) {
       const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
       
@@ -31,7 +31,7 @@ export async function PATCH(
           },
           data: {
             lemariId: null,      // Cabut kunci lemarinya!
-            status: "PRE_LIST"   // Kembalikan statusnya jadi antrean (meski dia boyong)
+            status: "PRE_LIST"   // Kembalikan statusnya jadi antrean (meski dia Check Out)
           }
         });
       }

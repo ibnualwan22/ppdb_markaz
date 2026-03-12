@@ -3,54 +3,57 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const keyword = searchParams.get("nama");
+    const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
+    if (!dufahAktif) return NextResponse.json({ belum: [], sudah: [], dufahNama: "Tidak ada Duf'ah Aktif" });
 
-    const dufahAktif = await prisma.dufah.findFirst({
-      where: { isActive: true },
-    });
-
-    if (!dufahAktif) {
-      return NextResponse.json(
-        { error: "Tidak ada Duf'ah yang sedang aktif saat ini." },
-        { status: 400 }
-      );
-    }
-
-    const filterPencarian: any = {
-      dufahId: dufahAktif.id,
-      santri: { kategori: { not: "KSU" } } // KSU tidak lewat meja ID Card
-    };
-
-    if (keyword) {
-      filterPencarian.santri.nama = {
-        contains: keyword,
-        mode: "insensitive",
-      };
-    }
-
-    const daftarAntrian = await prisma.riwayatDufah.findMany({
-      where: filterPencarian,
-      include: {
-        santri: {
-          select: { nama: true, kategori: true }
-        },
-        lemari: {
-          include: { 
-            kamar: { 
-              include: { sakan: true } // Menambahkan relasi Sakan di sini
-            } 
-          }
-        }
+    const belum = await prisma.riwayatDufah.findMany({
+      where: { 
+        dufahId: dufahAktif.id, 
+        lemariId: { not: null }, 
+        isIdCardTaken: false, 
+        santri: { kategori: { not: 'KSU' } } 
+      },
+      include: { 
+        santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
+        lemari: { include: { kamar: { include: { sakan: true } } } } 
       },
       orderBy: { santri: { nama: 'asc' } }
-      // take: 20 -> Dihapus agar semua nama tampil sekaligus
     });
 
-    return NextResponse.json(daftarAntrian);
+    const sudah = await prisma.riwayatDufah.findMany({
+      where: { 
+        dufahId: dufahAktif.id, 
+        lemariId: { not: null }, 
+        isIdCardTaken: true, 
+        santri: { kategori: { not: 'KSU' } } 
+      },
+      include: { 
+        santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
+        lemari: { include: { kamar: { include: { sakan: true } } } } 
+      },
+      orderBy: { waktuAmbilKartu: 'asc' } // ← yang pertama ambil = No. 1
+    });
+
+    return NextResponse.json({ belum, sudah, dufahNama: dufahAktif.nama });
   } catch (error) {
-    return NextResponse.json({ error: "Gagal memuat data antrian ID Card" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal memuat data" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const { id } = await request.json(); 
+    await prisma.riwayatDufah.update({
+      where: { id },
+      data: { 
+        isIdCardTaken: true,
+        waktuAmbilKartu: new Date() // ← catat waktu persis saat tombol ditekan
+      }
+    });
+    return NextResponse.json({ message: "ID Card berhasil diserahkan" });
+  } catch (error) {
+    return NextResponse.json({ error: "Gagal verifikasi" }, { status: 500 });
   }
 }
