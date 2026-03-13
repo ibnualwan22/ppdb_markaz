@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { swalConfirm, swalSuccess, swalError, swalDanger, swalInput } from "../../lib/swal";
 
 // SVG Icon Components
 const IconLock = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
@@ -90,19 +91,31 @@ export default function MasterLokasiPage() {
   };
   const aksiData = async (jenis: "sakan" | "kamar" | "lemari", aksi: "edit" | "hapus", id: string, dataLama: string, kategoriLama?: string) => {
     if (aksi === "hapus") {
-      if (!confirm(`YAKIN HAPUS ${jenis.toUpperCase()} ${dataLama}? Semua isinya ikut terhapus!`)) return;
-      await fetch(`/api/${jenis}/${id}`, { method: "DELETE" }); muatData();
+      const result = await swalDanger(
+        `Hapus ${jenis.toUpperCase()}?`,
+        `YAKIN HAPUS ${dataLama}? Semua isinya ikut terhapus!`
+      );
+      if (!result.isConfirmed) return;
+      
+      await fetch(`/api/${jenis}/${id}`, { method: "DELETE" }); 
+      swalSuccess(`${jenis} dihapus!`);
+      muatData();
     } 
     if (aksi === "edit") {
-      const namaBaru = prompt(`Masukkan nama/nomor baru untuk ${dataLama}:`, dataLama);
+      const resInput = await swalInput(`Edit nama/nomor ${dataLama}`, dataLama, `Masukkan nama baru untuk ${jenis}`);
+      const namaBaru = resInput.value;
+      
       if (!namaBaru || namaBaru === dataLama) return;
       let bodyData: any = { nama: namaBaru };
       if (jenis === "lemari") bodyData = { nomor: namaBaru };
       if (jenis === "sakan") {
-        const katBaru = prompt(`Kategori Sakan (BANIN/BANAT):`, kategoriLama)?.toUpperCase();
+        const katInput = await swalInput("Kategori Sakan (BANIN/BANAT)", kategoriLama, "Ketik BANIN atau BANAT");
+        const katBaru = katInput.value?.toUpperCase();
         if (katBaru === "BANIN" || katBaru === "BANAT") bodyData.kategori = katBaru;
       }
-      await fetch(`/api/${jenis}/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData) }); muatData();
+      await fetch(`/api/${jenis}/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData) }); 
+      swalSuccess("Berhasil diubah!");
+      muatData();
     }
   };
   const toggleLock = async (jenis: "sakan" | "kamar" | "lemari", id: string, statusKunciSaatIni: boolean) => {
@@ -123,7 +136,7 @@ export default function MasterLokasiPage() {
   };
 
   const eksekusiPindahKamar = async () => {
-    if (!lemariTujuan) return alert("Pilih lemari tujuan!");
+    if (!lemariTujuan) return swalError("Pilih lemari tujuan!");
     setLoading(true);
     const res = await fetch(`/api/riwayat/${santriPindah.id}`, {
       method: "PATCH",
@@ -132,10 +145,11 @@ export default function MasterLokasiPage() {
     });
 
     if (res.ok) {
+      swalSuccess("Pindah Kamar Berhasil!");
       setIsModalPindahOpen(false);
       setSakanTujuan(""); setKamarTujuan(""); setLemariTujuan("");
       muatData();
-    } else { alert("Gagal memindahkan santri."); }
+    } else { swalError("Gagal memindahkan santri."); }
     setLoading(false);
   };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { swalConfirm, swalSuccess, swalError } from "../../lib/swal";
 
 // SVG Icon Components
 const IconCalendar = () => (
@@ -66,24 +67,29 @@ export default function ManajemenDufahPage() {
     });
 
     if (res.ok) {
+      swalSuccess("Berhasil", "Duf'ah baru berhasil ditambahkan.");
       setNamaBaru(""); setTanggalBuka(""); setTanggalTutup("");
       muatData();
     } else {
-      alert("Gagal membuat Duf'ah");
+      swalError("Gagal membuat Duf'ah");
     }
     setLoading(false);
   };
 
   const setAktif = async (id: number, nama: string) => {
-    if (!confirm(`PENTING: Mengaktifkan ${nama} akan otomatis menonaktifkan (Auto-CO) semua santri reguler di bulan sebelumnya. Lanjutkan?`)) return;
+    const result = await swalConfirm(
+      "Aktifkan Duf'ah?",
+      `PENTING: Mengaktifkan ${nama} akan otomatis menonaktifkan (Auto-CO) semua santri reguler di bulan sebelumnya. Lanjutkan?`
+    );
+    if (!result.isConfirmed) return;
 
     setLoading(true);
     const res = await fetch(`/api/dufah/${id}/active`, { method: "PATCH" });
     if (res.ok) {
-      alert(`${nama} berhasil diaktifkan!`);
+      swalSuccess("Berhasil!", `${nama} berhasil diaktifkan.`);
       muatData();
     } else {
-      alert("Gagal mengaktifkan Duf'ah");
+      swalError("Gagal mengaktifkan Duf'ah");
     }
     setLoading(false);
   };
@@ -112,10 +118,11 @@ export default function ManajemenDufahPage() {
     });
 
     if (res.ok) {
+      swalSuccess("Berhasil!", "Jadwal pendaftaran diperbarui.");
       setIsModalOpen(false);
       muatData();
     } else {
-      alert("Gagal menyimpan perubahan");
+      swalError("Gagal menyimpan perubahan");
     }
     setLoading(false);
   };

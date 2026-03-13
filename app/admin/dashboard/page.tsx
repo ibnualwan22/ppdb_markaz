@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-
+import { usePusher } from "../../providers/PusherProvider";
+import { swalConfirm, swalSuccess, swalError } from "../../lib/swal";
 // SVG Icon Components
 const IconLock = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
@@ -45,6 +46,7 @@ export default function DashboardMuasisPage() {
   const [searchSakan, setSearchSakan] = useState("");
   const [searchSantri, setSearchSantri] = useState("");
   const mainRef = useRef<HTMLDivElement>(null);
+  const pusher = usePusher();
 
   const muatData = useCallback(async (isBackground = false) => {
     if (!isBackground) setLoading(true);
@@ -57,19 +59,42 @@ export default function DashboardMuasisPage() {
 
   useEffect(() => {
     muatData();
-    const interval = setInterval(() => { muatData(true); }, 3000);
-    return () => clearInterval(interval);
-  }, [muatData]);
+  }, []);
+
+  // Pusher: listen for data updates
+  useEffect(() => {
+    if (!pusher) return;
+    const handler = () => muatData(true);
+    const channel = pusher.subscribe("ppdb-channel");
+    channel.bind("data:update", handler);
+    return () => { 
+      channel.unbind("data:update", handler);
+      pusher.unsubscribe("ppdb-channel");
+    };
+  }, [pusher, muatData]);
 
   const toggleLock = async (jenis: "sakan" | "kamar" | "lemari", id: string, statusKunciSaatIni: boolean) => {
     const aksi = statusKunciSaatIni ? "MEMBUKA" : "MENGUNCI";
-    if (!confirm(`Yakin ingin ${aksi} ${jenis} ini?`)) return;
+    const namaItem = jenis === "sakan" ? "Sakan" : jenis === "kamar" ? "Kamar" : "Lemari";
+    
+    const result = await swalConfirm(
+      `Yakin ingin ${aksi} ${namaItem} ini?`,
+      statusKunciSaatIni ? "Santri akan bisa mengisinya kembali." : "Santri tidak akan bisa mengisinya!"
+    );
+    
+    if (!result.isConfirmed) return;
 
-    // Save scroll position
-    const scrollContainer = mainRef.current?.closest('main');
+    setLoading(true);
+    const scrollContainer = mainRef.current?.parentElement;
     const scrollTop = scrollContainer?.scrollTop || 0;
+    
+    // Simpan status detail sebelum scroll position reset
+    const activeStates = {
+      searchSakan,
+      searchSantri
+    };
 
-    await fetch(`/api/${jenis}/${id}`, {
+    const res = await fetch(`/api/${jenis}/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isLocked: !statusKunciSaatIni }),

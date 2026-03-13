@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { emitDataUpdate } from "@/app/lib/pusherServer";
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,7 @@ export async function PATCH(
       data: { lemariId: lemariIdBaru, status: "ASSIGNED" }
     });
 
+    emitDataUpdate("pindah-kamar");
     return NextResponse.json({ message: "Santri berhasil dipindahkan!", data: update });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memindahkan santri" }, { status: 500 });

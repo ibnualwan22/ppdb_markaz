@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePusher } from "../../providers/PusherProvider";
+import { swalConfirm, swalSuccess, swalError, swalNotif } from "../../lib/swal";
 
 // SVG Icon Components
 const IconBell = () => (
@@ -39,8 +41,9 @@ export default function MejaIdCardPage() {
   const [filterStatus, setFilterStatus] = useState("Semua");
 
   // STATE NOTIFIKASI & TRACKING REAL-TIME
-  const [notif, setNotif] = useState({ show: false, pesan: "" });
+  const [notif, setNotif] = useState({ show: false, pesan: "", namaTarget: "" });
   const prevAntreanRef = useRef<number | null>(null);
+  const pusher = usePusher();
 
   const putarSuara = () => {
     try {
@@ -49,10 +52,10 @@ export default function MejaIdCardPage() {
     } catch (e) {}
   };
 
-  const tampilkanNotif = (pesan: string) => {
+  const tampilkanNotif = (pesan: string, namaTarget?: string) => {
     putarSuara();
-    setNotif({ show: true, pesan });
-    setTimeout(() => setNotif({ show: false, pesan: "" }), 5000);
+    setNotif({ show: true, pesan, namaTarget: namaTarget || "" });
+    setTimeout(() => setNotif({ show: false, pesan: "", namaTarget: "" }), 5000);
   };
 
   const muatData = async (isBackground = false) => {
@@ -82,16 +85,45 @@ export default function MejaIdCardPage() {
 
   useEffect(() => {
     muatData();
-    const interval = setInterval(() => { muatData(true); }, 3000);
-    return () => clearInterval(interval);
   }, []);
 
+  // Pusher listeners
+  useEffect(() => {
+    if (!pusher) return;
+    
+    const onDataUpdate = () => muatData(true);
+    const onAsramaNotif = (payload: any) => {
+      tampilkanNotif(payload.message, payload.data?.nama);
+      swalNotif("Penempatan Baru", payload.message);
+    };
+
+    const channel = pusher.subscribe("ppdb-channel");
+    channel.bind("data:update", onDataUpdate);
+    channel.bind("notif:asrama", onAsramaNotif);
+    
+    return () => {
+      channel.unbind("data:update", onDataUpdate);
+      channel.unbind("notif:asrama", onAsramaNotif);
+      pusher.unsubscribe("ppdb-channel");
+    };
+  }, [pusher]);
+
   const submitIdCard = async (idRiwayat: string, namaSantri: string) => {
-    if (!confirm(`Tandai ID Card untuk ${namaSantri} sudah diserahkan?`)) return;
+    const resConfirm = await swalConfirm(
+      "Konfirmasi ID Card",
+      `Tandai ID Card untuk ${namaSantri} sudah diserahkan?`
+    );
+    if (!resConfirm.isConfirmed) return;
+
     const res = await fetch("/api/id-card", {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: idRiwayat }),
     });
-    if (res.ok) muatData(); else alert("Gagal memproses ID Card");
+    if (res.ok) {
+      swalSuccess("ID Card Diserahkan", `Kartu untuk ${namaSantri} berhasil dicatat.`);
+      muatData();
+    } else {
+      swalError("Gagal memproses ID Card");
+    }
   };
 
   const copyLaporanIdCard = () => {
@@ -102,7 +134,8 @@ export default function MejaIdCardPage() {
     const tanggalHariIni = new Date().toLocaleDateString('id-ID', opsiTanggal);
 
     let text = `Assalamualaikum warahmatullahi wabarakatuh.\n\nAfwan ustadz dan ustadzah\n@274147863187646\n@250057441992951 @210393385435192\n@31344738459884\n\nKami dari team Id Card\nIzin melaporkan jumlah santri yang cek in dari hari pertama sampai hari ini, ${tanggalHariIni} (Periode ${dufahNama}):\n\n1. Santri baru: *${totalBaru} Santri*\n2. Santri lama: *${totalLama} Santri*\n3. Jumlah keseluruhan: *${totalKeseluruhan} Santri*\n\nSekian laporan dari kami\nJazilasyukri 🙏\n\nWassalamu'alaikum warahmatullahi wabarakatuh`;
-    navigator.clipboard.writeText(text); alert("Laporan ID Card berhasil disalin!");
+    navigator.clipboard.writeText(text); 
+    swalSuccess("Berhasil Disalin!", "Laporan siap untuk di-paste ke WhatsApp.");
   };
 
   const dataDitampilkan = dataGabungan.filter(item => {

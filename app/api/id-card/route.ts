@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { emitDataUpdate, emitNotification } from "@/app/lib/pusherServer";
 
 const prisma = new PrismaClient();
 
@@ -45,13 +46,18 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const { id } = await request.json(); 
-    await prisma.riwayatDufah.update({
+    const updated = await prisma.riwayatDufah.update({
       where: { id },
       data: { 
         isIdCardTaken: true,
-        waktuAmbilKartu: new Date() // ← catat waktu persis saat tombol ditekan
-      }
+        waktuAmbilKartu: new Date()
+      },
+      include: { santri: { select: { nama: true } } }
     });
+
+    emitDataUpdate("id-card");
+    emitNotification("idcard", `💳 ${updated.santri.nama} telah menerima ID Card`, { nama: updated.santri.nama });
+
     return NextResponse.json({ message: "ID Card berhasil diserahkan" });
   } catch (error) {
     return NextResponse.json({ error: "Gagal verifikasi" }, { status: 500 });

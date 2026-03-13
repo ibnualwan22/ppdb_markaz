@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePusher } from "../../providers/PusherProvider";
+import { swalSuccess, swalError, swalNotif } from "../../lib/swal";
 
 // SVG Icon Components
 const IconLock = ({ className = "h-4 w-4" }: { className?: string }) => (
@@ -61,8 +63,10 @@ export default function MejaAsramaPage() {
   const [modalKamarId, setModalKamarId] = useState("");
   const [modalLemariId, setModalLemariId] = useState("");
 
+  const pusher = usePusher();
+
   // Notifikasi Real-time
-  const [notif, setNotif] = useState({ show: false, pesan: "" });
+  const [notif, setNotif] = useState({ show: false, pesan: "", namaTarget: "" });
   const prevSudahRef = useRef<number | null>(null);
 
   const putarSuara = () => {
@@ -72,10 +76,10 @@ export default function MejaAsramaPage() {
     } catch (e) {}
   };
 
-  const tampilkanNotif = (pesan: string) => {
+  const tampilkanNotif = (pesan: string, namaTarget?: string) => {
     putarSuara();
-    setNotif({ show: true, pesan });
-    setTimeout(() => setNotif({ show: false, pesan: "" }), 6000);
+    setNotif({ show: true, pesan, namaTarget: namaTarget || "" });
+    setTimeout(() => setNotif({ show: false, pesan: "", namaTarget: "" }), 6000);
   };
 
   const muatData = async (isBackground = false) => {
@@ -101,9 +105,28 @@ export default function MejaAsramaPage() {
 
   useEffect(() => {
     muatData();
-    const interval = setInterval(() => { muatData(true); }, 3000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Listen to generic data updates and specific ID card notifications
+  useEffect(() => {
+    if (!pusher) return;
+    
+    const onDataUpdate = () => muatData(true);
+    const onIdCardNotif = (payload: any) => {
+      tampilkanNotif(payload.message, payload.data?.nama);
+      swalNotif("Kartu Diserahkan", payload.message);
+    };
+    
+    const channel = pusher.subscribe("ppdb-channel");
+    channel.bind("data:update", onDataUpdate);
+    channel.bind("notif:idcard", onIdCardNotif);
+    
+    return () => {
+      channel.unbind("data:update", onDataUpdate);
+      channel.unbind("notif:idcard", onIdCardNotif);
+      pusher.unsubscribe("ppdb-channel");
+    };
+  }, [pusher]);
 
   // Modal antrean helpers
   const sakanDifilterModal = dataLokasi.filter(s => s.kategori === santriAntrean?.gender && !s.isLocked);
@@ -142,10 +165,10 @@ export default function MejaAsramaPage() {
     const data = await res.json();
     setLoading(false);
     if (res.ok) {
-      alert(data.message);
+      swalSuccess("Berhasil!", data.message);
       tutupInputModal();
       muatData(); 
-    } else { alert(`Gagal: ${data.error}`); }
+    } else { swalError("Gagal menyimpan", data.error); }
   };
 
   // Antrean modal
@@ -156,11 +179,12 @@ export default function MejaAsramaPage() {
     setIsModalOpen(false); setSantriAntrean(null); setModalSakanId(""); setModalKamarId(""); setModalLemariId("");
   };
   const eksekusiAssignModal = async () => {
-    if (!modalLemariId || !santriAntrean) return alert("Pilih lemari!");
+    if (!modalLemariId || !santriAntrean) return swalError("Gagal", "Silakan pilih lemari terlebih dahulu!");
     const res = await fetch(`/api/asrama/assign/${santriAntrean.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lemariId: modalLemariId }),
     });
-    if (res.ok) { alert("Berhasil!"); tutupModal(); muatData(); } else { alert(`Gagal`); }
+    const data = await res.json();
+    if (res.ok) { swalSuccess("Berhasil!", data.message); tutupModal(); muatData(); } else { swalError("Gagal", data.error); }
   };
 
   const sakanBanin = dataLokasi.filter(s => s.kategori !== "BANAT" && !s.isLocked);

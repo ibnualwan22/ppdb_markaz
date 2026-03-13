@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ReactNode, useState } from "react";
 import { usePathname } from "next/navigation";
+import { PusherProvider } from "../providers/PusherProvider";
 
 // SVG Icon Components
 const IconChart = () => (
@@ -73,6 +74,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }`;
 
   return (
+    <PusherProvider>
     <div className="flex h-screen bg-[#f0f4ff]">
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -169,5 +171,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
     </div>
+    </PusherProvider>
   );
 }

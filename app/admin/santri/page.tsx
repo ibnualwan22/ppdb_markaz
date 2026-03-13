@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { swalConfirm, swalSuccess, swalError, swalDanger } from "../../lib/swal";
 
 // SVG Icon Components
 const IconSearch = () => (
@@ -99,7 +100,12 @@ export default function MasterSantriPage() {
 
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
     const aksi = statusSaatIni ? "MENGELUARKAN (Check Out)" : "MENGAKTIFKAN KEMBALI";
-    if (!confirm(`Yakin ingin ${aksi} santri bernama ${nama}?`)) return;
+    
+    const result = await swalConfirm(
+      `Yakin ingin ${aksi}?`,
+      `Aksi ini untuk santri bernama ${nama}`
+    );
+    if (!result.isConfirmed) return;
 
     const res = await fetch(`/api/santri/${id}`, {
       method: "PATCH",
@@ -107,8 +113,12 @@ export default function MasterSantriPage() {
       body: JSON.stringify({ isAktif: !statusSaatIni })
     });
 
-    if (res.ok) muatDataSantri();
-    else alert("Gagal merubah status santri");
+    if (res.ok) {
+      swalSuccess("Berhasil", `Status ${nama} berhasil diubah.`);
+      muatDataSantri();
+    } else {
+      swalError("Gagal merubah status santri");
+    }
   };
 
   const bukaEditModal = (santri: any) => {
@@ -119,7 +129,7 @@ export default function MasterSantriPage() {
   };
 
   const simpanEdit = async () => {
-    if (!editModal || !editNama.trim()) return alert("Nama tidak boleh kosong!");
+    if (!editModal || !editNama.trim()) return swalError("Nama tidak boleh kosong!");
     setEditLoading(true);
     const res = await fetch(`/api/santri/${editModal.id}`, {
       method: "PUT",
@@ -128,23 +138,27 @@ export default function MasterSantriPage() {
     });
     setEditLoading(false);
     if (res.ok) {
-      alert("Data santri berhasil diperbarui!");
+      swalSuccess("Data santri berhasil diperbarui!");
       setEditModal(null);
       muatDataSantri();
     } else {
-      alert("Gagal memperbarui data santri");
+      swalError("Gagal memperbarui data santri");
     }
   };
 
   const hapusSantri = async (id: string, nama: string) => {
-    if (!confirm(`PERINGATAN: Yakin ingin MENGHAPUS PERMANEN santri "${nama}"?\n\nSemua data riwayat asrama akan ikut terhapus. Aksi ini tidak bisa dibatalkan!`)) return;
+    const result = await swalDanger(
+      "Hapus Permanen Santri?",
+      `Yakin ingin menghapus ${nama}? Semua riwayat asrama akan ikut terhapus. Aksi ini tidak bisa dibatalkan!`
+    );
+    if (!result.isConfirmed) return;
 
     const res = await fetch(`/api/santri/${id}`, { method: "DELETE" });
     if (res.ok) {
-      alert("Santri berhasil dihapus.");
+      swalSuccess("Santri berhasil dihapus.");
       muatDataSantri();
     } else {
-      alert("Gagal menghapus santri");
+      swalError("Gagal menghapus santri");
     }
   };
 
@@ -221,7 +235,7 @@ export default function MasterSantriPage() {
     }
 
     navigator.clipboard.writeText(text);
-    alert("Laporan Data Santri Duf'ah berhasil disalin! Silakan Paste di WhatsApp.");
+    swalSuccess("Berhasil Disalin!", "Laporan Data Santri Duf'ah siap di-paste di WhatsApp.");
   };
 
   const dataDitampilkan = dataSantri.filter((santri) => {

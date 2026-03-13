@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { emitDataUpdate, emitNotification } from "@/app/lib/pusherServer";
 
 const prisma = new PrismaClient();
 
@@ -61,6 +62,9 @@ export async function PATCH(
     });
 
     const namaSakan = updatePenempatan.lemari?.kamar.sakan.nama;
+    emitDataUpdate("assign");
+    emitNotification("asrama", `🔄 ${updatePenempatan.santri.nama} dipindahkan ke ${namaSakan}`, { nama: updatePenempatan.santri.nama });
+
     return NextResponse.json({ 
       message: `Berhasil! ${updatePenempatan.santri.nama} menempati sakan baru di ${namaSakan}.`,
       data: updatePenempatan 

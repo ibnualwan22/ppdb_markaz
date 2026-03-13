@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { emitDataUpdate } from "@/app/lib/pusherServer";
 
 const prisma = new PrismaClient();
 
@@ -36,6 +37,7 @@ export async function PATCH(
       }
     }
 
+    emitDataUpdate("santri-status");
     return NextResponse.json({ message: "Status berhasil diubah", data: santriUpdate });
   } catch (error) {
     return NextResponse.json({ error: "Gagal update status" }, { status: 500 });
@@ -61,6 +63,7 @@ export async function PUT(
       }
     });
 
+    emitDataUpdate("santri-edit");
     return NextResponse.json({ message: "Data santri berhasil diperbarui", data: santriUpdate });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memperbarui data santri" }, { status: 500 });
@@ -79,6 +82,7 @@ export async function DELETE(
       where: { id }
     });
 
+    emitDataUpdate("santri-delete");
     return NextResponse.json({ message: "Santri berhasil dihapus" });
   } catch (error) {
     return NextResponse.json({ error: "Gagal menghapus santri" }, { status: 500 });

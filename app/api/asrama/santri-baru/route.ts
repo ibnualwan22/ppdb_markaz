@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { emitDataUpdate, emitNotification } from "@/app/lib/pusherServer";
 
 const prisma = new PrismaClient();
 
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
       },
       include: { riwayat: true }
     });
+
+    emitDataUpdate("santri-baru");
+    emitNotification("asrama", `🛏️ ${nama} telah ditempatkan ke kamar baru`, { nama, kategori });
 
     return NextResponse.json({
       message: `${nama} berhasil didata. ${kategori === "KSU" ? "(KSU otomatis Bypass ID Card)" : ""}`,
