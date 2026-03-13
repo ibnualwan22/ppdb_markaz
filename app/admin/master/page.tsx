@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { swalConfirm, swalSuccess, swalError, swalDanger, swalInput } from "../../lib/swal";
+import { usePusher } from "../../providers/PusherProvider";
 
 // SVG Icon Components
 const IconLock = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
@@ -65,6 +66,8 @@ export default function MasterLokasiPage() {
   const [kamarTujuan, setKamarTujuan] = useState("");
   const [lemariTujuan, setLemariTujuan] = useState("");
 
+  const pusher = usePusher();
+
   const muatData = async () => {
     try {
       const res = await fetch("/api/sakan");
@@ -73,6 +76,19 @@ export default function MasterLokasiPage() {
   };
 
   useEffect(() => { muatData(); }, []);
+
+  useEffect(() => {
+    if (!pusher) return;
+    
+    const onDataUpdate = () => muatData();
+    const channel = pusher.subscribe("ppdb-channel");
+    channel.bind("data:update", onDataUpdate);
+    
+    return () => {
+      channel.unbind("data:update", onDataUpdate);
+      pusher.unsubscribe("ppdb-channel");
+    };
+  }, [pusher]);
 
   const tambahSakan = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
@@ -122,8 +138,39 @@ export default function MasterLokasiPage() {
     const scrollContainer = mainRef.current?.closest('main');
     const scrollTop = scrollContainer?.scrollTop || 0;
     
-    await fetch(`/api/${jenis}/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isLocked: !statusKunciSaatIni }) }); 
-    await muatData();
+    // Optimistic Update: Update UI instan tanpa menunggu loading
+    setDataSakan(prevData => prevData.map((s) => {
+      if (jenis === "sakan" && s.id === id) {
+        return { ...s, isLocked: !statusKunciSaatIni };
+      }
+      if (jenis === "kamar" || jenis === "lemari") {
+        return {
+          ...s,
+          kamar: s.kamar.map((k: any) => {
+            if (jenis === "kamar" && k.id === id) {
+              return { ...k, isLocked: !statusKunciSaatIni };
+            }
+            if (jenis === "lemari") {
+              return {
+                ...k,
+                lemari: k.lemari.map((l: any) => 
+                  l.id === id ? { ...l, isLocked: !statusKunciSaatIni } : l
+                )
+              };
+            }
+            return k;
+          })
+        };
+      }
+      return s;
+    }));
+    
+    try {
+      await fetch(`/api/${jenis}/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isLocked: !statusKunciSaatIni }) }); 
+    } catch (error) {
+      console.error(error);
+      await muatData(); // Revert on failure
+    }
 
     requestAnimationFrame(() => {
       if (scrollContainer) scrollContainer.scrollTop = scrollTop;

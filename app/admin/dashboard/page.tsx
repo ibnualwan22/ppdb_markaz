@@ -84,7 +84,6 @@ export default function DashboardMuasisPage() {
     
     if (!result.isConfirmed) return;
 
-    setLoading(true);
     const scrollContainer = mainRef.current?.parentElement;
     const scrollTop = scrollContainer?.scrollTop || 0;
     
@@ -94,12 +93,43 @@ export default function DashboardMuasisPage() {
       searchSantri
     };
 
-    const res = await fetch(`/api/${jenis}/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isLocked: !statusKunciSaatIni }),
-    });
-    await muatData(true);
+    // Optimistic Update: Update UI instan tanpa menunggu loading
+    setDataSakan(prevData => prevData.map((s) => {
+      if (jenis === "sakan" && s.id === id) {
+        return { ...s, isLocked: !statusKunciSaatIni };
+      }
+      if (jenis === "kamar" || jenis === "lemari") {
+        return {
+          ...s,
+          kamar: s.kamar.map((k: any) => {
+            if (jenis === "kamar" && k.id === id) {
+              return { ...k, isLocked: !statusKunciSaatIni };
+            }
+            if (jenis === "lemari") {
+              return {
+                ...k,
+                lemari: k.lemari.map((l: any) => 
+                  l.id === id ? { ...l, isLocked: !statusKunciSaatIni } : l
+                )
+              };
+            }
+            return k;
+          })
+        };
+      }
+      return s;
+    }));
+
+    try {
+      await fetch(`/api/${jenis}/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isLocked: !statusKunciSaatIni }),
+      });
+    } catch (error) {
+      console.error(error);
+      await muatData(true); // Revert on failure
+    }
 
     // Restore scroll position
     requestAnimationFrame(() => {

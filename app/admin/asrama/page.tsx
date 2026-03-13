@@ -157,6 +157,11 @@ export default function MejaAsramaPage() {
   const simpanSantriDariDenah = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!namaSantri || !selectedLemari || !kategori) return alert("Data wajib diisi!");
+    
+    // Simpan posisi scroll
+    const scrollContainer = document.querySelector('main');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     setLoading(true);
     const res = await fetch("/api/asrama/santri-baru", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -167,7 +172,12 @@ export default function MejaAsramaPage() {
     if (res.ok) {
       swalSuccess("Berhasil!", data.message);
       tutupInputModal();
-      muatData(); 
+      await muatData();
+      
+      // Kembalikan posisi scroll
+      requestAnimationFrame(() => {
+        if (scrollContainer) scrollContainer.scrollTop = scrollTop;
+      });
     } else { swalError("Gagal menyimpan", data.error); }
   };
 
@@ -180,11 +190,27 @@ export default function MejaAsramaPage() {
   };
   const eksekusiAssignModal = async () => {
     if (!modalLemariId || !santriAntrean) return swalError("Gagal", "Silakan pilih lemari terlebih dahulu!");
+    
+    // Simpan posisi scroll
+    const scrollContainer = document.querySelector('main');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     const res = await fetch(`/api/asrama/assign/${santriAntrean.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lemariId: modalLemariId }),
     });
     const data = await res.json();
-    if (res.ok) { swalSuccess("Berhasil!", data.message); tutupModal(); muatData(); } else { swalError("Gagal", data.error); }
+    if (res.ok) { 
+      swalSuccess("Berhasil!", data.message); 
+      tutupModal(); 
+      await muatData(); 
+      
+      // Kembalikan posisi scroll
+      requestAnimationFrame(() => {
+        if (scrollContainer) scrollContainer.scrollTop = scrollTop;
+      });
+    } else { 
+      swalError("Gagal", data.error); 
+    }
   };
 
   const sakanBanin = dataLokasi.filter(s => s.kategori !== "BANAT" && !s.isLocked);
