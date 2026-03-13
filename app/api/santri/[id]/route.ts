@@ -19,7 +19,6 @@ export async function PATCH(
     });
 
     // 2. LOGIKA PENGUSIRAN KAMAR
-    // Jika dia di-set Check Out (isAktif = false), kita harus kosongkan kamarnya di Duf'ah yang sedang berjalan
     if (isAktif === false) {
       const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
       
@@ -30,8 +29,8 @@ export async function PATCH(
             dufahId: dufahAktif.id
           },
           data: {
-            lemariId: null,      // Cabut kunci lemarinya!
-            status: "PRE_LIST"   // Kembalikan statusnya jadi antrean (meski dia Check Out)
+            lemariId: null,
+            status: "PRE_LIST"
           }
         });
       }
@@ -40,5 +39,48 @@ export async function PATCH(
     return NextResponse.json({ message: "Status berhasil diubah", data: santriUpdate });
   } catch (error) {
     return NextResponse.json({ error: "Gagal update status" }, { status: 500 });
+  }
+}
+
+// PUT: Update data santri (nama, kategori, gender)
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const { nama, kategori, gender } = body;
+
+    const santriUpdate = await prisma.santri.update({
+      where: { id },
+      data: { 
+        ...(nama && { nama }),
+        ...(kategori && { kategori }),
+        ...(gender && { gender }),
+      }
+    });
+
+    return NextResponse.json({ message: "Data santri berhasil diperbarui", data: santriUpdate });
+  } catch (error) {
+    return NextResponse.json({ error: "Gagal memperbarui data santri" }, { status: 500 });
+  }
+}
+
+// DELETE: Hapus santri beserta semua riwayatnya
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    await prisma.santri.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ message: "Santri berhasil dihapus" });
+  } catch (error) {
+    return NextResponse.json({ error: "Gagal menghapus santri" }, { status: 500 });
   }
 }
