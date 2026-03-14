@@ -80,9 +80,10 @@ model RiwayatDufah {
   // Status Alur PPDB
   status          String   @default("PRE_LIST") // "PRE_LIST", "ASSIGNED", "CHECKED_IN"
   isIdCardTaken   Boolean  @default(false)
+  nomorIdCard     Int?
 
   bulanKe         Int      @default(1)
-  updatedAt     DateTime @default(now()) @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
   waktuAmbilKartu DateTime?
   
   // Relasi Utama

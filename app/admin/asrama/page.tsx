@@ -71,7 +71,7 @@ export default function MejaAsramaPage() {
 
   const putarSuara = () => {
     try {
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3");
       audio.play().catch(() => { });
     } catch (e) { }
   };
@@ -114,7 +114,6 @@ export default function MejaAsramaPage() {
     const onDataUpdate = () => muatData(true);
     const onIdCardNotif = (payload: any) => {
       tampilkanNotif(payload.message, payload.data?.nama);
-      swalNotif("Kartu Diserahkan", payload.message);
     };
 
     const channel = pusher.subscribe("ppdb-channel");

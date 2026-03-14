@@ -47,7 +47,7 @@ export default function MejaIdCardPage() {
 
   const putarSuara = () => {
     try {
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3");
       audio.play().catch(() => console.log("Browser memblokir autoplay suara"));
     } catch (e) { }
   };
@@ -73,11 +73,7 @@ export default function MejaIdCardPage() {
         }
         prevAntreanRef.current = data.belum.length;
 
-        const sudahDenganNomor = data.sudah.map((item: any, index: number) => ({
-          ...item, nomorUrut: index + 1
-        }));
-
-        setDataGabungan([...data.belum, ...sudahDenganNomor]);
+        setDataGabungan([...data.belum, ...data.sudah]);
       }
     } catch (error) { console.error("Gagal memuat data ID Card", error); }
     if (!isBackground) setLoading(false);
@@ -94,7 +90,6 @@ export default function MejaIdCardPage() {
     const onDataUpdate = () => muatData(true);
     const onAsramaNotif = (payload: any) => {
       tampilkanNotif(payload.message, payload.data?.nama);
-      swalNotif("Penempatan Baru", payload.message);
     };
 
     const channel = pusher.subscribe("ppdb-channel");
@@ -278,7 +273,7 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
           <table className="w-full text-left border-collapse min-w-[750px]">
             <thead className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-200">
               <tr>
-                <th className="p-4 text-blue-800 font-bold text-center w-16">No</th>
+                <th className="p-4 text-blue-800 font-bold text-center w-24">No. ID Card</th>
                 <th className="p-4 text-blue-800 font-bold">Nama Santri</th>
                 <th className="p-4 text-blue-800 font-bold">Lokasi Sakan / Kamar</th>
                 <th className="p-4 text-blue-800 font-bold text-center">Status</th>
@@ -303,7 +298,7 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                       <td className="p-4 text-center">
                         {item.isIdCardTaken ? (
                           <span className="bg-green-600 text-white px-2.5 py-1 rounded-lg font-black text-sm shadow-sm inline-block min-w-[32px]">
-                            {item.nomorUrut}
+                            {item.nomorIdCard || '-'}
                           </span>
                         ) : (
                           <span className="bg-blue-100 text-blue-600 px-2.5 py-1 rounded-lg font-bold text-sm inline-block min-w-[32px]">

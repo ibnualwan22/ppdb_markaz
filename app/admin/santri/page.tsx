@@ -338,6 +338,7 @@ export default function MasterSantriPage() {
               <tr>
                 <th className="p-4 text-blue-800 font-bold text-center w-12">No</th>
                 <th className="p-4 text-blue-800 font-bold">Nama Lengkap</th>
+                <th className="p-4 text-blue-800 font-bold text-center">No. ID Card</th>
                 <th className="p-4 text-blue-800 font-bold text-center">Bulan Ke-</th>
                 <th className="p-4 text-blue-800 font-bold">Kategori</th>
                 <th className="p-4 text-blue-800 font-bold">Status</th>
@@ -347,7 +348,7 @@ export default function MasterSantriPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center">
+                  <td colSpan={7} className="p-10 text-center">
                     <div className="flex items-center justify-center gap-3">
                       <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
                       <span className="text-blue-500 font-medium">Memuat data...</span>
@@ -356,7 +357,7 @@ export default function MasterSantriPage() {
                 </tr>
               ) : dataDitampilkan.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-blue-300 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
+                  <td colSpan={7} className="p-10 text-center text-blue-300 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
                 </tr>
               ) : (
                 dataDitampilkan.map((santri, index) => (
@@ -373,6 +374,9 @@ export default function MasterSantriPage() {
                       <p className="text-xs text-blue-400 mt-1">
                         Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
                       </p>
+                    </td>
+                    <td className="p-4 text-center font-bold text-blue-900">
+                      {santri.kategori === 'KSU' ? '-' : santri.riwayat?.[0]?.nomorIdCard || '-'}
                     </td>
                     <td className="p-4 text-center font-bold text-blue-900">
                       {santri.riwayat?.[0]?.bulanKe || '-'}
