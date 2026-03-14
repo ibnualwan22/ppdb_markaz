@@ -67,70 +67,54 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   };
 
   const linkClass = (href: string) =>
-    `flex items-center gap-3 p-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-      isActive(href)
-        ? "bg-white/20 text-white shadow-lg shadow-blue-900/20 backdrop-blur-sm"
-        : "text-blue-100 hover:bg-white/10 hover:text-white"
+    `flex items-center gap-3 p-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive(href)
+      ? "bg-white/20 text-white shadow-lg shadow-blue-900/20 backdrop-blur-sm"
+      : "text-blue-100 hover:bg-white/10 hover:text-white"
     }`;
 
   return (
     <PusherProvider>
-    <div className="flex h-screen bg-[#f0f4ff]">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      <div className="flex h-screen bg-[#f0f4ff]">
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
-      >
-        {/* Header */}
-        <div className="p-6 text-center border-b border-blue-700/50">
-          <div className="w-14 h-14 bg-white/15 rounded-2xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-lg overflow-hidden">
-            <Image
-              src="/images/logo.png"
-              alt="Logo"
-              width={40}
-              height={40}
-              className="object-contain"
-              onError={(e) => {
-                // Fallback: hide broken image and show text
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                if (target.parentElement) {
-                  target.parentElement.innerHTML = '<span style="font-size:14px;font-weight:700;color:white;">MA</span>';
-                }
-              }}
-            />
+        {/* Sidebar */}
+        <aside
+          className={`fixed md:static inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            }`}
+        >
+          {/* Header */}
+          <div className="p-6 text-center border-b border-blue-700/50">
+            <div className="w-14 h-14 bg-white/15 rounded-2xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-lg overflow-hidden">
+              <Image
+                src="/images/logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                className="object-contain"
+                onError={(e) => {
+                  // Fallback: hide broken image and show text
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  if (target.parentElement) {
+                    target.parentElement.innerHTML = '<span style="font-size:14px;font-weight:700;color:white;">MA</span>';
+                  }
+                }}
+              />
+            </div>
+            <h2 className="text-lg font-bold tracking-wide">PPDB Markaz Arabiyyah</h2>
+            <p className="text-xs text-blue-300 mt-1 font-medium">Portal Administrasi</p>
           </div>
-          <h2 className="text-lg font-bold tracking-wide">PPDB Markaz Arabiyyah</h2>
-          <p className="text-xs text-blue-300 mt-1 font-medium">Portal Administrasi</p>
-        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-          <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest px-3 mb-2">Menu Utama</p>
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={linkClass(item.href)}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
-
-          <div className="pt-4 mt-4 border-t border-blue-700/50">
-            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest px-3 mb-2">Pengaturan</p>
-            {masterItems.map((item) => (
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest px-3 mb-2">Menu Utama</p>
+            {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -141,36 +125,50 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 {item.label}
               </Link>
             ))}
+
+            <div className="pt-4 mt-4 border-t border-blue-700/50">
+              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest px-3 mb-2">Pengaturan</p>
+              {masterItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={linkClass(item.href)}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-blue-700/50 text-center">
+            <p className="text-[10px] text-blue-400 font-medium">© 2026 Markaz Arabiyyah</p>
           </div>
-        </nav>
+        </aside>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-blue-700/50 text-center">
-          <p className="text-[10px] text-blue-400 font-medium">© 2025 Markaz Arabiyyah</p>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Bar (Mobile) */}
+          <header className="md:hidden bg-white border-b border-blue-100 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-xl hover:bg-blue-50 transition text-blue-800"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h1 className="text-sm font-bold text-blue-900">PPDB Markaz</h1>
+            <div className="w-8" />
+          </header>
+
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
         </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar (Mobile) */}
-        <header className="md:hidden bg-white border-b border-blue-100 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl hover:bg-blue-50 transition text-blue-800"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <h1 className="text-sm font-bold text-blue-900">PPDB Markaz</h1>
-          <div className="w-8" />
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
       </div>
-    </div>
     </PusherProvider>
   );
 }

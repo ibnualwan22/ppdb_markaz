@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePusher } from "../providers/PusherProvider";
 import { swalInfo } from "../lib/swal";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export default function AdminDashboardHome() {
   const [stats, setStats] = useState<any>(null);
@@ -93,12 +94,19 @@ export default function AdminDashboardHome() {
 
   const tahunUnik = Array.from(new Set(grafikData.map(g => g.tahun))).sort((a, b) => b - a);
   
-  let grafikDitampilkan = grafikData.filter(g => {
+  let grafikMurni = grafikData.filter(g => {
     let lolosTahun = filterTahun === "ALL" || g.tahun.toString() === filterTahun;
     let lolosMulai = filterMulai === "" || g.id >= parseInt(filterMulai);
     let lolosAkhir = filterAkhir === "" || g.id <= parseInt(filterAkhir);
     return lolosTahun && lolosMulai && lolosAkhir;
   });
+
+  // Jika tidak ada filter yang digunakan (default state), hanya tampilkan 10 data paling baru
+  let grafikDitampilkan = grafikMurni;
+  const isDefaultView = filterTahun === "ALL" && filterMulai === "" && filterAkhir === "";
+  if (isDefaultView && grafikDitampilkan.length > 10) {
+    grafikDitampilkan = grafikDitampilkan.slice(-10);
+  }
 
   const maxPendaftar = grafikDitampilkan.length > 0 ? Math.max(...grafikDitampilkan.map(g => {
     if (filterGender === "BANIN") return g.totalBanin;
@@ -172,25 +180,25 @@ export default function AdminDashboardHome() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-blue-50 pb-4 mb-6 gap-4">
             <h2 className="text-xl font-bold text-blue-900">📊 Grafik Pendaftar per Duf&apos;ah</h2>
             
-            <div className="flex flex-wrap items-center gap-2 text-sm justify-end w-full md:w-auto">
-              <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)} className="p-2 border border-blue-200 rounded-lg bg-white font-bold text-blue-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-300">
+            <div className="flex flex-wrap items-center justify-end gap-2 text-sm w-full md:w-auto">
+              <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)} className="p-2 border border-blue-200 rounded-lg bg-white font-bold text-blue-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-300 w-full sm:w-auto">
                 <option value="ALL">Semua Gender</option>
-                <option value="BANIN">👨 Banin (Putra)</option>
-                <option value="BANAT">🧕 Banat (Putri)</option>
+                <option value="BANIN">👨 Banin</option>
+                <option value="BANAT">🧕 Banat</option>
               </select>
 
-              <select value={filterTahun} onChange={(e) => setFilterTahun(e.target.value)} className="p-2 border border-blue-200 rounded-lg bg-white font-bold text-blue-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-300">
+              <select value={filterTahun} onChange={(e) => setFilterTahun(e.target.value)} className="p-2 border border-blue-200 rounded-lg bg-white font-bold text-blue-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-300 w-full sm:w-auto">
                 <option value="ALL">Semua Tahun</option>
                 {tahunUnik.map(t => <option key={t} value={t.toString()}>{t}</option>)}
               </select>
 
-              <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-lg px-2">
-                <select value={filterMulai} onChange={(e) => setFilterMulai(e.target.value)} className="p-2 bg-transparent text-blue-700 outline-none cursor-pointer max-w-[90px]">
+              <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-lg px-2 w-full sm:w-auto overflow-hidden">
+                <select value={filterMulai} onChange={(e) => setFilterMulai(e.target.value)} className="p-2 bg-transparent text-blue-700 outline-none cursor-pointer flex-1 min-w-0">
                   <option value="">Awal</option>
                   {grafikData.map(g => <option key={g.id} value={g.id}>{g.nama}</option>)}
                 </select>
-                <span className="text-blue-400 font-bold">-</span>
-                <select value={filterAkhir} onChange={(e) => setFilterAkhir(e.target.value)} className="p-2 bg-transparent text-blue-700 outline-none cursor-pointer max-w-[90px]">
+                <span className="text-blue-400 font-bold shrink-0">-</span>
+                <select value={filterAkhir} onChange={(e) => setFilterAkhir(e.target.value)} className="p-2 bg-transparent text-blue-700 outline-none cursor-pointer flex-1 min-w-0">
                   <option value="">Akhir</option>
                   {grafikData.map(g => <option key={g.id} value={g.id}>{g.nama}</option>)}
                 </select>
@@ -198,58 +206,69 @@ export default function AdminDashboardHome() {
             </div>
           </div>
 
-          <div className="flex-1 flex items-end gap-2 h-64 mt-4 overflow-x-auto pb-2">
+          <div className="w-full mt-4 pb-2 relative z-10 overflow-x-auto overflow-y-hidden">
             {grafikDitampilkan.length === 0 ? (
-              <div className="w-full text-center text-blue-300 italic mb-10">Tidak ada data untuk filter ini.</div>
+              <div className="w-full text-center text-blue-300 italic py-10">Tidak ada data untuk filter ini.</div>
             ) : (
-              grafikDitampilkan.map((item) => {
-                let topNumber = item.totalPendaftar;
-                if (filterGender === "BANIN") topNumber = item.totalBanin;
-                if (filterGender === "BANAT") topNumber = item.totalBanat;
-
-                const tinggiTotal = maxPendaftar === 0 ? 0 : (item.totalPendaftar / maxPendaftar) * 100;
-                const tinggiBanin = maxPendaftar === 0 ? 0 : (item.totalBanin / maxPendaftar) * 100;
-                const tinggiBanat = maxPendaftar === 0 ? 0 : (item.totalBanat / maxPendaftar) * 100;
-
-                let tooltip = `${item.totalPendaftar} Santri\n(👨 ${item.totalBanin} | 🧕 ${item.totalBanat})`;
-                if (filterGender === "BANIN") tooltip = `${item.totalBanin} Banin`;
-                if (filterGender === "BANAT") tooltip = `${item.totalBanat} Banat`;
-
-                return (
-                  <div key={item.id} className="flex flex-col items-center justify-end group min-w-[50px] flex-1 h-full">
-                    <div className="relative w-full flex justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 transition absolute bottom-full mb-1 text-xs font-bold text-white bg-blue-800 px-2 py-1 rounded pointer-events-none z-10 whitespace-pre text-center">
-                        {tooltip}
-                      </span>
-                    </div>
-                    <div className="w-full flex-1 flex flex-col justify-end items-center">
-                      <span className={`text-xs font-bold mb-1 ${filterGender === 'BANAT' ? 'text-pink-600' : filterGender === 'BANIN' ? 'text-blue-600' : 'text-blue-700'}`}>
-                        {topNumber}
-                      </span>
-                      <div className="w-full flex-1 flex flex-col justify-end relative">
-                        {filterGender === "ALL" && topNumber > 0 && (
-                          <div className="w-full absolute bottom-0 flex flex-col justify-end transition-all" style={{ height: `${tinggiTotal}%`, minHeight: '4px' }}>
-                            <div className="w-full bg-pink-500 hover:bg-pink-600 rounded-t-md border-b border-white/20 transition-all" style={{ height: `${(item.totalBanat / item.totalPendaftar) * 100}%` }}></div>
-                            <div className="w-full bg-blue-500 hover:bg-blue-600 transition-all" style={{ height: `${(item.totalBanin / item.totalPendaftar) * 100}%` }}></div>
+              <div className="h-[300px] relative" style={{ minWidth: `${Math.max(100, grafikDitampilkan.length * 60)}px` }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={grafikDitampilkan} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                    <XAxis 
+                      dataKey="nama" 
+                      tick={{ fontSize: 10, fill: '#3b82f6', fontWeight: 600 }} 
+                      axisLine={false} 
+                      tickLine={false} 
+                    />
+                  <YAxis 
+                    tick={{ fontSize: 10, fill: '#94a3b8' }} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    domain={[0, 'dataMax + 10']}
+                  />
+                  <Tooltip
+                    cursor={{ fill: '#eff6ff' }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-3 border border-blue-100 shadow-xl rounded-xl">
+                            <p className="font-bold text-blue-900 border-b border-blue-50 pb-2 mb-2">
+                              {data.nama} <span className="text-gray-400 text-sm font-medium">({data.tahun})</span>
+                            </p>
+                            {filterGender === "ALL" || filterGender === "BANIN" ? (
+                              <p className="text-blue-600 font-bold text-sm">👨 Banin: {data.totalBanin}</p>
+                            ) : null}
+                            {filterGender === "ALL" || filterGender === "BANAT" ? (
+                              <p className="text-pink-600 font-bold text-sm mt-1">🧕 Banat: {data.totalBanat}</p>
+                            ) : null}
+                            {filterGender === "ALL" && (
+                              <p className="text-gray-700 font-bold border-t border-gray-100 mt-2 pt-2 text-sm">
+                                Total: {data.totalPendaftar} Santri
+                              </p>
+                            )}
                           </div>
-                        )}
-                        {filterGender === "BANIN" && (
-                          <div className="w-full absolute bottom-0 bg-blue-500 hover:bg-blue-600 rounded-t-md transition-all" style={{ height: `${tinggiBanin}%`, minHeight: '4px' }}></div>
-                        )}
-                        {filterGender === "BANAT" && (
-                          <div className="w-full absolute bottom-0 bg-pink-500 hover:bg-pink-600 rounded-t-md transition-all" style={{ height: `${tinggiBanat}%`, minHeight: '4px' }}></div>
-                        )}
-                        {filterGender === "ALL" && topNumber === 0 && (
-                          <div className="w-full absolute bottom-0 bg-blue-100 rounded-t-md" style={{ height: `0%`, minHeight: '4px' }}></div>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-blue-500 mt-2 font-semibold text-center leading-tight h-8 flex items-start justify-center">
-                      {item.nama}<br/>({item.tahun})
-                    </span>
-                  </div>
-                );
-              })
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  
+                  {/* Rendering logic based on filter */}
+                  {filterGender === "ALL" && (
+                    <>
+                      <Bar dataKey="totalBanin" name="Banin" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} barSize={40} />
+                      <Bar dataKey="totalBanat" name="Banat" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={40} />
+                    </>
+                  )}
+                  {filterGender === "BANIN" && (
+                    <Bar dataKey="totalBanin" name="Banin" fill="#3b82f6" radius={[4, 4, 4, 4]} barSize={40} />
+                  )}
+                  {filterGender === "BANAT" && (
+                    <Bar dataKey="totalBanat" name="Banat" fill="#ec4899" radius={[4, 4, 4, 4]} barSize={40} />
+                  )}
+                </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </div>
         </div>

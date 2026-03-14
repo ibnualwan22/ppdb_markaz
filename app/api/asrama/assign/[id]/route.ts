@@ -53,7 +53,6 @@ export async function PATCH(
       data: {
         lemariId: lemariId,
         status: "ASSIGNED",
-        bulanKe: 1 // TAMBAHKAN BARIS INI: Paksa kembali ke bulan 1 karena sakan baru
       },
       include: {
         santri: { select: { nama: true } },

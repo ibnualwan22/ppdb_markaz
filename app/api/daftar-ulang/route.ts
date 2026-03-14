@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       } else {
         lemariBaru = null;
         statusBaru = "PRE_LIST";
-        bulanKeBaru = 1; 
+        bulanKeBaru = durasiBerjalan + 1; 
       }
     } else {
       // TERPUTUS! Hukumannya: Reset kamar, Reset bulan, Reset Kategori

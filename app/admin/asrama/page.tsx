@@ -27,12 +27,12 @@ const IconInbox = () => (
 );
 const IconMale = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
   </svg>
 );
 const IconFemale = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline text-pink-500" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
   </svg>
 );
 const IconPlus = () => (
@@ -72,8 +72,8 @@ export default function MejaAsramaPage() {
   const putarSuara = () => {
     try {
       const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-      audio.play().catch(() => {});
-    } catch (e) {}
+      audio.play().catch(() => { });
+    } catch (e) { }
   };
 
   const tampilkanNotif = (pesan: string, namaTarget?: string) => {
@@ -95,12 +95,12 @@ export default function MejaAsramaPage() {
         const totalSudah = dataIdCard.sudah.length;
 
         if (prevSudahRef.current !== null && totalSudah > prevSudahRef.current) {
-          const anakTerakhir = dataIdCard.sudah[totalSudah - 1]; 
+          const anakTerakhir = dataIdCard.sudah[totalSudah - 1];
           tampilkanNotif(`${anakTerakhir.santri.nama} telah menerima ID Card (No. ${totalSudah})`);
         }
         prevSudahRef.current = totalSudah;
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   useEffect(() => {
@@ -110,17 +110,17 @@ export default function MejaAsramaPage() {
   // Listen to generic data updates and specific ID card notifications
   useEffect(() => {
     if (!pusher) return;
-    
+
     const onDataUpdate = () => muatData(true);
     const onIdCardNotif = (payload: any) => {
       tampilkanNotif(payload.message, payload.data?.nama);
       swalNotif("Kartu Diserahkan", payload.message);
     };
-    
+
     const channel = pusher.subscribe("ppdb-channel");
     channel.bind("data:update", onDataUpdate);
     channel.bind("notif:idcard", onIdCardNotif);
-    
+
     return () => {
       channel.unbind("data:update", onDataUpdate);
       channel.unbind("notif:idcard", onIdCardNotif);
@@ -157,11 +157,11 @@ export default function MejaAsramaPage() {
   const simpanSantriDariDenah = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!namaSantri || !selectedLemari || !kategori) return alert("Data wajib diisi!");
-    
+
     // Simpan posisi scroll
     const scrollContainer = document.querySelector('main');
     const scrollTop = scrollContainer?.scrollTop || 0;
-    
+
     setLoading(true);
     const res = await fetch("/api/asrama/santri-baru", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -173,7 +173,7 @@ export default function MejaAsramaPage() {
       swalSuccess("Berhasil!", data.message);
       tutupInputModal();
       await muatData();
-      
+
       // Kembalikan posisi scroll
       requestAnimationFrame(() => {
         if (scrollContainer) scrollContainer.scrollTop = scrollTop;
@@ -190,26 +190,26 @@ export default function MejaAsramaPage() {
   };
   const eksekusiAssignModal = async () => {
     if (!modalLemariId || !santriAntrean) return swalError("Gagal", "Silakan pilih lemari terlebih dahulu!");
-    
+
     // Simpan posisi scroll
     const scrollContainer = document.querySelector('main');
     const scrollTop = scrollContainer?.scrollTop || 0;
-    
+
     const res = await fetch(`/api/asrama/assign/${santriAntrean.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lemariId: modalLemariId }),
     });
     const data = await res.json();
-    if (res.ok) { 
-      swalSuccess("Berhasil!", data.message); 
-      tutupModal(); 
-      await muatData(); 
-      
+    if (res.ok) {
+      swalSuccess("Berhasil!", data.message);
+      tutupModal();
+      await muatData();
+
       // Kembalikan posisi scroll
       requestAnimationFrame(() => {
         if (scrollContainer) scrollContainer.scrollTop = scrollTop;
       });
-    } else { 
-      swalError("Gagal", data.error); 
+    } else {
+      swalError("Gagal", data.error);
     }
   };
 
@@ -227,7 +227,7 @@ export default function MejaAsramaPage() {
         <h2 className={`text-xl font-black mb-4 ${textWarna} flex items-center gap-2`}>
           {isBiru ? <IconMale /> : <IconFemale />} {judul}
         </h2>
-        
+
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {data.map((sakan) => {
             let totalLemari = 0;
@@ -280,7 +280,7 @@ export default function MejaAsramaPage() {
 
                     const kosong = kamar.lemari.filter((l: any) => !l.isLocked && (!l.penghuni || l.penghuni.length === 0)).length;
                     const totalK = kamar.lemari.filter((l: any) => !l.isLocked).length;
-                    
+
                     return (
                       <div key={kamar.id} className="p-3 rounded-xl border border-blue-100 bg-blue-50/30">
                         <div className="flex justify-between items-center mb-2 pb-2 border-b border-blue-100/50">
@@ -340,7 +340,7 @@ export default function MejaAsramaPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen relative overflow-hidden">
-      
+
       {/* POP-UP NOTIFIKASI */}
       <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
         <div className="bg-white border-l-4 border-blue-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px]">
@@ -386,9 +386,16 @@ export default function MejaAsramaPage() {
                       <p className="font-bold text-blue-900 text-lg flex items-center gap-2">
                         {item.santri.nama} {item.santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
                       </p>
-                      <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-md">Wajib Rolling</span>
+                      <div className="flex flex-col gap-1 items-start mt-1">
+                        <span className="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-md uppercase tracking-wide">Wajib Rolling</span>
+                        {item.keteranganSakanLama && (
+                          <span className="text-[11px] font-medium text-gray-500 italic flex items-center gap-1">
+                            <IconLock className="h-3 w-3 opacity-50" /> Sblmnya: {item.keteranganSakanLama}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <button onClick={() => bukaModalAntrean(item.id, item.santri.nama, item.santri.gender)} className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-blue-800 text-sm font-bold shadow-sm transition-all active:scale-95">
+                    <button onClick={() => bukaModalAntrean(item.id, item.santri.nama, item.santri.gender)} className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-blue-800 text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0 ml-2">
                       Beri Kamar
                     </button>
                   </li>
@@ -409,7 +416,7 @@ export default function MejaAsramaPage() {
                 {selectedSakan?.nama} → Kamar {selectedKamar?.nama} → Lemari {selectedLemari?.nomor}
               </p>
             </div>
-            
+
             <form onSubmit={simpanSantriDariDenah} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-bold text-blue-900 mb-1">Nama Lengkap</label>
@@ -438,8 +445,9 @@ export default function MejaAsramaPage() {
                 <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
                   <label className="block text-sm font-bold text-yellow-800 mb-1">Sudah menetap berapa bulan?</label>
                   <select value={bulanKe} onChange={(e) => setBulanKe(e.target.value)} className="w-full p-3 border border-yellow-300 rounded-xl outline-none bg-white">
-                    <option value="1">1 Bulan (Baru menempati bulan lalu)</option>
-                    <option value="2">2 Bulan (Bulan depan wajib rolling)</option>
+                    <option value="2">Bulan ke-2 (Baru menempati bulan lalu)</option>
+                    <option value="3">Bulan ke-3 (Bulan depan wajib rolling)</option>
+                    <option value="6">Bulan ke-6 (testing)</option>
                   </select>
                 </div>
               )}

@@ -33,10 +33,10 @@ const IconSearch = () => (
 
 export default function MejaIdCardPage() {
   const [dataGabungan, setDataGabungan] = useState<any[]>([]);
-  const [sudahAmbilMurni, setSudahAmbilMurni] = useState<any[]>([]); 
+  const [sudahAmbilMurni, setSudahAmbilMurni] = useState<any[]>([]);
   const [dufahNama, setDufahNama] = useState("");
   const [loading, setLoading] = useState(true);
-  
+
   const [keyword, setKeyword] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
 
@@ -49,7 +49,7 @@ export default function MejaIdCardPage() {
     try {
       const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       audio.play().catch(() => console.log("Browser memblokir autoplay suara"));
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const tampilkanNotif = (pesan: string, namaTarget?: string) => {
@@ -66,7 +66,7 @@ export default function MejaIdCardPage() {
         const data = await res.json();
         setDufahNama(data.dufahNama);
         setSudahAmbilMurni(data.sudah);
-        
+
         if (prevAntreanRef.current !== null && data.belum.length > prevAntreanRef.current) {
           const selisih = data.belum.length - prevAntreanRef.current;
           tampilkanNotif(`Ada ${selisih} santri baru masuk ke antrean ID Card!`);
@@ -90,7 +90,7 @@ export default function MejaIdCardPage() {
   // Pusher listeners
   useEffect(() => {
     if (!pusher) return;
-    
+
     const onDataUpdate = () => muatData(true);
     const onAsramaNotif = (payload: any) => {
       tampilkanNotif(payload.message, payload.data?.nama);
@@ -100,7 +100,7 @@ export default function MejaIdCardPage() {
     const channel = pusher.subscribe("ppdb-channel");
     channel.bind("data:update", onDataUpdate);
     channel.bind("notif:asrama", onAsramaNotif);
-    
+
     return () => {
       channel.unbind("data:update", onDataUpdate);
       channel.unbind("notif:asrama", onAsramaNotif);
@@ -126,16 +126,95 @@ export default function MejaIdCardPage() {
     }
   };
 
-  const copyLaporanIdCard = () => {
-    const totalBaru = sudahAmbilMurni.filter(s => s.santri.kategori === 'BARU').length;
-    const totalLama = sudahAmbilMurni.filter(s => s.santri.kategori === 'LAMA').length;
-    const totalKeseluruhan = totalBaru + totalLama;
-    const opsiTanggal: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const tanggalHariIni = new Date().toLocaleDateString('id-ID', opsiTanggal);
+  const copyLaporanHarian = () => {
+    const isToday = (dateString: string | Date | null) => {
+      if (!dateString) return false;
+      const date = new Date(dateString);
+      const today = new Date();
 
-    let text = `Assalamualaikum warahmatullahi wabarakatuh.\n\nAfwan ustadz dan ustadzah\n@274147863187646\n@250057441992951 @210393385435192\n@31344738459884\n\nKami dari team Id Card\nIzin melaporkan jumlah santri yang cek in dari hari pertama sampai hari ini, ${tanggalHariIni} (Periode ${dufahNama}):\n\n1. Santri baru: *${totalBaru} Santri*\n2. Santri lama: *${totalLama} Santri*\n3. Jumlah keseluruhan: *${totalKeseluruhan} Santri*\n\nSekian laporan dari kami\nJazilasyukri 🙏\n\nWassalamu'alaikum warahmatullahi wabarakatuh`;
-    navigator.clipboard.writeText(text); 
-    swalSuccess("Berhasil Disalin!", "Laporan siap untuk di-paste ke WhatsApp.");
+      const df = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' });
+      return df.format(date) === df.format(today);
+    };
+
+    const dataHariIni = sudahAmbilMurni.filter(s => isToday(s.waktuAmbilKartu));
+    const totalBaru = dataHariIni.filter(s => s.santri?.kategori === 'BARU').length;
+    const totalLama = dataHariIni.filter(s => s.santri?.kategori === 'LAMA').length;
+    const totalKeseluruhan = totalBaru + totalLama;
+
+    const todaysDate = new Date();
+    const namaHari = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long' }).format(todaysDate);
+    // id-ID format is usually DD/MM/YYYY
+    const tanggalFormat = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(todaysDate);
+
+    let text = `Assalamualaikum warahmatullahi wabarakatuh.
+
+Afwan ustadz dan ustadzah 
+@Ustadz Trilaks 
+@Ust Miqdarul Khoir Syarofit  
+@U. Rika Trikaks  
+@~Aqmarina 
+
+Kami dari team Id Card 
+Izin melaporkan jumlah  santri yang cek in pada hari ini ${namaHari}, ${tanggalFormat}: 
+
+1. Santri baru: *${totalBaru} Santri*
+2. Santri lama: *${totalLama} Santri*
+3. Jumlah keseluruhan: *${totalKeseluruhan} Santri*
+
+Sekian laporan dari kami
+Jazilasyukri 🙏
+
+Wassalamu'alaikum warahmatullahi wabarakatuh`;
+    navigator.clipboard.writeText(text);
+    swalSuccess("Berhasil Disalin!", "Laporan Harian siap untuk di-paste ke WhatsApp.");
+  };
+
+  const copyLaporanGlobal = () => {
+    const totalBaru = sudahAmbilMurni.filter(s => s.santri?.kategori === 'BARU').length;
+    const totalLama = sudahAmbilMurni.filter(s => s.santri?.kategori === 'LAMA').length;
+    const totalKeseluruhan = totalBaru + totalLama;
+
+    const rincianPerHari: Record<string, number> = {};
+    // Sort array by date first so that rincian text can be ordered if we want, but it's optional.
+    sudahAmbilMurni.forEach(s => {
+      if (!s.waktuAmbilKartu) return;
+      const date = new Date(s.waktuAmbilKartu);
+      const namaHari = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long' }).format(date);
+      const tanggalFormat = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+      const dateStr = `${namaHari}, ${tanggalFormat}`;
+
+      rincianPerHari[dateStr] = (rincianPerHari[dateStr] || 0) + 1;
+    });
+
+    const rincianText = Object.entries(rincianPerHari)
+      .map(([tanggal, jumlah]) => `- ${tanggal} : ${jumlah} Santri`)
+      .join('\n');
+
+    let text = `Assalamualaikum warahmatullahi wabarakatuh.
+
+Afwan ustadz dan ustadzah 
+@Ustadz Trilaks 
+@Ust Miqdarul Khoir Syarofit  
+@U. Rika Trikaks  
+@~Aqmarina 
+
+Kami dari team Id Card 
+Izin melaporkan rekap jumlah santri yang sudah cek in dari hari pertama sampai hari ketiga (Periode ${dufahNama}):
+
+1. Santri baru: *${totalBaru} Santri*
+2. Santri lama: *${totalLama} Santri*
+3. Jumlah keseluruhan: *${totalKeseluruhan} Santri*
+
+*Rincian Per Hari:*
+${rincianText || '- Belum ada data'}
+
+Sekian laporan dari kami
+Jazilasyukri 🙏
+
+
+Wassalamu'alaikum warahmatullahi wabarakatuh`;
+    navigator.clipboard.writeText(text);
+    swalSuccess("Berhasil Disalin!", "Laporan Global siap untuk di-paste ke WhatsApp.");
   };
 
   const dataDitampilkan = dataGabungan.filter(item => {
@@ -149,7 +228,7 @@ export default function MejaIdCardPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen relative overflow-hidden">
-      
+
       {/* POP-UP NOTIFIKASI */}
       <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
         <div className="bg-white border-l-4 border-blue-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px]">
@@ -166,9 +245,14 @@ export default function MejaIdCardPage() {
           <h1 className="text-3xl font-extrabold text-blue-900">Meja ID Card & Check-In</h1>
           <p className="text-blue-500 mt-1 font-medium">Verifikasi penyerahan ID Card secara Real-Time.</p>
         </div>
-        <button onClick={copyLaporanIdCard} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-green-200 flex items-center gap-2 transition-all active:scale-95">
-          <IconClipboard /> Copy Laporan WA
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button onClick={copyLaporanHarian} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg shadow-green-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm md:text-base">
+            📋 Laporan Harian
+          </button>
+          <button onClick={copyLaporanGlobal} className="bg-gradient-to-r from-blue-800 to-blue-900 hover:from-blue-900 hover:to-blue-950 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm md:text-base">
+            📊 Laporan Global
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 mb-6 flex flex-col md:flex-row gap-6">
