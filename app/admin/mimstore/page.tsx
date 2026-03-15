@@ -22,6 +22,10 @@ export default function MimStorePage() {
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
   // STATE NOTIFIKASI & REAL-TIME
   const [notif, setNotif] = useState({ show: false, pesan: "", namaTarget: "" });
   const pusher = usePusher();
@@ -115,6 +119,14 @@ export default function MimStorePage() {
     item.santri.nama.toLowerCase().includes(keyword.toLowerCase())
   );
 
+  const totalPages = Math.ceil(dataDitampilkan.length / itemsPerPage);
+  const currentData = dataDitampilkan.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Fungsi untuk ganti halaman
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-screen relative overflow-hidden">
       
@@ -141,7 +153,7 @@ export default function MimStorePage() {
           <label className="block text-sm font-bold text-gray-300 mb-2">Cari Nama Santri</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconSearch /></span>
-            <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Ketik nama santri..." className="w-full pl-10 p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner" />
+            <input type="text" value={keyword} onChange={(e) => { setKeyword(e.target.value); setCurrentPage(1); }} placeholder="Ketik nama santri..." className="w-full pl-10 p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner" />
           </div>
         </div>
       </div>
@@ -149,7 +161,7 @@ export default function MimStorePage() {
       <div className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1000px]">
-            <thead className="bg-dark-900 border-b border-gold-500/20">
+            <thead className="bg-dark-900 border-b border-gold-500/20 sticky top-0 z-10">
               <tr>
                 <th className="p-4 text-gold-600 font-bold text-center w-24">No. ID Card</th>
                 <th className="p-4 text-gold-600 font-bold min-w-[200px]">Nama Lengkap & Lokasi</th>
@@ -174,7 +186,7 @@ export default function MimStorePage() {
               ) : dataDitampilkan.length === 0 ? (
                 <tr><td colSpan={8} className="p-10 text-center text-gray-500 italic font-medium">Data santri tidak ditemukan.</td></tr>
               ) : (
-                dataDitampilkan.map((item) => (
+                currentData.map((item) => (
                   <tr key={item.id} className="border-b border-gold-500/5 hover:bg-dark-900/50 transition">
                     <td className="p-4 text-center">
                       <span className="bg-dark-900 text-gray-300 border border-gray-700 font-black text-sm px-2.5 py-1 rounded-lg">
@@ -195,13 +207,14 @@ export default function MimStorePage() {
                     {/* Dresscode */}
                     <td className="p-4 text-center">
                       <div className="flex flex-col items-center gap-2">
-                        <label className="flex items-center cursor-pointer gap-2">
+                        <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
                           <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
                             checked={item.isDresscodeTaken}
                             onChange={(e) => handleUpdate(item.id, 'isDresscodeTaken', e.target.checked)}
                           />
+                          <span className="text-xs font-bold text-gray-300">DC</span>
                         </label>
-                        <input type="text" placeholder="Ukuran" className="w-16 p-1 text-xs text-center border border-dark-900 rounded bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500"
+                        <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner"
                           defaultValue={item.ukuranDresscode || ""}
                           onBlur={(e) => {
                             if (e.target.value !== item.ukuranDresscode) {
@@ -214,31 +227,43 @@ export default function MimStorePage() {
 
                     {/* Tote Bag */}
                     <td className="p-4 text-center">
-                      <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
-                        checked={item.isToteBagTaken}
-                        onChange={(e) => handleUpdate(item.id, 'isToteBagTaken', e.target.checked)}
-                      />
+                      <div className="flex justify-center flex-col items-center">
+                        <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
+                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                            checked={item.isToteBagTaken}
+                            onChange={(e) => handleUpdate(item.id, 'isToteBagTaken', e.target.checked)}
+                          />
+                          <span className="text-xs font-bold text-gray-300">TB</span>
+                        </label>
+                      </div>
                     </td>
 
                     {/* Pin / Dabus */}
                     <td className="p-4 text-center">
-                      <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
-                        checked={item.isPinTaken}
-                        onChange={(e) => handleUpdate(item.id, 'isPinTaken', e.target.checked)}
-                      />
+                      <div className="flex justify-center flex-col items-center">
+                        <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
+                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                            checked={item.isPinTaken}
+                            onChange={(e) => handleUpdate(item.id, 'isPinTaken', e.target.checked)}
+                          />
+                          <span className="text-xs font-bold text-gray-300">Pin</span>
+                        </label>
+                      </div>
                     </td>
 
                     {/* Songkok / Khimar */}
                     <td className="p-4 text-center">
-                      <div className="flex flex-col items-center gap-2 text-xs text-gray-400 font-medium">
-                        <span>{item.santri.gender === 'BANIN' ? 'Songkok' : 'Khimar'}</span>
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
-                            checked={item.isSongkokKhimarTaken}
-                            onChange={(e) => handleUpdate(item.id, 'isSongkokKhimarTaken', e.target.checked)}
-                          />
+                      <div className="flex flex-col items-center gap-2 text-xs font-medium">
+                        <div className="flex flex-col items-center gap-2">
+                          <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
+                            <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                              checked={item.isSongkokKhimarTaken}
+                              onChange={(e) => handleUpdate(item.id, 'isSongkokKhimarTaken', e.target.checked)}
+                            />
+                            <span className="text-xs font-bold text-gray-300">{item.santri.gender === 'BANIN' ? 'SK' : 'KM'}</span>
+                          </label>
                           {item.santri.gender === 'BANIN' && (
-                            <input type="text" placeholder="Ukuran" className="w-16 p-1 text-xs text-center border border-dark-900 rounded bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500"
+                            <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner"
                               defaultValue={item.ukuranSongkok || ""}
                               onBlur={(e) => {
                                 if (e.target.value !== item.ukuranSongkok) {
@@ -253,18 +278,28 @@ export default function MimStorePage() {
 
                     {/* Malzamah */}
                     <td className="p-4 text-center">
-                      <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
-                        checked={item.isMalzamahTaken}
-                        onChange={(e) => handleUpdate(item.id, 'isMalzamahTaken', e.target.checked)}
-                      />
+                      <div className="flex justify-center flex-col items-center">
+                        <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
+                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                            checked={item.isMalzamahTaken}
+                            onChange={(e) => handleUpdate(item.id, 'isMalzamahTaken', e.target.checked)}
+                          />
+                          <span className="text-xs font-bold text-gray-300">MZ</span>
+                        </label>
+                      </div>
                     </td>
 
                     {/* Ta'birot */}
                     <td className="p-4 text-center">
-                      <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
-                        checked={item.isTabirotTaken}
-                        onChange={(e) => handleUpdate(item.id, 'isTabirotTaken', e.target.checked)}
-                      />
+                      <div className="flex justify-center flex-col items-center">
+                        <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
+                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                            checked={item.isTabirotTaken}
+                            onChange={(e) => handleUpdate(item.id, 'isTabirotTaken', e.target.checked)}
+                          />
+                          <span className="text-xs font-bold text-gray-300">Tab</span>
+                        </label>
+                      </div>
                     </td>
 
                   </tr>
@@ -273,6 +308,26 @@ export default function MimStorePage() {
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION UI */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gold-500/20 bg-dark-900 flex flex-col md:flex-row justify-between items-center gap-4">
+            <span className="text-sm text-gray-400 font-medium">Halaman {currentPage} dari {totalPages}</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition">Prev</button>
+              
+              <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button key={i + 1} onClick={() => goToPage(i + 1)} className={`w-10 h-10 rounded-lg font-bold border transition shrink-0 ${currentPage === i + 1 ? 'bg-gold-500 text-black border-gold-500 shadow-sm' : 'bg-dark-800 text-gray-400 border-gray-700 hover:border-gold-500/50'}`}>
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition">Next</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { nama, kategori, gender } = body;
+    const { nama, kategori, gender, riwayatId, bulanKe, nomorIdCard } = body;
 
     const santriUpdate = await prisma.santri.update({
       where: { id },
@@ -62,6 +62,16 @@ export async function PUT(
         ...(gender && { gender }),
       }
     });
+
+    if (riwayatId && (bulanKe !== undefined || nomorIdCard !== undefined)) {
+      await prisma.riwayatDufah.update({
+        where: { id: riwayatId },
+        data: {
+          ...(bulanKe !== undefined && { bulanKe: Number(bulanKe) }),
+          ...(nomorIdCard !== undefined && { nomorIdCard: nomorIdCard === "" ? null : Number(nomorIdCard) }),
+        }
+      });
+    }
 
     emitDataUpdate("santri-edit");
     return NextResponse.json({ message: "Data santri berhasil diperbarui", data: santriUpdate });

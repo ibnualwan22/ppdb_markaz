@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { swalConfirm, swalSuccess, swalError, swalDanger } from "../../lib/swal";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // SVG Icon Components
 const IconSearch = () => (
@@ -63,7 +66,12 @@ export default function MasterSantriPage() {
   const [filterDufah, setFilterDufah] = useState("AKTIF");
   const [filterGender, setFilterGender] = useState("SEMUA");
   const [filterKategori, setFilterKategori] = useState("SEMUA");
+  const [filterBulanKe, setFilterBulanKe] = useState("SEMUA");
   const [loading, setLoading] = useState(true);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const [riwayatTerpilih, setRiwayatTerpilih] = useState<any | null>(null);
 
@@ -72,6 +80,9 @@ export default function MasterSantriPage() {
   const [editNama, setEditNama] = useState("");
   const [editKategori, setEditKategori] = useState("");
   const [editGender, setEditGender] = useState("");
+  const [editBulanKe, setEditBulanKe] = useState("");
+  const [editNomorIdCard, setEditNomorIdCard] = useState("");
+  const [editRiwayatId, setEditRiwayatId] = useState("");
   const [editLoading, setEditLoading] = useState(false);
 
   const muatDaftarDufah = async () => {
@@ -95,8 +106,9 @@ export default function MasterSantriPage() {
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1); // Reset page on filter change
     muatDataSantri();
-  }, [filterDufah]);
+  }, [filterDufah, filterGender, filterKategori, filterBulanKe, keyword]);
 
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
     const aksi = statusSaatIni ? "MENGELUARKAN (Check Out)" : "MENGAKTIFKAN KEMBALI";
@@ -126,6 +138,9 @@ export default function MasterSantriPage() {
     setEditNama(santri.nama);
     setEditKategori(santri.kategori);
     setEditGender(santri.gender);
+    setEditBulanKe(santri.riwayat?.[0]?.bulanKe || "1");
+    setEditNomorIdCard(santri.riwayat?.[0]?.nomorIdCard || "");
+    setEditRiwayatId(santri.riwayat?.[0]?.id || "");
   };
 
   const simpanEdit = async () => {
@@ -134,7 +149,14 @@ export default function MasterSantriPage() {
     const res = await fetch(`/api/santri/${editModal.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama: editNama, kategori: editKategori, gender: editGender })
+      body: JSON.stringify({ 
+        nama: editNama, 
+        kategori: editKategori, 
+        gender: editGender, 
+        riwayatId: editRiwayatId,
+        bulanKe: editBulanKe, 
+        nomorIdCard: editNomorIdCard 
+      })
     });
     setEditLoading(false);
     if (res.ok) {
@@ -242,8 +264,72 @@ export default function MasterSantriPage() {
     const cocokNama = santri.nama.toLowerCase().includes(keyword.toLowerCase());
     const cocokGender = filterGender === "SEMUA" || santri.gender === filterGender;
     const cocokKategori = filterKategori === "SEMUA" || santri.kategori === filterKategori;
-    return cocokNama && cocokGender && cocokKategori;
+    const cocokBulanKe = filterBulanKe === "SEMUA" || (santri.riwayat?.[0]?.bulanKe?.toString() === filterBulanKe);
+    return cocokNama && cocokGender && cocokKategori && cocokBulanKe;
   });
+
+  const exportToExcel = () => {
+    if (dataDitampilkan.length === 0) return swalError("Tidak ada data untuk diexport!");
+    const dataExport = dataDitampilkan.map((santri, index) => ({
+      No: index + 1,
+      Nama: santri.nama,
+      Sakan: santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
+      Lemari: santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
+      "No. ID Card": santri.kategori === "KSU" ? "-" : (santri.riwayat?.[0]?.nomorIdCard || "-"),
+      "Bulan Ke": santri.riwayat?.[0]?.bulanKe || "-",
+      Kategori: santri.kategori,
+      Status: santri.isAktif ? "Aktif" : "Keluar"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Santri");
+    XLSX.writeFile(workbook, `Master_Santri_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportToPDF = () => {
+    if (dataDitampilkan.length === 0) return swalError("Tidak ada data untuk diexport!");
+    const doc = new jsPDF("p", "pt", "a4");
+
+    doc.setFontSize(14);
+    doc.text("Data Master Santri Markaz", 40, 40);
+
+    const tableData = dataDitampilkan.map((santri, index) => [
+      index + 1,
+      santri.nama,
+      santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
+      santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
+      santri.kategori === "KSU" ? "-" : (santri.riwayat?.[0]?.nomorIdCard || "-"),
+      santri.riwayat?.[0]?.bulanKe || "-",
+      santri.kategori,
+      santri.isAktif ? "Aktif" : "Keluar",
+      santri.gender // For styling purposes
+    ]);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [["No", "Nama", "Sakan", "Lemari", "ID Card", "Bln", "Kategori", "Status"]],
+      body: tableData.map(row => row.slice(0, 8)), // Extract the actual table fields
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [212, 175, 55], textColor: [0, 0, 0] },
+      didParseCell: function(data) {
+        if (data.section === 'body') {
+          const rowIndex = data.row.index;
+          const gender = tableData[rowIndex][8];
+          if (gender === 'BANIN') {
+             // Light blue background for Banin
+             data.cell.styles.fillColor = [224, 242, 254];
+          } else if (gender === 'BANAT') {
+             // Light pink background for Banat
+             data.cell.styles.fillColor = [252, 231, 243];
+          }
+        }
+      }
+    });
+
+    doc.save(`Master_Santri_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen relative">
@@ -252,14 +338,22 @@ export default function MasterSantriPage() {
           <h1 className="text-3xl font-extrabold text-gold-500">Master Data Santri</h1>
           <p className="text-gray-400 mt-1 font-medium">Kelola status aktif, Check Out, edit data, dan riwayat penempatan asrama.</p>
         </div>
-        <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-3 px-6 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] flex items-center gap-2 transition-all active:scale-95">
-          <IconClipboard /> Laporan WA Duf&apos;ah
-        </button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          <button onClick={exportToExcel} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
+            <IconDocument /> Excel
+          </button>
+          <button onClick={exportToPDF} className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
+            <IconDocument /> PDF
+          </button>
+          <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] text-sm flex items-center gap-1 transition-all active:scale-95">
+            <IconClipboard /> Laporan WA
+          </button>
+        </div>
       </div>
 
       {/* FILTER AREA */}
       <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Periode / Duf&apos;ah</label>
             <select
@@ -308,6 +402,20 @@ export default function MasterSantriPage() {
           </div>
 
           <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Bulan Ke</label>
+            <select
+              value={filterBulanKe}
+              onChange={(e) => setFilterBulanKe(e.target.value)}
+              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
+            >
+              <option value="SEMUA">Semua Bulan</option>
+              {[...Array(12)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>{i + 1}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Cari Nama</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-600"><IconSearch /></span>
@@ -334,7 +442,7 @@ export default function MasterSantriPage() {
       <div className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead className="bg-dark-900 border-b border-gold-500/20">
+            <thead className="bg-dark-900 border-b border-gold-500/20 sticky top-0 z-10">
               <tr>
                 <th className="p-4 text-gold-600 font-bold text-center w-12">No</th>
                 <th className="p-4 text-gold-600 font-bold">Nama Lengkap</th>
@@ -360,9 +468,14 @@ export default function MasterSantriPage() {
                   <td colSpan={7} className="p-10 text-center text-gray-500 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
                 </tr>
               ) : (
-                dataDitampilkan.map((santri, index) => (
-                  <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
-                    <td className="p-4 text-center">
+                (() => {
+                  const totalPages = Math.ceil(dataDitampilkan.length / itemsPerPage);
+                  const currentData = dataDitampilkan.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                  return currentData.map((santri, i) => {
+                    const index = (currentPage - 1) * itemsPerPage + i;
+                    return (
+                      <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
+                        <td className="p-4 text-center">
                       <span className="bg-dark-900 border border-gold-500/20 text-gold-500 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
                         {index + 1}
                       </span>
@@ -429,11 +542,64 @@ export default function MasterSantriPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+              })})()
               )}
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION UI */}
+        {Math.ceil(dataDitampilkan.length / itemsPerPage) > 1 && (
+          <div className="p-4 border-t border-gold-500/20 bg-dark-900 flex flex-col md:flex-row justify-between items-center gap-4">
+            <span className="text-sm text-gray-400 font-medium">Halaman {currentPage} dari {Math.ceil(dataDitampilkan.length / itemsPerPage)}</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} 
+                disabled={currentPage === 1} 
+                className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
+              >
+                Prev
+              </button>
+              
+              <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
+                {[...Array(Math.ceil(dataDitampilkan.length / itemsPerPage))].map((_, i) => {
+                  // Basic windowed pagination display for many pages
+                  const total = Math.ceil(dataDitampilkan.length / itemsPerPage);
+                  if (
+                    i === 0 || 
+                    i === total - 1 || 
+                    (i >= currentPage - 2 && i <= currentPage)
+                  ) {
+                    return (
+                      <button 
+                        key={i + 1} 
+                        onClick={() => setCurrentPage(i + 1)} 
+                        className={`w-10 h-10 rounded-lg font-bold border transition shrink-0 ${currentPage === i + 1 ? 'bg-gold-500 text-black border-gold-500 shadow-sm' : 'bg-dark-800 text-gray-400 border-gray-700 hover:border-gold-500/50'}`}
+                      >
+                        {i + 1}
+                      </button>
+                    );
+                  } else if (
+                    (i === 1 && currentPage > 3) || 
+                    (i === total - 2 && currentPage < total - 2)
+                  ) {
+                    return <span key={`ellipsis-${i}`} className="w-10 h-10 flex items-center justify-center text-gray-500 shrink-0">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(dataDitampilkan.length / itemsPerPage), prev + 1))} 
+                disabled={currentPage === Math.ceil(dataDitampilkan.length / itemsPerPage)} 
+                className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL EDIT SANTRI */}
@@ -465,6 +631,16 @@ export default function MasterSantriPage() {
                     <option value="BANIN">Banin</option>
                     <option value="BANAT">Banat</option>
                   </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Bulan Ke-</label>
+                  <input type="number" value={editBulanKe} onChange={(e) => setEditBulanKe(e.target.value)} min="1" className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" disabled={!editRiwayatId} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Nomor ID Card</label>
+                  <input type="number" value={editNomorIdCard} onChange={(e) => setEditNomorIdCard(e.target.value)} placeholder="-" className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" disabled={!editRiwayatId || editKategori === "KSU"} />
                 </div>
               </div>
             </div>
