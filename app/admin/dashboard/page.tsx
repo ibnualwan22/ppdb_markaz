@@ -169,27 +169,26 @@ export default function DashboardMuasisPage() {
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="font-bold text-blue-800">Memuat Visualisasi Asrama...</p>
+        <div className="w-16 h-16 border-4 border-gold-500/20 border-t-gold-500 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="font-bold text-gold-500">Memuat Visualisasi Asrama...</p>
       </div>
     </div>
   );
 
   const RenderSakanBlock = ({ data, judul, warnaTema }: { data: any[], judul: string, warnaTema: 'biru' | 'pink' }) => {
     const isBiru = warnaTema === 'biru';
-    const bgHeader = isBiru ? 'bg-gradient-to-r from-blue-800 to-blue-700' : 'bg-gradient-to-r from-pink-700 to-pink-600';
-    const textWarna = isBiru ? 'text-blue-800' : 'text-pink-800';
-    const bgProgress = isBiru ? 'bg-blue-500' : 'bg-pink-500';
-    const bgLemariTerisi = isBiru ? 'bg-blue-50 border-blue-200' : 'bg-pink-50 border-pink-200';
+    const bgHeader = 'bg-dark-800 border-b border-gold-500/10';
+    const textWarna = 'text-gold-500';
+    const bgLemariTerisi = 'bg-dark-800 border-gold-500/30';
 
     // Filter sakan yang mengandung santri yang dicari
     const filteredData = searchSantri ? data.filter(sakanContainsSantri) : data;
 
     return (
       <div className="mb-12">
-        <h2 className={`text-2xl font-black mb-6 ${textWarna} border-b-2 ${isBiru ? 'border-blue-200' : 'border-pink-200'} pb-2 flex items-center gap-2`}>
+        <h2 className={`text-2xl font-black mb-6 ${textWarna} border-b-2 border-gold-500/20 pb-2 flex items-center gap-2`}>
           {isBiru ? <IconMale /> : <IconFemale />} {judul}
-          <span className="text-sm font-medium text-gray-400 ml-2">({filteredData.length} Sakan)</span>
+          <span className="text-sm font-medium text-gray-500 ml-2">({filteredData.length} Sakan)</span>
         </h2>
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -210,13 +209,13 @@ export default function DashboardMuasisPage() {
             const sakanGembokStyle = sakan.isLocked ? "grayscale opacity-90" : "";
 
             return (
-              <div key={sakan.id} className={`bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow ${sakanGembokStyle}`}>
+              <div key={sakan.id} className={`bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden flex flex-col hover:border-gold-500/40 transition-all ${sakanGembokStyle}`}>
                 
-                <div className={`${sakan.isLocked ? 'bg-gradient-to-r from-gray-700 to-gray-600' : bgHeader} p-5 text-white relative`}>
+                <div className={`${sakan.isLocked ? 'bg-dark-900 border-b border-gray-800' : bgHeader} p-5 text-gray-200 relative`}>
                   {/* TOMBOL KUNCI SAKAN */}
                   <button 
                     onClick={() => toggleLock('sakan', sakan.id, sakan.isLocked)} 
-                    className={`absolute top-4 right-4 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1 ${sakan.isLocked ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}
+                    className={`absolute top-4 right-4 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1 ${sakan.isLocked ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 backdrop-blur-sm'}`}
                   >
                     {sakan.isLocked ? <><IconUnlock className="h-3.5 w-3.5" /> Buka Sakan</> : <><IconLock className="h-3.5 w-3.5" /> Kunci Sakan</>}
                   </button>
@@ -233,14 +232,14 @@ export default function DashboardMuasisPage() {
                       <p className="text-xs opacity-80 font-medium">Terisi: {terisiSakan} / {totalLemariSakan}</p>
                     </div>
                   </div>
-                  <div className="w-full bg-white/30 rounded-full h-2.5">
-                    <div className={`${sakan.isLocked ? 'bg-gray-400' : 'bg-white'} h-2.5 rounded-full transition-all duration-1000`} style={{ width: `${sakan.isLocked ? 0 : persentaseSakan}%` }}></div>
+                  <div className="w-full bg-dark-900/50 rounded-full h-2.5 border border-gold-500/10">
+                    <div className={`${sakan.isLocked ? 'bg-gray-600' : 'bg-gold-500'} h-2.5 rounded-full transition-all duration-1000`} style={{ width: `${sakan.isLocked ? 0 : persentaseSakan}%` }}></div>
                   </div>
                 </div>
 
-                <div className="p-5 bg-white flex-1 flex flex-col gap-4">
+                <div className="p-5 bg-dark-800 flex-1 flex flex-col gap-4">
                   {sakan.kamar.length === 0 ? (
-                    <p className="text-center text-blue-300 italic py-4">Belum ada kamar.</p>
+                    <p className="text-center text-gray-500 italic py-4">Belum ada kamar.</p>
                   ) : (
                     sakan.kamar.map((kamar: any) => {
                       const lemariAktifKamar = kamar.lemari.filter((l:any) => !l.isLocked && !kamar.isLocked && !sakan.isLocked);
@@ -250,9 +249,9 @@ export default function DashboardMuasisPage() {
                       const isKamarLocked = kamar.isLocked || sakan.isLocked;
 
                       return (
-                        <div key={kamar.id} className={`p-4 rounded-xl border shadow-sm transition-all ${isKamarLocked ? 'bg-gray-100 border-gray-300' : 'bg-blue-50/30 border-blue-100'}`}>
-                          <div className="flex justify-between items-center border-b border-blue-100/50 pb-2 mb-3">
-                            <h4 className={`font-bold text-lg flex items-center gap-2 ${isKamarLocked ? 'text-gray-500 line-through' : 'text-blue-900'}`}>
+                        <div key={kamar.id} className={`p-4 rounded-xl border shadow-sm transition-all ${isKamarLocked ? 'bg-dark-900 border-gray-800' : 'bg-dark-900/50 border-gold-500/10'}`}>
+                          <div className="flex justify-between items-center border-b border-gold-500/10 pb-2 mb-3">
+                            <h4 className={`font-bold text-lg flex items-center gap-2 ${isKamarLocked ? 'text-gray-600 line-through' : 'text-gold-400'}`}>
                               {isKamarLocked && <IconLock className="h-4 w-4" />} Kamar {kamar.nama}
                             </h4>
                             <div className="flex items-center gap-2">
@@ -260,13 +259,13 @@ export default function DashboardMuasisPage() {
                               <button 
                                 onClick={() => toggleLock('kamar', kamar.id, kamar.isLocked)} 
                                 disabled={sakan.isLocked}
-                                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${kamar.isLocked ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200' : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'}`}
+                                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${kamar.isLocked ? 'bg-yellow-500/10 text-yellow-600 border-yellow-600/30 hover:bg-yellow-500/20' : 'bg-gold-500/10 text-gold-500 border-gold-500/30 hover:bg-gold-500/20'}`}
                               >
                                 {kamar.isLocked ? <><IconUnlock className="h-3 w-3" /> Buka</> : <><IconLock className="h-3 w-3" /> Kunci</>}
                               </button>
                               
                               {!isKamarLocked && (
-                                <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-lg border border-blue-200">
+                                <span className="text-xs font-bold bg-dark-800 text-gold-500 px-2 py-1 rounded-lg border border-gold-500/20">
                                   Isi: {terisiKamar} / {totalLemariKamar}
                                 </span>
                               )}
@@ -283,23 +282,23 @@ export default function DashboardMuasisPage() {
                               // RENDER JIKA LEMARI DIKUNCI
                               if (isLemariLocked) {
                                 return (
-                                  <div key={lemari.id} className="p-2 rounded-lg border bg-gray-200 border-gray-300 flex flex-col justify-between min-h-[70px] relative group">
+                                  <div key={lemari.id} className="p-2 rounded-lg border bg-dark-900 border-gray-800 flex flex-col justify-between min-h-[70px] relative group">
                                     <div className="flex justify-between items-start mb-1">
-                                      <span className="text-[10px] font-black text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shadow-sm line-through">
+                                      <span className="text-[10px] font-black text-gray-600 bg-black/50 px-1.5 py-0.5 rounded shadow-sm line-through">
                                         {lemari.nomor}
                                       </span>
                                       {/* TOMBOL BUKA LEMARI - always visible on mobile */}
                                       {!isKamarLocked && (
                                         <button 
                                           onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)}
-                                          className="text-[10px] bg-yellow-400 hover:bg-yellow-500 text-black px-1.5 py-0.5 rounded shadow-sm font-bold flex items-center gap-0.5"
+                                          className="text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 border border-yellow-500/30 px-1.5 py-0.5 rounded shadow-sm font-bold flex items-center gap-0.5"
                                         >
                                           <IconUnlock className="h-2.5 w-2.5" />
                                         </button>
                                       )}
                                     </div>
                                     <div className="mt-auto text-center opacity-70">
-                                      <IconLock className="h-5 w-5 mx-auto text-gray-500" />
+                                      <IconLock className="h-5 w-5 mx-auto text-gray-700" />
                                       <p className="text-[10px] text-gray-600 font-bold uppercase mt-1">Ditutup</p>
                                     </div>
                                   </div>
@@ -310,13 +309,13 @@ export default function DashboardMuasisPage() {
                               return (
                                 <div key={lemari.id} className={`p-2 rounded-lg border flex flex-col justify-between min-h-[70px] group relative transition-all ${
                                   isHighlighted 
-                                    ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-400 shadow-md' 
+                                    ? 'bg-yellow-900/20 border-yellow-500/50 ring-1 ring-yellow-500/50 shadow-md shadow-yellow-500/10' 
                                     : isTerisi 
                                       ? bgLemariTerisi 
-                                      : 'bg-gray-50 border-gray-200 border-dashed'
+                                      : 'bg-dark-900/30 border-gray-800 border-dashed hover:border-gold-500/30'
                                 }`}>
                                   <div className="flex justify-between items-start mb-1">
-                                    <span className="text-[10px] font-black text-gray-500 bg-white px-1.5 py-0.5 rounded shadow-sm">
+                                    <span className="text-[10px] font-black text-gray-400 bg-dark-900 border border-gray-800 px-1.5 py-0.5 rounded shadow-sm">
                                       {lemari.nomor}
                                     </span>
                                     
@@ -329,7 +328,7 @@ export default function DashboardMuasisPage() {
                                       {/* TOMBOL KUNCI LEMARI - visible on mobile, hover on desktop */}
                                       <button 
                                         onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)}
-                                        className="text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold transition-opacity bg-gray-200 hover:bg-gray-300 text-gray-700 md:opacity-0 md:group-hover:opacity-100"
+                                        className="text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold transition-opacity bg-dark-800 border border-gold-500/20 hover:bg-gold-500/10 text-gold-500 md:opacity-0 md:group-hover:opacity-100"
                                         title="Kunci Lemari"
                                       >
                                         <IconLock className="h-2.5 w-2.5" />
@@ -339,11 +338,11 @@ export default function DashboardMuasisPage() {
                                   
                                   <div className="mt-auto">
                                     {isTerisi ? (
-                                      <p className={`font-bold text-xs leading-tight truncate ${isHighlighted ? 'text-yellow-800' : textWarna}`} title={dataSantri.nama}>
+                                      <p className={`font-bold text-xs leading-tight truncate ${isHighlighted ? 'text-yellow-500' : 'text-gray-300'}`} title={dataSantri.nama}>
                                         {dataSantri.nama}
                                       </p>
                                     ) : (
-                                      <p className="text-xs text-gray-400 italic font-medium text-center group-hover:hidden">Kosong</p>
+                                      <p className="text-xs text-gray-600 italic font-medium text-center group-hover:hidden">Kosong</p>
                                     )}
                                   </div>
                                 </div>
@@ -365,37 +364,37 @@ export default function DashboardMuasisPage() {
 
   return (
     <div ref={mainRef} className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
-      <div className="mb-8 border-b border-blue-100 pb-6">
+      <div className="mb-8 border-b border-gold-500/10 pb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-extrabold text-blue-900">Dashboard Visual Muasis</h1>
-            <p className="text-blue-500 mt-1 font-medium">Pemantauan denah Sakan, kapasitas, dan kontrol akses kamar santri secara real-time.</p>
+            <h1 className="text-3xl font-extrabold text-gold-500">Dashboard Visual Muasis</h1>
+            <p className="text-gray-400 mt-1 font-medium">Pemantauan denah Sakan, kapasitas, dan kontrol akses kamar santri secara real-time.</p>
           </div>
         </div>
 
         {/* SEARCH BARS */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"><IconHome className="h-4 w-4" /></span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconHome className="h-4 w-4" /></span>
             <input
               type="text"
               value={searchSakan}
               onChange={(e) => setSearchSakan(e.target.value)}
               placeholder="Cari nama sakan..."
-              className="w-full pl-10 pr-4 py-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white shadow-sm text-blue-900 font-medium placeholder:text-blue-300"
+              className="w-full pl-10 pr-4 py-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 focus:border-gold-500/50 bg-dark-800 shadow-sm text-gray-200 font-medium placeholder:text-gray-600"
             />
           </div>
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"><IconSearch className="h-4 w-4" /></span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconSearch className="h-4 w-4" /></span>
             <input
               type="text"
               value={searchSantri}
               onChange={(e) => setSearchSantri(e.target.value)}
               placeholder="Cari nama santri di denah..."
-              className="w-full pl-10 pr-4 py-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white shadow-sm text-blue-900 font-medium placeholder:text-blue-300"
+              className="w-full pl-10 pr-4 py-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 focus:border-gold-500/50 bg-dark-800 shadow-sm text-gray-200 font-medium placeholder:text-gray-600"
             />
             {searchSantri && (
-              <button onClick={() => setSearchSantri("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-600 font-bold"><IconX /></button>
+              <button onClick={() => setSearchSantri("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gold-500 font-bold"><IconX /></button>
             )}
           </div>
         </div>
@@ -404,7 +403,7 @@ export default function DashboardMuasisPage() {
       {sakanBanin.length > 0 && <RenderSakanBlock data={sakanBanin} judul="Area Asrama Banin (Putra)" warnaTema="biru" />}
       {sakanBanat.length > 0 && <RenderSakanBlock data={sakanBanat} judul="Area Asrama Banat (Putri)" warnaTema="pink" />}
       {sakanBanin.length === 0 && sakanBanat.length === 0 && (
-        <div className="text-center py-20 text-blue-300 font-medium">Belum ada data Sakan di Master Lokasi.</div>
+        <div className="text-center py-20 text-gray-500 font-medium">Belum ada data Sakan di Master Lokasi.</div>
       )}
     </div>
   );

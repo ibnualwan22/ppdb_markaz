@@ -115,10 +115,10 @@ export default function AdminDashboardHome() {
   })) : 1;
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-[#f0f4ff]">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="font-bold text-blue-800">Memuat Command Center...</p>
+    <div className="flex items-center justify-center min-h-screen relative">
+      <div className="text-center z-10">
+        <div className="w-16 h-16 border-4 border-gold-500/20 border-t-gold-500 rounded-full animate-spin mx-auto mb-4 shadow-[0_0_15px_rgba(158,129,35,0.5)]"></div>
+        <p className="font-bold text-gold-500">Memuat Command Center...</p>
       </div>
     </div>
   );
@@ -127,78 +127,78 @@ export default function AdminDashboardHome() {
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
       
       {/* HEADER & TOMBOL WA */}
-      <div className="mb-8 border-b border-blue-100 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div className="mb-8 border-b border-gold-500/20 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 relative z-10">
         <div>
-          <h1 className="text-3xl font-extrabold text-blue-900">Dashboard & Rekapitulasi</h1>
-          <p className="text-blue-500 mt-1 font-medium">Pemantauan Global Sistem Administrasi Asrama</p>
+          <h1 className="text-3xl font-extrabold text-gold-500">Dashboard & Rekapitulasi</h1>
+          <p className="text-gray-400 mt-1 font-medium">Pemantauan Global Sistem Administrasi Asrama</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right hidden md:block">
-            <p className="text-sm font-bold text-blue-400">Periode Berjalan:</p>
-            <p className="text-xl font-black text-blue-700">{stats?.dufahNama}</p>
+            <p className="text-sm font-bold text-gray-400">Periode Berjalan:</p>
+            <p className="text-xl font-black text-gold-400">{stats?.dufahNama}</p>
           </div>
-          <button onClick={copyLaporanWA} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-200 flex items-center gap-2 transition-all active:scale-95">
+          <button onClick={copyLaporanWA} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-3 px-6 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] flex items-center gap-2 transition-all active:scale-95">
             <span className="text-xl">📋</span> Copy Laporan WA
           </button>
         </div>
       </div>
 
       {/* 3 KARTU STATISTIK */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 border-l-4 border-l-blue-600 flex flex-col justify-center relative overflow-hidden hover:shadow-md transition-shadow">
-          <p className="text-blue-500 font-bold text-sm z-10">Total Penghuni Sakan</p>
-          <p className="text-4xl font-black text-blue-700 mt-2 z-10">{stats?.totalMasukSakan} <span className="text-lg font-medium text-blue-300">Santri</span></p>
-          <div className="absolute -right-4 -bottom-4 text-7xl opacity-5">🏢</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 relative z-10">
+        <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-gold-500 flex flex-col justify-center relative overflow-hidden transition-shadow">
+          <p className="text-gold-500 font-bold text-sm z-10">Total Penghuni Sakan</p>
+          <p className="text-4xl font-black text-gold-400 mt-2 z-10">{stats?.totalMasukSakan} <span className="text-lg font-medium text-gray-400">Santri</span></p>
+          <div className="absolute -right-4 -bottom-4 text-7xl opacity-5 grayscale">🏢</div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-green-100 border-l-4 border-l-green-500 flex flex-col justify-center relative overflow-hidden hover:shadow-md transition-shadow">
-          <p className="text-green-600 font-bold text-sm z-10">Selesai ID Card & Check-in</p>
-          <p className="text-4xl font-black text-green-600 mt-2 z-10">{stats?.totalAmbilIdCard} <span className="text-lg font-medium text-green-300">Santri</span></p>
+        <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-green-600 flex flex-col justify-center relative overflow-hidden transition-shadow">
+          <p className="text-green-500 font-bold text-sm z-10">Selesai ID Card & Check-in</p>
+          <p className="text-4xl font-black text-green-500 mt-2 z-10">{stats?.totalAmbilIdCard} <span className="text-lg font-medium text-green-900">Santri</span></p>
           
           {stats?.totalKSU > 0 && (
-            <p className="text-xs font-bold text-purple-600 mt-1 z-10 bg-purple-50 inline-block px-2 py-0.5 rounded-md self-start border border-purple-200">
+            <p className="text-xs font-bold text-purple-400 mt-1 z-10 bg-purple-900/40 inline-block px-2 py-0.5 rounded-md self-start border border-purple-500/30">
               + {stats?.totalKSU} (KSU)
             </p>
           )}
 
-          <div className="absolute -right-4 -bottom-4 text-7xl opacity-5">💳</div>
+          <div className="absolute -right-4 -bottom-4 text-7xl opacity-10 grayscale">💳</div>
         </div>
 
-        <div className={`p-6 rounded-2xl shadow-sm border-l-4 flex flex-col justify-center relative overflow-hidden hover:shadow-md transition-shadow ${stats?.selisih > 0 ? 'bg-red-50 border border-red-100 border-l-red-500' : 'bg-white border border-gray-100 border-l-gray-400'}`}>
-          <p className={`${stats?.selisih > 0 ? 'text-red-800' : 'text-gray-600'} font-bold text-sm z-10`}>Selisih (Belum ID Card)</p>
-          <p className={`text-4xl font-black mt-2 z-10 ${stats?.selisih > 0 ? 'text-red-600' : 'text-gray-500'}`}>
+        <div className={`p-6 rounded-2xl shadow-sm border-l-4 flex flex-col justify-center relative overflow-hidden transition-shadow ${stats?.selisih > 0 ? 'bg-dark-800 border-y-red-900/50 border-r-red-900/50 border-l-red-500' : 'bg-dark-800 border border-gold-500/10 border-l-gray-600'}`}>
+          <p className={`${stats?.selisih > 0 ? 'text-red-500' : 'text-gray-400'} font-bold text-sm z-10`}>Selisih (Belum ID Card)</p>
+          <p className={`text-4xl font-black mt-2 z-10 ${stats?.selisih > 0 ? 'text-red-500' : 'text-gray-500'}`}>
             {stats?.selisih} <span className="text-lg font-medium opacity-50">Santri</span>
           </p>
           {stats?.selisih > 0 && <p className="text-xs text-red-500 mt-2 font-bold animate-pulse">⚠️ Perlu tindakan!</p>}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         
         {/* KOLOM KIRI: GRAFIK */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-blue-100 p-6 flex flex-col">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-blue-50 pb-4 mb-6 gap-4">
-            <h2 className="text-xl font-bold text-blue-900">📊 Grafik Pendaftar per Duf&apos;ah</h2>
+        <div className="lg:col-span-2 bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 p-6 flex flex-col">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gold-500/10 pb-4 mb-6 gap-4">
+            <h2 className="text-xl font-bold text-gold-500">📊 Grafik Pendaftar per Duf&apos;ah</h2>
             
             <div className="flex flex-wrap items-center justify-end gap-2 text-sm w-full md:w-auto">
-              <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)} className="p-2 border border-blue-200 rounded-lg bg-white font-bold text-blue-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-300 w-full sm:w-auto">
+              <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)} className="p-2 border border-dark-900 rounded-lg bg-dark-900 font-bold text-gold-500 outline-none cursor-pointer focus:ring-1 focus:ring-gold-500/50 w-full sm:w-auto shadow-inner">
                 <option value="ALL">Semua Gender</option>
                 <option value="BANIN">👨 Banin</option>
                 <option value="BANAT">🧕 Banat</option>
               </select>
 
-              <select value={filterTahun} onChange={(e) => setFilterTahun(e.target.value)} className="p-2 border border-blue-200 rounded-lg bg-white font-bold text-blue-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-300 w-full sm:w-auto">
+              <select value={filterTahun} onChange={(e) => setFilterTahun(e.target.value)} className="p-2 border border-dark-900 rounded-lg bg-dark-900 font-bold text-gold-500 outline-none cursor-pointer focus:ring-1 focus:ring-gold-500/50 w-full sm:w-auto shadow-inner">
                 <option value="ALL">Semua Tahun</option>
                 {tahunUnik.map(t => <option key={t} value={t.toString()}>{t}</option>)}
               </select>
 
-              <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-lg px-2 w-full sm:w-auto overflow-hidden">
-                <select value={filterMulai} onChange={(e) => setFilterMulai(e.target.value)} className="p-2 bg-transparent text-blue-700 outline-none cursor-pointer flex-1 min-w-0">
+              <div className="flex items-center gap-1 bg-dark-900 border border-dark-900 rounded-lg px-2 w-full sm:w-auto overflow-hidden shadow-inner">
+                <select value={filterMulai} onChange={(e) => setFilterMulai(e.target.value)} className="p-2 bg-transparent text-gold-500 outline-none cursor-pointer flex-1 min-w-0 font-bold">
                   <option value="">Awal</option>
                   {grafikData.map(g => <option key={g.id} value={g.id}>{g.nama}</option>)}
                 </select>
-                <span className="text-blue-400 font-bold shrink-0">-</span>
-                <select value={filterAkhir} onChange={(e) => setFilterAkhir(e.target.value)} className="p-2 bg-transparent text-blue-700 outline-none cursor-pointer flex-1 min-w-0">
+                <span className="text-gold-600 font-bold shrink-0">-</span>
+                <select value={filterAkhir} onChange={(e) => setFilterAkhir(e.target.value)} className="p-2 bg-transparent text-gold-500 outline-none cursor-pointer flex-1 min-w-0 font-bold">
                   <option value="">Akhir</option>
                   {grafikData.map(g => <option key={g.id} value={g.id}>{g.nama}</option>)}
                 </select>
@@ -208,41 +208,41 @@ export default function AdminDashboardHome() {
 
           <div className="w-full mt-4 pb-2 relative z-10 overflow-x-auto overflow-y-hidden">
             {grafikDitampilkan.length === 0 ? (
-              <div className="w-full text-center text-blue-300 italic py-10">Tidak ada data untuk filter ini.</div>
+              <div className="w-full text-center text-gray-500 italic py-10">Tidak ada data untuk filter ini.</div>
             ) : (
               <div className="h-[300px] relative" style={{ minWidth: `${Math.max(100, grafikDitampilkan.length * 60)}px` }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={grafikDitampilkan} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                     <XAxis 
                       dataKey="nama" 
-                      tick={{ fontSize: 10, fill: '#3b82f6', fontWeight: 600 }} 
+                      tick={{ fontSize: 10, fill: '#ba9a2f', fontWeight: 600 }} 
                       axisLine={false} 
                       tickLine={false} 
                     />
                   <YAxis 
-                    tick={{ fontSize: 10, fill: '#94a3b8' }} 
+                    tick={{ fontSize: 10, fill: '#64748b' }} 
                     axisLine={false} 
                     tickLine={false} 
                     domain={[0, 'dataMax + 10']}
                   />
                   <Tooltip
-                    cursor={{ fill: '#eff6ff' }}
+                    cursor={{ fill: '#ffffff10' }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-white p-3 border border-blue-100 shadow-xl rounded-xl">
-                            <p className="font-bold text-blue-900 border-b border-blue-50 pb-2 mb-2">
-                              {data.nama} <span className="text-gray-400 text-sm font-medium">({data.tahun})</span>
+                          <div className="bg-dark-900 p-3 border border-gold-500/20 shadow-xl rounded-xl">
+                            <p className="font-bold text-gold-400 border-b border-gold-500/10 pb-2 mb-2">
+                              {data.nama} <span className="text-gray-500 text-sm font-medium">({data.tahun})</span>
                             </p>
                             {filterGender === "ALL" || filterGender === "BANIN" ? (
-                              <p className="text-blue-600 font-bold text-sm">👨 Banin: {data.totalBanin}</p>
+                              <p className="text-blue-400 font-bold text-sm">👨 Banin: {data.totalBanin}</p>
                             ) : null}
                             {filterGender === "ALL" || filterGender === "BANAT" ? (
-                              <p className="text-pink-600 font-bold text-sm mt-1">🧕 Banat: {data.totalBanat}</p>
+                              <p className="text-pink-400 font-bold text-sm mt-1">🧕 Banat: {data.totalBanat}</p>
                             ) : null}
                             {filterGender === "ALL" && (
-                              <p className="text-gray-700 font-bold border-t border-gray-100 mt-2 pt-2 text-sm">
+                              <p className="text-gray-300 font-bold border-t border-gray-700 mt-2 pt-2 text-sm">
                                 Total: {data.totalPendaftar} Santri
                               </p>
                             )}
@@ -274,15 +274,15 @@ export default function AdminDashboardHome() {
         </div>
 
         {/* KOLOM KANAN: LIST SELISIH */}
-        <div className="bg-white rounded-2xl shadow-sm border border-red-100 flex flex-col h-[500px] lg:h-auto">
-          <div className="bg-red-50 p-5 border-b border-red-100 rounded-t-2xl">
-            <h2 className="text-lg font-bold text-red-800 flex items-center gap-2">🚨 Daftar Selisih</h2>
-            <p className="text-xs text-red-600 mt-1 font-medium">Santri yang sudah masuk kamar tapi belum konfirmasi ID Card.</p>
+        <div className="bg-dark-800 rounded-2xl shadow-sm border border-red-900/50 flex flex-col h-[500px] lg:h-auto overflow-hidden">
+          <div className="bg-red-900/20 p-5 border-b border-red-900/50 rounded-t-2xl">
+            <h2 className="text-lg font-bold text-red-500 flex items-center gap-2">🚨 Daftar Selisih</h2>
+            <p className="text-xs text-red-400 mt-1 font-medium">Santri yang sudah masuk kamar tapi belum konfirmasi ID Card.</p>
           </div>
           
           <div className="flex-1 overflow-y-auto p-2">
             {stats?.listBelumIdCard.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-blue-300 opacity-70 p-6 text-center">
+              <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-70 p-6 text-center">
                 <span className="text-4xl mb-2">🎉</span>
                 <p className="font-bold">Aman! Selisih Nol.</p>
                 <p className="text-sm">Semua santri sudah ambil kartu.</p>
@@ -290,10 +290,10 @@ export default function AdminDashboardHome() {
             ) : (
               <ul className="space-y-2 p-2">
                 {stats?.listBelumIdCard.map((row: any, i: number) => (
-                  <li key={row.id} className="bg-white p-3 border border-red-100 rounded-xl hover:bg-red-50 transition flex gap-3 items-center shadow-sm">
-                    <div className="bg-red-100 text-red-800 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0">{i + 1}</div>
+                  <li key={row.id} className="bg-dark-900 p-3 border border-red-900/30 rounded-xl hover:bg-red-900/10 transition flex gap-3 items-center shadow-sm">
+                    <div className="bg-red-900/50 text-red-500 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 border border-red-500/30">{i + 1}</div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm flex items-center gap-1">
+                      <p className="font-bold text-gray-200 text-sm flex items-center gap-1">
                         {row.santri.nama}
                         <span className="text-[10px]">{row.santri.gender === 'BANAT' ? '🧕' : '👨'}</span>
                       </p>
@@ -308,8 +308,8 @@ export default function AdminDashboardHome() {
           </div>
 
           {stats?.listBelumIdCard.length > 0 && (
-            <div className="p-4 border-t border-red-100 bg-red-50 text-center rounded-b-2xl">
-              <Link href="/admin/id-card" className="text-red-700 font-bold text-sm hover:underline flex items-center justify-center gap-1">
+            <div className="p-4 border-t border-red-900/50 bg-red-900/20 text-center rounded-b-2xl">
+              <Link href="/admin/id-card" className="text-red-500 font-bold text-sm hover:underline flex items-center justify-center gap-1">
                 Tindak Lanjuti di Meja ID Card ➔
               </Link>
             </div>

@@ -3,13 +3,18 @@
 
 
 :root {
-  --background: #f0f4ff;
-  --foreground: #171717;
+  --background: #121212;
+  --foreground: #e5e5e5;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-gold-400: #E6C587;
+  --color-gold-500: #D4AF37;
+  --color-gold-600: #C2A36B;
+  --color-dark-800: #1a1a1a;
+  --color-dark-900: #121212;
   --font-sans: 'Inter', var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
 }
@@ -18,6 +23,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* Luxury Geometric Labyrinth Pattern */
+.bg-luxury-pattern {
+  /* Hexagonal/Maze pattern resembling Laramiss reference */
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40 L40 0 L80 40 L40 80 Z' fill='none' stroke='%23C2A36B' stroke-width='1' stroke-opacity='0.08'/%3E%3Cpath d='M20 40 L40 20 L60 40 L40 60 Z' fill='none' stroke='%23C2A36B' stroke-width='1' stroke-opacity='0.15'/%3E%3Cpath d='M0 0 L40 40 L80 0' fill='none' stroke='%23C2A36B' stroke-width='1' stroke-opacity='0.1'/%3E%3Cpath d='M0 80 L40 40 L80 80' fill='none' stroke='%23C2A36B' stroke-width='1' stroke-opacity='0.1'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  background-repeat: repeat;
 }
 
 /* Smooth scrollbar */

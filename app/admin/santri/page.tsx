@@ -247,25 +247,25 @@ export default function MasterSantriPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-blue-100 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gold-500/10 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-blue-900">Master Data Santri</h1>
-          <p className="text-blue-500 mt-1 font-medium">Kelola status aktif, Check Out, edit data, dan riwayat penempatan asrama.</p>
+          <h1 className="text-3xl font-extrabold text-gold-500">Master Data Santri</h1>
+          <p className="text-gray-400 mt-1 font-medium">Kelola status aktif, Check Out, edit data, dan riwayat penempatan asrama.</p>
         </div>
-        <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-green-200 flex items-center gap-2 transition-all active:scale-95">
+        <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-3 px-6 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] flex items-center gap-2 transition-all active:scale-95">
           <IconClipboard /> Laporan WA Duf&apos;ah
         </button>
       </div>
 
       {/* FILTER AREA */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 mb-6">
+      <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs font-bold text-blue-800 mb-1.5 uppercase tracking-wide">Periode / Duf&apos;ah</label>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Periode / Duf&apos;ah</label>
             <select
               value={filterDufah}
               onChange={(e) => setFilterDufah(e.target.value)}
-              className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white font-bold text-blue-700 shadow-sm cursor-pointer text-sm"
+              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
             >
               <optgroup label="Data Terkini">
                 <option value="AKTIF">Santri Aktif Saat Ini</option>
@@ -281,11 +281,11 @@ export default function MasterSantriPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-blue-800 mb-1.5 uppercase tracking-wide">Gender</label>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Gender</label>
             <select
               value={filterGender}
               onChange={(e) => setFilterGender(e.target.value)}
-              className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white font-bold text-blue-700 shadow-sm cursor-pointer text-sm"
+              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
             >
               <option value="SEMUA">Semua Gender</option>
               <option value="BANIN">Banin (Putra)</option>
@@ -294,11 +294,11 @@ export default function MasterSantriPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-blue-800 mb-1.5 uppercase tracking-wide">Kategori</label>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Kategori</label>
             <select
               value={filterKategori}
               onChange={(e) => setFilterKategori(e.target.value)}
-              className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white font-bold text-blue-700 shadow-sm cursor-pointer text-sm"
+              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
             >
               <option value="SEMUA">Semua Kategori</option>
               <option value="BARU">Baru</option>
@@ -308,15 +308,15 @@ export default function MasterSantriPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-blue-800 mb-1.5 uppercase tracking-wide">Cari Nama</label>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Cari Nama</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"><IconSearch /></span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-600"><IconSearch /></span>
               <input
                 type="text"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Cari santri..."
-                className="w-full pl-10 pr-4 p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white shadow-sm text-blue-900 placeholder:text-blue-300 text-sm"
+                className="w-full pl-10 pr-4 p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 shadow-inner text-gray-200 placeholder:text-gray-600 text-sm"
               />
             </div>
           </div>
@@ -325,24 +325,24 @@ export default function MasterSantriPage() {
 
       {/* Counter */}
       <div className="mb-4 flex items-center gap-3">
-        <span className="bg-blue-50 text-blue-700 font-bold text-sm px-3 py-1.5 rounded-xl border border-blue-200">
+        <span className="bg-dark-800 text-gold-500 font-bold text-sm px-3 py-1.5 rounded-xl border border-gold-500/20">
           Total: {dataDitampilkan.length} santri
         </span>
       </div>
 
       {/* TABEL MASTER SANTRI */}
-      <div className="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+      <div className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-200">
+            <thead className="bg-dark-900 border-b border-gold-500/20">
               <tr>
-                <th className="p-4 text-blue-800 font-bold text-center w-12">No</th>
-                <th className="p-4 text-blue-800 font-bold">Nama Lengkap</th>
-                <th className="p-4 text-blue-800 font-bold text-center">No. ID Card</th>
-                <th className="p-4 text-blue-800 font-bold text-center">Bulan Ke-</th>
-                <th className="p-4 text-blue-800 font-bold">Kategori</th>
-                <th className="p-4 text-blue-800 font-bold">Status</th>
-                <th className="p-4 text-blue-800 font-bold text-center">Aksi</th>
+                <th className="p-4 text-gold-600 font-bold text-center w-12">No</th>
+                <th className="p-4 text-gold-600 font-bold">Nama Lengkap</th>
+                <th className="p-4 text-gold-600 font-bold text-center">No. ID Card</th>
+                <th className="p-4 text-gold-600 font-bold text-center">Bulan Ke-</th>
+                <th className="p-4 text-gold-600 font-bold">Kategori</th>
+                <th className="p-4 text-gold-600 font-bold">Status</th>
+                <th className="p-4 text-gold-600 font-bold text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -350,49 +350,49 @@ export default function MasterSantriPage() {
                 <tr>
                   <td colSpan={7} className="p-10 text-center">
                     <div className="flex items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                      <span className="text-blue-500 font-medium">Memuat data...</span>
+                      <div className="w-6 h-6 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin"></div>
+                      <span className="text-gray-400 font-medium">Memuat data...</span>
                     </div>
                   </td>
                 </tr>
               ) : dataDitampilkan.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-blue-300 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
+                  <td colSpan={7} className="p-10 text-center text-gray-500 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
                 </tr>
               ) : (
                 dataDitampilkan.map((santri, index) => (
-                  <tr key={santri.id} className={`border-b border-blue-50 hover:bg-blue-50/50 transition ${!santri.isAktif ? 'bg-red-50/50 opacity-75' : ''}`}>
+                  <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
                     <td className="p-4 text-center">
-                      <span className="bg-blue-100 text-blue-700 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
+                      <span className="bg-dark-900 border border-gold-500/20 text-gold-500 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
                         {index + 1}
                       </span>
                     </td>
                     <td className="p-4">
-                      <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-700 line-through' : 'text-blue-900'}`}>
+                      <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-500 line-through' : 'text-gray-200'}`}>
                         {santri.nama} {santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
                       </p>
-                      <p className="text-xs text-blue-400 mt-1">
+                      <p className="text-xs text-gray-500 mt-1">
                         Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
                       </p>
                     </td>
-                    <td className="p-4 text-center font-bold text-blue-900">
+                    <td className="p-4 text-center font-bold text-gold-400">
                       {santri.kategori === 'KSU' ? '-' : santri.riwayat?.[0]?.nomorIdCard || '-'}
                     </td>
-                    <td className="p-4 text-center font-bold text-blue-900">
+                    <td className="p-4 text-center font-bold text-gold-400">
                       {santri.riwayat?.[0]?.bulanKe || '-'}
                     </td>
                     <td className="p-4">
-                      <span className={`px-3 py-1 text-xs font-bold rounded-lg shadow-sm text-white ${santri.kategori === 'KSU' ? 'bg-purple-600' : santri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
+                      <span className={`px-3 py-1 text-xs font-bold rounded-lg shadow-sm text-white ${santri.kategori === 'KSU' ? 'bg-purple-900/80' : santri.kategori === 'LAMA' ? 'bg-orange-800' : 'bg-green-800'}`}>
                         {santri.kategori}
                       </span>
                     </td>
                     <td className="p-4">
                       {santri.isAktif ? (
-                        <span className="px-3 py-1 bg-green-50 text-green-800 border border-green-200 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                        <span className="px-3 py-1 bg-green-900/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
                           <IconCheck /> Aktif
                         </span>
                       ) : (
-                        <span className="px-3 py-1 bg-red-50 text-red-800 border border-red-200 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                        <span className="px-3 py-1 bg-red-900/20 text-red-500 border border-red-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
                           <IconX /> Keluar
                         </span>
                       )}
@@ -401,28 +401,28 @@ export default function MasterSantriPage() {
                       <div className="flex justify-center gap-1.5 flex-wrap">
                         <button
                           onClick={() => setRiwayatTerpilih(santri)}
-                          className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition text-xs font-bold border border-blue-200 flex items-center gap-1"
+                          className="bg-dark-900 text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gold-500/20 flex items-center gap-1"
                         >
                           <IconDocument /> Riwayat
                         </button>
 
                         <button
                           onClick={() => bukaEditModal(santri)}
-                          className="bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded-lg hover:bg-yellow-100 transition text-xs font-bold border border-yellow-200 flex items-center gap-1"
+                          className="bg-dark-900 text-gray-400 hover:text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gray-700 flex items-center gap-1"
                         >
                           <IconEdit /> Edit
                         </button>
 
                         <button
                           onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
-                          className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`}
+                          className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
                         >
                           {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
                         </button>
 
                         <button
                           onClick={() => hapusSantri(santri.id, santri.nama)}
-                          className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition text-xs font-bold border border-red-200 flex items-center gap-1"
+                          className="bg-dark-900 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-900/20 transition text-xs font-bold border border-red-900/50 flex items-center gap-1"
                         >
                           <IconTrash /> Hapus
                         </button>
@@ -438,30 +438,30 @@ export default function MasterSantriPage() {
 
       {/* MODAL EDIT SANTRI */}
       {editModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-5">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2"><IconEdit /> Edit Data Santri</h2>
-              <p className="text-white/80 text-sm mt-1">Perbarui informasi santri</p>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+            <div className="bg-dark-900 border-b border-gold-500/10 p-5">
+              <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconEdit /> Edit Data Santri</h2>
+              <p className="text-gray-400 text-sm mt-1">Perbarui informasi santri</p>
             </div>
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Nama Lengkap</label>
-                <input type="text" value={editNama} onChange={(e) => setEditNama(e.target.value)} className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white" />
+                <label className="block text-sm font-bold text-gray-300 mb-1">Nama Lengkap</label>
+                <input type="text" value={editNama} onChange={(e) => setEditNama(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-blue-900 mb-1">Kategori</label>
-                  <select value={editKategori} onChange={(e) => setEditKategori(e.target.value)} className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white font-bold">
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Kategori</label>
+                  <select value={editKategori} onChange={(e) => setEditKategori(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
                     <option value="BARU">BARU</option>
                     <option value="LAMA">LAMA</option>
                     <option value="KSU">KSU</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-blue-900 mb-1">Gender</label>
-                  <select value={editGender} onChange={(e) => setEditGender(e.target.value)} className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white font-bold">
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Gender</label>
+                  <select value={editGender} onChange={(e) => setEditGender(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
                     <option value="BANIN">Banin</option>
                     <option value="BANAT">Banat</option>
                   </select>
@@ -469,9 +469,9 @@ export default function MasterSantriPage() {
               </div>
             </div>
 
-            <div className="p-5 border-t border-blue-50 bg-blue-50/30 flex justify-end gap-3">
-              <button onClick={() => setEditModal(null)} className="px-5 py-2.5 text-blue-600 font-bold hover:bg-blue-100 rounded-xl transition">Batal</button>
-              <button onClick={simpanEdit} disabled={editLoading} className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all active:scale-95 shadow-sm">
+            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+              <button onClick={() => setEditModal(null)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+              <button onClick={simpanEdit} disabled={editLoading} className="px-6 py-2.5 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
                 {editLoading ? "Menyimpan..." : "Simpan Perubahan"}
               </button>
             </div>
@@ -481,14 +481,14 @@ export default function MasterSantriPage() {
 
       {/* MODAL RIWAYAT */}
       {riwayatTerpilih && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className="bg-gradient-to-r from-blue-800 to-blue-700 p-5 flex justify-between items-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+            <div className="bg-dark-900 border-b border-gold-500/10 p-5 flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2"><IconDocument /> Buku Riwayat Asrama</h2>
-                <p className="text-blue-200 text-sm mt-1">Santri: <strong>{riwayatTerpilih.nama}</strong></p>
+                <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconDocument /> Buku Riwayat Asrama</h2>
+                <p className="text-gray-400 text-sm mt-1">Santri: <strong className="text-gray-200">{riwayatTerpilih.nama}</strong></p>
               </div>
-              <button onClick={() => setRiwayatTerpilih(null)} className="text-white hover:text-red-300 font-bold text-xl transition">
+              <button onClick={() => setRiwayatTerpilih(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl transition">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -497,35 +497,35 @@ export default function MasterSantriPage() {
 
             <div className="p-6 overflow-y-auto flex-1">
               {riwayatTerpilih.riwayat.length === 0 ? (
-                <div className="text-center py-10 text-blue-300">Belum ada catatan riwayat penempatan.</div>
+                <div className="text-center py-10 text-gray-500">Belum ada catatan riwayat penempatan.</div>
               ) : (
                 <div className="space-y-4">
                   {riwayatTerpilih.riwayat.map((rekamJejejak: any, index: number) => (
-                    <div key={rekamJejejak.id} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm flex items-start gap-4 hover:shadow-md transition">
-                      <div className="bg-blue-100 text-blue-800 font-bold w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-blue-200">
+                    <div key={rekamJejejak.id} className="bg-dark-900 p-4 rounded-xl border border-gold-500/10 shadow-sm flex items-start gap-4 hover:border-gold-500/30 transition">
+                      <div className="bg-dark-800 text-gold-500 font-bold w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-gold-500/20">
                         #{riwayatTerpilih.riwayat.length - index}
                       </div>
 
                       <div className="flex-1">
-                        <h3 className="font-bold text-lg text-blue-900 border-b border-blue-50 pb-1 mb-2">
+                        <h3 className="font-bold text-lg text-gold-400 border-b border-gold-500/10 pb-1 mb-2">
                           {rekamJejejak.dufah?.nama || "Duf'ah Tidak Diketahui"}
                         </h3>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>
-                            <p className="text-blue-400">Status ID Card:</p>
-                            <p className="font-semibold text-blue-900 flex items-center gap-1">
+                            <p className="text-gray-400">Status ID Card:</p>
+                            <p className="font-semibold text-gray-200 flex items-center gap-1">
                               {rekamJejejak.isIdCardTaken ? <><IconCheck /> Diambil</> : "Menunggu"}
                             </p>
                           </div>
                           <div>
-                            <p className="text-blue-400">Status Kamar:</p>
-                            <p className="font-semibold text-blue-900">
+                            <p className="text-gray-400">Status Kamar:</p>
+                            <p className="font-semibold text-gray-200">
                               {rekamJejejak.status === "ASSIGNED" ? "Mendapat Kamar" : "Antrean / Belum Dapat"}
                             </p>
                           </div>
-                          <div className="col-span-2 mt-1 bg-blue-50 p-2 rounded-lg border border-blue-100">
-                            <p className="text-blue-400 text-xs">Lokasi Lemari (Bulan ke-{rekamJejejak.bulanKe}):</p>
-                            <p className="font-bold text-blue-800">
+                          <div className="col-span-2 mt-1 bg-dark-800 p-2 rounded-lg border border-gold-500/10">
+                            <p className="text-gray-400 text-xs">Lokasi Lemari (Bulan ke-{rekamJejejak.bulanKe}):</p>
+                            <p className="font-bold text-gray-200">
                               {rekamJejejak.lemari
                                 ? `${rekamJejejak.lemari.kamar.sakan.nama} | Kamar ${rekamJejejak.lemari.kamar.nama} - Loker ${rekamJejejak.lemari.nomor}`
                                 : "Belum ditentukan"
@@ -540,8 +540,8 @@ export default function MasterSantriPage() {
               )}
             </div>
 
-            <div className="p-5 border-t border-blue-100 bg-blue-50/30 text-right">
-              <button onClick={() => setRiwayatTerpilih(null)} className="px-6 py-2.5 bg-blue-100 text-blue-800 font-bold rounded-xl hover:bg-blue-200 transition">
+            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
+              <button onClick={() => setRiwayatTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
                 Tutup
               </button>
             </div>

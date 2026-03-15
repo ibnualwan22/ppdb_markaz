@@ -212,43 +212,43 @@ export default function MasterLokasiPage() {
 
   const RenderSakanCard = ({ sakan }: { sakan: any }) => {
     const isBanat = sakan.kategori === "BANAT";
-    const headerColor = sakan.isLocked ? 'bg-gray-600' : isBanat ? 'bg-gradient-to-r from-pink-700 to-pink-600' : 'bg-gradient-to-r from-blue-800 to-blue-700';
+    const headerColor = sakan.isLocked ? 'bg-dark-900' : isBanat ? 'bg-gradient-to-r from-rose-900 to-rose-800' : 'bg-dark-900 border-b border-gold-500/10';
 
     return (
-      <div className={`rounded-2xl shadow-sm border overflow-hidden transition-all ${sakan.isLocked ? 'bg-gray-200 border-gray-400 opacity-80' : 'bg-white border-blue-100'}`}>
-        <div className={`${headerColor} p-4 flex justify-between items-center text-white`}>
+      <div className={`rounded-2xl shadow-sm border overflow-hidden transition-all ${sakan.isLocked ? 'bg-dark-900 border-gray-800 opacity-80' : 'bg-dark-800 border-gold-500/20 hover:border-gold-500/50'}`}>
+        <div className={`${headerColor} p-4 flex justify-between items-center text-gray-200`}>
           <div>
-            <h3 className={`font-bold text-xl flex items-center gap-2 ${sakan.isLocked ? 'line-through text-gray-300' : ''}`}>
-              {sakan.isLocked && <IconLock className="h-4 w-4" />} {sakan.nama}
+            <h3 className={`font-bold text-xl flex items-center gap-2 ${sakan.isLocked ? 'line-through text-gray-500' : 'text-gold-500'}`}>
+              {sakan.isLocked && <IconLock className="h-4 w-4 text-gray-500" />} {sakan.nama}
             </h3>
-            <span className="text-xs font-bold bg-white/20 text-white px-2 py-0.5 rounded uppercase">{sakan.kategori || "BANIN"}</span>
+            <span className="text-xs font-bold bg-dark-800 text-gold-500 border border-gold-500/20 px-2 py-0.5 rounded uppercase">{sakan.kategori || "BANIN"}</span>
           </div>
           <div className="flex gap-1">
-            <button onClick={() => toggleLock('sakan', sakan.id, sakan.isLocked)} className={`text-xs px-2 py-1 rounded font-bold flex items-center gap-1 ${sakan.isLocked ? 'bg-yellow-500 text-black' : 'bg-white/20 hover:bg-white/30'}`}>
+            <button onClick={() => toggleLock('sakan', sakan.id, sakan.isLocked)} className={`text-xs px-2 py-1 rounded font-bold flex items-center gap-1 border ${sakan.isLocked ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' : 'bg-dark-800 text-gray-400 border-gray-700 hover:bg-dark-900'}`}>
               {sakan.isLocked ? <><IconUnlock className="h-3 w-3" /> Buka</> : <><IconLock className="h-3 w-3" /> Kunci</>}
             </button>
-            <button onClick={() => aksiData('sakan', 'edit', sakan.id, sakan.nama, sakan.kategori)} className="text-xs bg-white/20 hover:bg-white/40 px-2 py-1 rounded flex items-center gap-1"><IconEdit className="h-3 w-3" /></button>
-            <button onClick={() => aksiData('sakan', 'hapus', sakan.id, sakan.nama)} className="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded flex items-center gap-1"><IconTrash className="h-3 w-3" /></button>
+            <button onClick={() => aksiData('sakan', 'edit', sakan.id, sakan.nama, sakan.kategori)} className="text-xs bg-dark-800 text-gray-400 border border-gray-700 hover:bg-dark-900 px-2 py-1 rounded flex items-center gap-1"><IconEdit className="h-3 w-3" /></button>
+            <button onClick={() => aksiData('sakan', 'hapus', sakan.id, sakan.nama)} className="text-xs bg-red-900/20 text-red-500 border border-red-900/30 hover:bg-red-900/50 px-2 py-1 rounded flex items-center gap-1"><IconTrash className="h-3 w-3" /></button>
           </div>
         </div>
 
-        <div className="p-4 bg-gray-50/50">
+        <div className="p-4 bg-dark-900/50">
           {sakan.kamar.length === 0 ? (
             <p className="text-sm text-gray-500 italic">Belum ada kamar.</p>
           ) : (
             <div className="space-y-4">
               {sakan.kamar.map((kamar: any) => (
-                <div key={kamar.id} className={`p-3 rounded-xl border shadow-sm transition-all ${kamar.isLocked ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
-                  <div className="flex justify-between items-center border-b pb-2 mb-2">
-                    <span className={`font-bold flex items-center gap-1 ${kamar.isLocked ? 'text-red-700 line-through' : 'text-gray-800'}`}>
+                <div key={kamar.id} className={`p-3 rounded-xl border shadow-sm transition-all ${kamar.isLocked ? 'bg-red-900/10 border-red-900/30' : 'bg-dark-900 border-gold-500/10'}`}>
+                  <div className="flex justify-between items-center border-b border-gold-500/10 pb-2 mb-2">
+                    <span className={`font-bold flex items-center gap-1 ${kamar.isLocked ? 'text-red-500 line-through' : 'text-gold-400'}`}>
                       {kamar.isLocked && <IconLock className="h-3.5 w-3.5" />} Kamar {kamar.nama}
                     </span>
                     <div className="flex gap-1">
-                      <button onClick={() => toggleLock('kamar', kamar.id, kamar.isLocked)} className={`text-[10px] px-2 py-1 rounded border font-bold flex items-center gap-1 ${kamar.isLocked ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <button onClick={() => toggleLock('kamar', kamar.id, kamar.isLocked)} className={`text-[10px] px-2 py-1 rounded border font-bold flex items-center gap-1 ${kamar.isLocked ? 'bg-green-900/20 text-green-500 border-green-900/30' : 'bg-red-900/20 text-red-500 border-red-900/30'}`}>
                         {kamar.isLocked ? <><IconUnlock className="h-2.5 w-2.5" /> Buka</> : <><IconLock className="h-2.5 w-2.5" /> Kunci</>}
                       </button>
-                      <button onClick={() => aksiData('kamar', 'edit', kamar.id, kamar.nama)} className="text-[10px] text-blue-600 hover:bg-blue-50 px-2 py-1 rounded border flex items-center gap-1"><IconEdit className="h-2.5 w-2.5" /> Edit</button>
-                      <button onClick={() => aksiData('kamar', 'hapus', kamar.id, kamar.nama)} className="text-[10px] text-red-600 hover:bg-red-50 px-2 py-1 rounded border flex items-center gap-1"><IconTrash className="h-2.5 w-2.5" /> Hapus</button>
+                      <button onClick={() => aksiData('kamar', 'edit', kamar.id, kamar.nama)} className="text-[10px] text-gray-400 hover:text-gold-500 bg-dark-800 border-gray-700 px-2 py-1 rounded border flex items-center gap-1"><IconEdit className="h-2.5 w-2.5" /> Edit</button>
+                      <button onClick={() => aksiData('kamar', 'hapus', kamar.id, kamar.nama)} className="text-[10px] text-red-500 bg-dark-800 border-gray-700 hover:text-red-400 px-2 py-1 rounded border flex items-center gap-1"><IconTrash className="h-2.5 w-2.5" /> Hapus</button>
                     </div>
                   </div>
                   
@@ -262,30 +262,30 @@ export default function MasterLokasiPage() {
                         
                         return (
                           <div key={lemari.id} className={`flex flex-col border p-2 rounded relative group transition-all 
-                            ${lemari.isLocked ? 'bg-gray-200 border-gray-400 opacity-75' 
-                            : isBentrok ? 'bg-red-100 border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' 
-                            : isTerisi ? 'bg-blue-50 border-blue-200' 
-                            : 'bg-gray-50 border-gray-200 border-dashed'}`}>
+                            ${lemari.isLocked ? 'bg-dark-900 border-gray-800 opacity-75' 
+                            : isBentrok ? 'bg-red-900/20 border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]' 
+                            : isTerisi ? 'bg-dark-800 border-gold-500/30' 
+                            : 'bg-dark-900 border-gray-800 border-dashed hover:border-gold-500/50'}`}>
                             
                             <div className="flex justify-between items-start mb-2">
-                              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm ${isBentrok ? 'bg-red-600 text-white' : 'bg-white text-gray-600'}`}>
+                              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm border ${isBentrok ? 'bg-red-600 text-white border-red-600' : 'bg-dark-900 text-gray-400 border-gray-800'}`}>
                                 {lemari.isLocked && <IconLock className="h-2.5 w-2.5 inline mr-0.5" />} Loker {lemari.nomor}
                               </span>
-                              <div className="flex gap-1">
-                                <button onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)} className="text-[10px] bg-white rounded px-1 shadow-sm border hover:bg-gray-100 flex items-center">{lemari.isLocked ? <IconUnlock className="h-2.5 w-2.5" /> : <IconLock className="h-2.5 w-2.5" />}</button>
-                                <button onClick={() => aksiData('lemari', 'edit', lemari.id, lemari.nomor)} className="text-[10px] bg-white rounded px-1 shadow-sm border hover:bg-gray-100 flex items-center"><IconEdit className="h-2.5 w-2.5" /></button>
-                                <button onClick={() => aksiData('lemari', 'hapus', lemari.id, lemari.nomor)} className="text-[10px] bg-white rounded px-1 shadow-sm border hover:bg-gray-100 text-red-500 flex items-center"><IconTrash className="h-2.5 w-2.5" /></button>
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)} className="text-[10px] bg-dark-900 text-gray-400 rounded px-1 shadow-sm border border-gray-700 hover:bg-dark-800 flex items-center">{lemari.isLocked ? <IconUnlock className="h-2.5 w-2.5" /> : <IconLock className="h-2.5 w-2.5" />}</button>
+                                <button onClick={() => aksiData('lemari', 'edit', lemari.id, lemari.nomor)} className="text-[10px] bg-dark-900 text-gray-400 rounded px-1 shadow-sm border border-gray-700 hover:bg-dark-800 flex items-center"><IconEdit className="h-2.5 w-2.5" /></button>
+                                <button onClick={() => aksiData('lemari', 'hapus', lemari.id, lemari.nomor)} className="text-[10px] bg-dark-900 text-red-500 rounded px-1 shadow-sm border border-gray-700 hover:bg-dark-800 flex items-center"><IconTrash className="h-2.5 w-2.5" /></button>
                               </div>
                             </div>
 
                             {isTerisi ? (
                               <div className="space-y-1 mt-auto">
                                 {lemari.penghuni.map((p:any) => (
-                                  <div key={p.id} className="flex justify-between items-center bg-white/70 px-1.5 py-1 rounded border border-white/50">
-                                    <p className="font-bold text-xs truncate max-w-[100px]" title={p.santri.nama}>{p.santri.nama}</p>
+                                  <div key={p.id} className="flex justify-between items-center bg-dark-900 px-1.5 py-1 rounded border border-gold-500/20">
+                                    <p className="font-bold text-xs text-gray-200 truncate max-w-[100px]" title={p.santri.nama}>{p.santri.nama}</p>
                                     <button 
                                       onClick={() => bukaModalPindah(p.id, p.santri.nama, sakan.kategori)}
-                                      className="text-[10px] bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 px-1.5 py-0.5 rounded transition shadow-sm font-bold flex items-center gap-0.5"
+                                      className="text-[10px] bg-gold-500/10 hover:bg-gold-500 hover:text-black text-gold-500 border border-gold-500/30 px-1.5 py-0.5 rounded transition shadow-sm font-bold flex items-center gap-0.5"
                                       title="Pindah Kamar"
                                     >
                                       <IconRefresh className="h-2.5 w-2.5" /> Pindah
@@ -294,7 +294,7 @@ export default function MasterLokasiPage() {
                                 ))}
                               </div>
                             ) : (
-                              <div className="mt-auto text-center"><span className="text-xs text-gray-400 italic">Kosong</span></div>
+                              <div className="mt-auto text-center"><span className="text-xs text-gray-600 italic">Kosong</span></div>
                             )}
                           </div>
                         );
@@ -312,53 +312,53 @@ export default function MasterLokasiPage() {
 
   return (
     <div ref={mainRef} className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
-      <div className="mb-8 border-b border-blue-100 pb-6">
-        <h1 className="text-3xl font-extrabold text-blue-900">Master Lokasi Asrama</h1>
-        <p className="text-blue-500 mt-1 font-medium">Kelola sakan, kamar, dan lemari asrama.</p>
+      <div className="mb-8 border-b border-gold-500/10 pb-6">
+        <h1 className="text-3xl font-extrabold text-gold-500">Master Lokasi Asrama</h1>
+        <p className="text-gray-400 mt-1 font-medium">Kelola sakan, kamar, dan lemari asrama.</p>
       </div>
 
       {/* Form Tambah */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <form onSubmit={tambahSakan} className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100">
-          <h2 className="font-bold text-lg mb-4 text-blue-700">1. Tambah Sakan</h2>
-          <input type="text" value={namaSakan} onChange={(e) => setNamaSakan(e.target.value)} placeholder="Nama Sakan (Cth: Alkaf)" className="w-full p-3 mb-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400" required />
-          <select value={kategoriSakan} onChange={(e) => setKategoriSakan(e.target.value)} className="w-full p-3 mb-3 border border-blue-200 rounded-xl font-bold text-blue-700 outline-none focus:ring-2 focus:ring-blue-400 bg-white" >
+        <form onSubmit={tambahSakan} className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20">
+          <h2 className="font-bold text-lg mb-4 text-gold-500">1. Tambah Sakan</h2>
+          <input type="text" value={namaSakan} onChange={(e) => setNamaSakan(e.target.value)} placeholder="Nama Sakan (Cth: Alkaf)" className="w-full p-3 mb-3 border border-dark-900 bg-dark-900 text-gray-200 placeholder:text-gray-600 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" required />
+          <select value={kategoriSakan} onChange={(e) => setKategoriSakan(e.target.value)} className="w-full p-3 mb-3 border border-dark-900 bg-dark-900 text-gold-500 rounded-xl font-bold outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" >
             <option value="BANIN">Putra (BANIN)</option>
             <option value="BANAT">Putri (BANAT)</option>
           </select>
-          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all active:scale-95 shadow-sm">Simpan Sakan</button>
+          <button type="submit" disabled={loading} className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] active:scale-95">Simpan Sakan</button>
         </form>
-        <form onSubmit={tambahKamar} className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100">
-          <h2 className="font-bold text-lg mb-4 text-blue-700">2. Tambah Kamar</h2>
-          <select value={sakanIdKamar} onChange={(e) => setSakanIdKamar(e.target.value)} className="w-full p-3 mb-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white" required >
+        <form onSubmit={tambahKamar} className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20">
+          <h2 className="font-bold text-lg mb-4 text-gold-500">2. Tambah Kamar</h2>
+          <select value={sakanIdKamar} onChange={(e) => setSakanIdKamar(e.target.value)} className="w-full p-3 mb-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" required >
             <option value="">-- Pilih Sakan --</option>
             {dataSakan.map((s) => <option key={s.id} value={s.id}>{s.nama} ({s.kategori})</option>)}
           </select>
-          <input type="text" value={namaKamar} onChange={(e) => setNamaKamar(e.target.value)} placeholder="Nama Kamar (Cth: A)" className="w-full p-3 mb-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400" required />
-          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all active:scale-95 shadow-sm">Simpan Kamar</button>
+          <input type="text" value={namaKamar} onChange={(e) => setNamaKamar(e.target.value)} placeholder="Nama Kamar (Cth: A)" className="w-full p-3 mb-3 border border-dark-900 bg-dark-900 text-gray-200 placeholder:text-gray-600 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" required />
+          <button type="submit" disabled={loading} className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] active:scale-95">Simpan Kamar</button>
         </form>
-        <form onSubmit={tambahLemari} className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100">
-          <h2 className="font-bold text-lg mb-4 text-blue-700">3. Tambah Lemari</h2>
-          <select value={kamarIdLemari} onChange={(e) => setKamarIdLemari(e.target.value)} className="w-full p-3 mb-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white" required >
+        <form onSubmit={tambahLemari} className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20">
+          <h2 className="font-bold text-lg mb-4 text-gold-500">3. Tambah Lemari</h2>
+          <select value={kamarIdLemari} onChange={(e) => setKamarIdLemari(e.target.value)} className="w-full p-3 mb-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" required >
             <option value="">-- Pilih Kamar --</option>
             {dataSakan.map((s) => s.kamar.map((k: any) => <option key={k.id} value={k.id}>{s.nama} - Kamar {k.nama}</option>))}
           </select>
-          <input type="text" value={nomorLemari} onChange={(e) => setNomorLemari(e.target.value)} placeholder="Nomor Lemari (Cth: A1)" className="w-full p-3 mb-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400" required />
-          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all active:scale-95 shadow-sm">Simpan Lemari</button>
+          <input type="text" value={nomorLemari} onChange={(e) => setNomorLemari(e.target.value)} placeholder="Nomor Lemari (Cth: A1)" className="w-full p-3 mb-3 border border-dark-900 bg-dark-900 text-gray-200 placeholder:text-gray-600 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" required />
+          <button type="submit" disabled={loading} className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] active:scale-95">Simpan Lemari</button>
         </form>
       </div>
 
-      <div className="mb-6 bg-yellow-50 p-4 rounded-xl border border-yellow-200 flex items-center gap-3">
+      <div className="mb-6 bg-yellow-900/20 p-4 rounded-xl border border-yellow-500/30 flex items-center gap-3">
         <IconWarning />
-        <p className="text-sm text-yellow-800 font-medium">Jika ada loker warna merah (Bentrok), klik tombol Pindah untuk memindahkan santri.</p>
+        <p className="text-sm text-yellow-500 font-medium">Jika ada loker warna merah (Bentrok), klik tombol Pindah untuk memindahkan santri.</p>
       </div>
 
       {/* BANIN SECTION */}
       {sakanBanin.length > 0 && (
         <div className="mb-10">
-          <h2 className="text-2xl font-black text-blue-800 mb-6 flex items-center gap-2 border-b-2 border-blue-200 pb-2">
-            <IconMale /> Sakan Banin (Putra)
-            <span className="text-sm font-medium text-gray-400 ml-2">({sakanBanin.length} Sakan)</span>
+          <h2 className="text-2xl font-black text-gold-500 mb-6 flex items-center gap-2 border-b border-gold-500/10 pb-2">
+            <IconMale /> <span className="text-gray-200">Sakan</span> Banin (Putra)
+            <span className="text-sm font-medium text-gray-500 ml-2">({sakanBanin.length} Sakan)</span>
           </h2>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {sakanBanin.map((sakan) => <RenderSakanCard key={sakan.id} sakan={sakan} />)}
@@ -369,9 +369,9 @@ export default function MasterLokasiPage() {
       {/* BANAT SECTION */}
       {sakanBanat.length > 0 && (
         <div className="mb-10">
-          <h2 className="text-2xl font-black text-pink-800 mb-6 flex items-center gap-2 border-b-2 border-pink-200 pb-2">
-            <IconFemale /> Sakan Banat (Putri)
-            <span className="text-sm font-medium text-gray-400 ml-2">({sakanBanat.length} Sakan)</span>
+          <h2 className="text-2xl font-black text-rose-500 mb-6 flex items-center gap-2 border-b border-gold-500/10 pb-2">
+            <IconFemale /> <span className="text-gray-200">Sakan</span> Banat (Putri)
+            <span className="text-sm font-medium text-gray-500 ml-2">({sakanBanat.length} Sakan)</span>
           </h2>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {sakanBanat.map((sakan) => <RenderSakanCard key={sakan.id} sakan={sakan} />)}
@@ -380,38 +380,38 @@ export default function MasterLokasiPage() {
       )}
 
       {dataSakan.length === 0 && (
-        <div className="text-center py-20 text-blue-300 font-medium">Belum ada data Sakan.</div>
+        <div className="text-center py-20 text-gray-500 font-medium">Belum ada data Sakan.</div>
       )}
 
       {/* MODAL PINDAH KAMAR */}
       {isModalPindahOpen && santriPindah && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className={`p-5 ${santriPindah.gender === 'BANAT' ? 'bg-gradient-to-r from-pink-600 to-pink-500' : 'bg-gradient-to-r from-blue-700 to-blue-600'}`}>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2"><IconRefresh className="h-5 w-5" /> Pindah Lokasi Kamar</h2>
-              <p className="text-white/80 text-sm mt-1">Pilih kamar baru untuk: <strong>{santriPindah.nama}</strong></p>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-800 rounded-2xl shadow-2xl border border-gold-500/20 w-full max-w-lg overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+            <div className={`p-5 bg-dark-900 border-b border-gold-500/10`}>
+              <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconRefresh className="h-5 w-5" /> Pindah Lokasi Kamar</h2>
+              <p className="text-gray-400 text-sm mt-1">Pilih kamar baru untuk: <strong className="text-gray-200">{santriPindah.nama}</strong></p>
             </div>
             
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Pilih Sakan Tujuan</label>
-                <select value={sakanTujuan} onChange={(e) => { setSakanTujuan(e.target.value); setKamarTujuan(""); setLemariTujuan(""); }} className="w-full p-3 border border-blue-200 rounded-xl outline-none bg-white font-bold focus:ring-2 focus:ring-blue-400">
+                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Sakan Tujuan</label>
+                <select value={sakanTujuan} onChange={(e) => { setSakanTujuan(e.target.value); setKamarTujuan(""); setLemariTujuan(""); }} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 font-bold focus:ring-1 focus:ring-gold-500/50 text-gray-200">
                   <option value="">-- Pilih Sakan --</option>
                   {sakanPindahDifilter.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Pilih Kamar Tujuan</label>
-                <select value={kamarTujuan} onChange={(e) => { setKamarTujuan(e.target.value); setLemariTujuan(""); }} disabled={!sakanTujuan} className="w-full p-3 border border-blue-200 rounded-xl outline-none bg-white disabled:bg-gray-50 focus:ring-2 focus:ring-blue-400">
+                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Kamar Tujuan</label>
+                <select value={kamarTujuan} onChange={(e) => { setKamarTujuan(e.target.value); setLemariTujuan(""); }} disabled={!sakanTujuan} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 text-gray-200">
                   <option value="">-- Pilih Kamar --</option>
                   {kamarPindahDifilter.map((k: any) => <option key={k.id} value={k.id}>Kamar {k.nama}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Pilih Lemari (Yang Kosong)</label>
-                <select value={lemariTujuan} onChange={(e) => setLemariTujuan(e.target.value)} disabled={!kamarTujuan} className="w-full p-3 border border-blue-200 rounded-xl outline-none bg-white disabled:bg-gray-50 focus:ring-2 focus:ring-blue-400">
+                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Lemari (Yang Kosong)</label>
+                <select value={lemariTujuan} onChange={(e) => setLemariTujuan(e.target.value)} disabled={!kamarTujuan} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 text-gray-200">
                   <option value="">-- Pilih Lemari --</option>
                   {lemariPindahTersedia.map((l: any) => <option key={l.id} value={l.id}>Loker {l.nomor}</option>)}
                 </select>
@@ -419,9 +419,9 @@ export default function MasterLokasiPage() {
               </div>
             </div>
 
-            <div className="p-5 border-t border-blue-50 bg-blue-50/30 flex justify-end gap-3">
-              <button onClick={() => setIsModalPindahOpen(false)} className="px-5 py-2.5 text-blue-600 font-bold hover:bg-blue-100 rounded-xl transition">Batal</button>
-              <button onClick={eksekusiPindahKamar} disabled={!lemariTujuan || loading} className={`px-6 py-2.5 text-white font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-sm ${santriPindah.gender === 'BANAT' ? 'bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'}`}>
+            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+              <button onClick={() => setIsModalPindahOpen(false)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+              <button onClick={eksekusiPindahKamar} disabled={!lemariTujuan || loading} className={`px-6 py-2.5 bg-gold-500 hover:bg-gold-400 text-black font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]`}>
                 {loading ? "Memproses..." : "Konfirmasi Pindah"}
               </button>
             </div>

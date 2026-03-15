@@ -217,9 +217,9 @@ export default function MejaAsramaPage() {
 
   const RenderDenahBlock = ({ data, judul, warnaTema }: { data: any[], judul: string, warnaTema: 'biru' | 'pink' }) => {
     const isBiru = warnaTema === 'biru';
-    const bgHeader = isBiru ? 'bg-gradient-to-r from-blue-800 to-blue-700' : 'bg-gradient-to-r from-pink-700 to-pink-600';
-    const textWarna = isBiru ? 'text-blue-800' : 'text-pink-800';
-    const bgLemariTerisi = isBiru ? 'bg-blue-50 border-blue-200' : 'bg-pink-50 border-pink-200';
+    const bgHeader = 'bg-dark-800 border-b border-gold-500/10';
+    const textWarna = 'text-gold-500';
+    const bgLemariTerisi = 'bg-dark-800 border-gold-500/30';
 
     return (
       <div className="mb-10">
@@ -239,20 +239,20 @@ export default function MejaAsramaPage() {
             const persen = totalLemari === 0 ? 0 : Math.round((terisi / totalLemari) * 100);
 
             return (
-              <div key={sakan.id} className="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden hover:shadow-md transition-shadow">
-                <div className={`${bgHeader} p-4 text-white`}>
+              <div key={sakan.id} className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden hover:border-gold-500/40 transition-all">
+                <div className={`${bgHeader} p-4 text-gray-200`}>
                   <div className="flex justify-between items-end">
                     <div>
-                      <h3 className="text-xl font-black">{sakan.nama}</h3>
+                      <h3 className="text-xl font-black text-gold-500">{sakan.nama}</h3>
                       <p className="text-sm opacity-80">{sakan.kamar.length} Kamar</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black">{persen}%</p>
+                      <p className="text-2xl font-black text-gold-500">{persen}%</p>
                       <p className="text-xs opacity-80">Terisi: {terisi}/{totalLemari}</p>
                     </div>
                   </div>
-                  <div className="w-full bg-white/30 rounded-full h-2 mt-3">
-                    <div className="bg-white h-2 rounded-full transition-all duration-700" style={{ width: `${persen}%` }}></div>
+                  <div className="w-full bg-dark-900/50 rounded-full h-2 mt-3 border border-gold-500/10">
+                    <div className="bg-gold-500 h-2 rounded-full transition-all duration-700" style={{ width: `${persen}%` }}></div>
                   </div>
                 </div>
 
@@ -264,12 +264,12 @@ export default function MejaAsramaPage() {
                     // LOCKED ROOM DISPLAY
                     if (isKamarLocked) {
                       return (
-                        <div key={kamar.id} className="p-3 rounded-xl border border-gray-300 bg-gray-100">
+                        <div key={kamar.id} className="p-3 rounded-xl border border-gray-800 bg-dark-900">
                           <div className="flex justify-between items-center">
-                            <h4 className="font-bold text-gray-500 flex items-center gap-2 line-through">
-                              <IconLock className="h-4 w-4 text-gray-500" /> Kamar {kamar.nama}
+                            <h4 className="font-bold text-gray-600 flex items-center gap-2 line-through">
+                              <IconLock className="h-4 w-4 text-gray-600" /> Kamar {kamar.nama}
                             </h4>
-                            <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2.5 py-1 rounded-lg border border-gray-300 flex items-center gap-1">
+                            <span className="text-xs font-bold text-gray-600 bg-black/50 px-2.5 py-1 rounded-lg border border-gray-800 flex items-center gap-1">
                               <IconLock className="h-3 w-3" /> Dikunci
                             </span>
                           </div>
@@ -281,10 +281,10 @@ export default function MejaAsramaPage() {
                     const totalK = kamar.lemari.filter((l: any) => !l.isLocked).length;
 
                     return (
-                      <div key={kamar.id} className="p-3 rounded-xl border border-blue-100 bg-blue-50/30">
-                        <div className="flex justify-between items-center mb-2 pb-2 border-b border-blue-100/50">
-                          <h4 className="font-bold text-blue-900">Kamar {kamar.nama}</h4>
-                          <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                      <div key={kamar.id} className="p-3 rounded-xl border border-gold-500/10 bg-dark-900/50">
+                        <div className="flex justify-between items-center mb-2 pb-2 border-b border-gold-500/10">
+                          <h4 className="font-bold text-gold-400">Kamar {kamar.nama}</h4>
+                          <span className="text-xs font-bold text-gold-500 bg-dark-800 px-2 py-0.5 rounded-lg border border-gold-500/20">
                             Kosong: {kosong}/{totalK}
                           </span>
                         </div>
@@ -314,12 +314,12 @@ export default function MejaAsramaPage() {
                               <button
                                 key={lemari.id}
                                 onClick={() => bukaInputModal(sakan, kamar, lemari)}
-                                className="p-2 rounded-lg border border-dashed border-blue-300 bg-white min-h-[65px] flex flex-col justify-between hover:border-blue-500 hover:bg-blue-50 hover:shadow-md transition-all group cursor-pointer"
+                                className="p-2 rounded-lg border border-dashed border-gray-800 bg-dark-900/30 min-h-[65px] flex flex-col justify-between hover:border-gold-500/50 hover:bg-gold-500/5 hover:shadow-md transition-all group cursor-pointer"
                               >
-                                <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded shadow-sm self-start">{lemari.nomor}</span>
+                                <span className="text-[10px] font-black text-gray-400 bg-dark-900 border border-gray-800 px-1.5 py-0.5 rounded shadow-sm self-start">{lemari.nomor}</span>
                                 <div className="text-center w-full">
-                                  <p className="text-xs text-blue-400 italic font-medium group-hover:hidden">Kosong</p>
-                                  <p className="text-xs text-blue-600 font-bold hidden group-hover:flex items-center justify-center gap-1"><IconPlus /> Isi Santri</p>
+                                  <p className="text-xs text-gray-600 italic font-medium group-hover:hidden">Kosong</p>
+                                  <p className="text-xs text-gold-500 font-bold hidden group-hover:flex items-center justify-center gap-1"><IconPlus /> Isi Santri</p>
                                 </div>
                               </button>
                             );
@@ -351,9 +351,9 @@ export default function MejaAsramaPage() {
         </div>
       </div>
 
-      <div className="mb-8 border-b border-blue-100 pb-6">
-        <h1 className="text-3xl font-extrabold text-blue-900">Meja Asrama & Penempatan</h1>
-        <p className="text-blue-500 mt-1 font-medium">Klik lemari kosong untuk menempatkan santri baru.</p>
+      <div className="mb-8 border-b border-gold-500/10 pb-6">
+        <h1 className="text-3xl font-extrabold text-gold-500">Meja Asrama & Penempatan</h1>
+        <p className="text-gray-400 mt-1 font-medium">Klik lemari kosong untuk menempatkan santri baru.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -367,22 +367,22 @@ export default function MejaAsramaPage() {
         </div>
 
         {/* KOLOM KANAN: ANTREAN ROLLING */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 flex flex-col h-[600px] lg:h-auto lg:max-h-[80vh] lg:sticky lg:top-4">
-          <div className="mb-4 border-b border-blue-50 pb-4">
-            <h2 className="text-xl font-bold text-blue-800 flex items-center gap-2"><IconClipboard /> Antrean Rolling</h2>
-            <p className="text-sm text-blue-400 mt-1">Santri lama yang wajib pindah kamar.</p>
+        <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 flex flex-col h-[600px] lg:h-auto lg:max-h-[80vh] lg:sticky lg:top-4">
+          <div className="mb-4 border-b border-gold-500/10 pb-4">
+            <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconClipboard /> Antrean Rolling</h2>
+            <p className="text-sm text-gray-400 mt-1">Santri lama yang wajib pindah kamar.</p>
           </div>
           <div className="flex-1 overflow-y-auto pr-1">
             {antrean.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-blue-300 py-10">
+              <div className="flex flex-col items-center justify-center h-full text-gray-600 py-10">
                 <IconInbox /><p className="font-medium mt-2">Belum ada antrean.</p>
               </div>
             ) : (
               <ul className="space-y-3">
                 {antrean.map((item) => (
-                  <li key={item.id} className="p-4 border border-blue-100 rounded-xl flex justify-between items-center bg-blue-50/30 border-l-4 border-l-red-400 hover:shadow-sm transition">
+                  <li key={item.id} className="p-4 border border-gold-500/10 rounded-xl flex justify-between items-center bg-dark-900/50 border-l-4 border-l-gold-500 hover:border-gold-500/30 transition">
                     <div>
-                      <p className="font-bold text-blue-900 text-lg flex items-center gap-2">
+                      <p className="font-bold text-gray-200 text-lg flex items-center gap-2">
                         {item.santri.nama} {item.santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
                       </p>
                       <div className="flex flex-col gap-1 items-start mt-1">
@@ -394,7 +394,7 @@ export default function MejaAsramaPage() {
                         )}
                       </div>
                     </div>
-                    <button onClick={() => bukaModalAntrean(item.id, item.santri.nama, item.santri.gender)} className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-blue-800 text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0 ml-2">
+                    <button onClick={() => bukaModalAntrean(item.id, item.santri.nama, item.santri.gender)} className="bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 shrink-0 ml-2">
                       Beri Kamar
                     </button>
                   </li>
@@ -407,32 +407,32 @@ export default function MejaAsramaPage() {
 
       {/* MODAL INPUT SANTRI BARU (Dari klik denah) */}
       {isInputModalOpen && selectedLemari && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className={`p-5 ${genderSantri === 'BANAT' ? 'bg-gradient-to-r from-pink-600 to-pink-500' : 'bg-gradient-to-r from-blue-700 to-blue-600'}`}>
-              <h2 className="text-xl font-bold text-white">Input Santri ke Kamar</h2>
-              <p className="text-white/80 text-sm mt-1">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gold-500/20" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+            <div className={`p-5 bg-dark-900 border-b border-gold-500/10`}>
+              <h2 className="text-xl font-bold text-gold-500">Input Santri ke Kamar</h2>
+              <p className="text-gray-400 text-sm mt-1">
                 {selectedSakan?.nama} → Kamar {selectedKamar?.nama} → Lemari {selectedLemari?.nomor}
               </p>
             </div>
 
             <form onSubmit={simpanSantriDariDenah} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Nama Lengkap</label>
-                <input type="text" value={namaSantri} onChange={(e) => setNamaSantri(e.target.value)} placeholder="Cth: Ahmad / Siti" className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white" required />
+                <label className="block text-sm font-bold text-gray-300 mb-1">Nama Lengkap</label>
+                <input type="text" value={namaSantri} onChange={(e) => setNamaSantri(e.target.value)} placeholder="Cth: Ahmad / Siti" className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 focus:border-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner" required />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-blue-900 mb-1">Gender</label>
-                  <select value={genderSantri} onChange={(e) => setGenderSantri(e.target.value)} className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white font-bold text-blue-700" disabled>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Gender</label>
+                  <select value={genderSantri} onChange={(e) => setGenderSantri(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 font-bold text-gold-500 shadow-inner" disabled>
                     <option value="BANIN">Putra (BANIN)</option>
                     <option value="BANAT">Putri (BANAT)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-blue-900 mb-1">Kategori Santri</label>
-                  <select value={kategori} onChange={(e) => setKategori(e.target.value)} className="w-full p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Kategori Santri</label>
+                  <select value={kategori} onChange={(e) => setKategori(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner">
                     <option value="BARU">BARU</option>
                     <option value="LAMA">LAMA</option>
                     <option value="KSU">KSU</option>
@@ -441,9 +441,9 @@ export default function MejaAsramaPage() {
               </div>
 
               {kategori === "LAMA" && (
-                <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
-                  <label className="block text-sm font-bold text-yellow-800 mb-1">Sudah menetap berapa bulan?</label>
-                  <select value={bulanKe} onChange={(e) => setBulanKe(e.target.value)} className="w-full p-3 border border-yellow-300 rounded-xl outline-none bg-white">
+                <div className="bg-yellow-900/10 p-4 rounded-xl border border-yellow-500/20">
+                  <label className="block text-sm font-bold text-yellow-500 mb-1">Sudah menetap berapa bulan?</label>
+                  <select value={bulanKe} onChange={(e) => setBulanKe(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 focus:ring-1 focus:ring-gold-500/50">
                     <option value="2">Bulan ke-2 (Baru menempati bulan lalu)</option>
                     <option value="3">Bulan ke-3 (Bulan depan wajib rolling)</option>
                     <option value="6">Bulan ke-6 (testing)</option>
@@ -451,9 +451,9 @@ export default function MejaAsramaPage() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-blue-50">
-                <button type="button" onClick={tutupInputModal} className="px-5 py-2.5 text-blue-600 font-bold hover:bg-blue-50 rounded-xl transition">Batal</button>
-                <button type="submit" disabled={loading} className={`px-6 py-2.5 text-white font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 ${genderSantri === 'BANAT' ? 'bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'}`}>
+              <div className="flex justify-end gap-3 pt-4 border-t border-gold-500/10">
+                <button type="button" onClick={tutupInputModal} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                <button type="submit" disabled={loading} className={`px-6 py-2.5 text-black font-bold rounded-xl shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all active:scale-95 disabled:opacity-50 bg-gold-500 hover:bg-gold-400`}>
                   {loading ? "Menyimpan..." : "Simpan & Assign"}
                 </button>
               </div>
@@ -464,38 +464,38 @@ export default function MejaAsramaPage() {
 
       {/* MODAL PENEMPATAN ANTREAN */}
       {isModalOpen && santriAntrean && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className={`p-5 ${santriAntrean.gender === 'BANAT' ? 'bg-gradient-to-r from-pink-600 to-pink-500' : 'bg-gradient-to-r from-blue-700 to-blue-600'}`}>
-              <h2 className="text-xl font-bold text-white">Penempatan Kamar Baru</h2>
-              <p className="text-white/80 text-sm mt-1">Untuk: <strong>{santriAntrean.nama}</strong> ({santriAntrean.gender})</p>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gold-500/20" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+            <div className="p-5 bg-dark-900 border-b border-gold-500/10">
+              <h2 className="text-xl font-bold text-gold-500">Penempatan Kamar Baru</h2>
+              <p className="text-gray-400 text-sm mt-1">Untuk: <strong className="text-gray-200">{santriAntrean.nama}</strong> ({santriAntrean.gender})</p>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Pilih Sakan</label>
-                <select value={modalSakanId} onChange={(e) => { setModalSakanId(e.target.value); setModalKamarId(""); setModalLemariId(""); }} className="w-full p-3 border border-blue-200 rounded-xl outline-none bg-white font-bold focus:ring-2 focus:ring-blue-400">
+                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Sakan</label>
+                <select value={modalSakanId} onChange={(e) => { setModalSakanId(e.target.value); setModalKamarId(""); setModalLemariId(""); }} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 font-bold focus:ring-1 focus:ring-gold-500/50 shadow-inner">
                   <option value="">-- Pilih Sakan --</option>
                   {sakanDifilterModal.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Pilih Kamar</label>
-                <select value={modalKamarId} onChange={(e) => { setModalKamarId(e.target.value); setModalLemariId(""); }} disabled={!modalSakanId} className="w-full p-3 border border-blue-200 rounded-xl outline-none bg-white disabled:bg-gray-50 focus:ring-2 focus:ring-blue-400">
+                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Kamar</label>
+                <select value={modalKamarId} onChange={(e) => { setModalKamarId(e.target.value); setModalLemariId(""); }} disabled={!modalSakanId} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 shadow-inner">
                   <option value="">-- Pilih Kamar --</option>
                   {modalDaftarKamar.map((k: any) => <option key={k.id} value={k.id}>Kamar {k.nama}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-blue-900 mb-1">Pilih Lemari</label>
-                <select value={modalLemariId} onChange={(e) => setModalLemariId(e.target.value)} disabled={!modalKamarId} className="w-full p-3 border border-blue-200 rounded-xl outline-none bg-white disabled:bg-gray-50 focus:ring-2 focus:ring-blue-400">
+                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Lemari</label>
+                <select value={modalLemariId} onChange={(e) => setModalLemariId(e.target.value)} disabled={!modalKamarId} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 shadow-inner">
                   <option value="">-- Pilih Lemari --</option>
                   {modalLemariTersedia.map((l: any) => <option key={l.id} value={l.id}>Lemari {l.nomor}</option>)}
                 </select>
               </div>
             </div>
-            <div className="p-5 border-t border-blue-50 bg-blue-50/30 flex justify-end gap-3">
-              <button onClick={tutupModal} className="px-5 py-2.5 text-blue-600 font-bold hover:bg-blue-100 rounded-xl transition">Batal</button>
-              <button onClick={eksekusiAssignModal} disabled={!modalLemariId} className={`px-6 py-2.5 text-white font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-sm ${santriAntrean.gender === 'BANAT' ? 'bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'}`}>
+            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+              <button onClick={tutupModal} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+              <button onClick={eksekusiAssignModal} disabled={!modalLemariId} className={`px-6 py-2.5 text-black font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)] bg-gold-500 hover:bg-gold-400`}>
                 Simpan Penempatan
               </button>
             </div>

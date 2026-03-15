@@ -226,41 +226,41 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
 
       {/* POP-UP NOTIFIKASI */}
       <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
-        <div className="bg-white border-l-4 border-blue-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px]">
-          <div className="bg-blue-100 p-2 rounded-full animate-bounce text-blue-700"><IconBell /></div>
+        <div className="bg-dark-800 border-l-4 border-gold-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px] border-y border-r border-gold-500/20">
+          <div className="bg-dark-900 border border-gold-500/30 p-2 rounded-full animate-bounce text-gold-500"><IconBell /></div>
           <div>
-            <h4 className="font-bold text-blue-800 text-sm">Informasi Baru</h4>
-            <p className="text-gray-600 text-xs font-medium">{notif.pesan}</p>
+            <h4 className="font-bold text-gold-400 text-sm">Informasi Baru</h4>
+            <p className="text-gray-300 text-xs font-medium">{notif.pesan}</p>
           </div>
         </div>
       </div>
 
-      <div className="mb-8 border-b border-blue-100 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="mb-8 border-b border-gold-500/10 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-blue-900">Meja ID Card & Check-In</h1>
-          <p className="text-blue-500 mt-1 font-medium">Verifikasi penyerahan ID Card secara Real-Time.</p>
+          <h1 className="text-3xl font-extrabold text-gold-500">Meja ID Card & Check-In</h1>
+          <p className="text-gray-400 mt-1 font-medium">Verifikasi penyerahan ID Card secara Real-Time.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <button onClick={copyLaporanHarian} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg shadow-green-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm md:text-base">
+          <button onClick={copyLaporanHarian} className="bg-dark-800 border border-gold-500/50 hover:bg-gold-500/10 text-gold-500 font-bold py-2.5 px-5 rounded-xl shadow-[0_0_10px_rgba(212,175,55,0.1)] flex items-center justify-center gap-2 transition-all active:scale-95 text-sm md:text-base">
             📋 Laporan Harian
           </button>
-          <button onClick={copyLaporanGlobal} className="bg-gradient-to-r from-blue-800 to-blue-900 hover:from-blue-900 hover:to-blue-950 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm md:text-base">
+          <button onClick={copyLaporanGlobal} className="bg-gold-500 hover:bg-gold-400 text-black font-bold py-2.5 px-5 rounded-xl shadow-[0_0_15px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 text-sm md:text-base">
             📊 Laporan Global
           </button>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 mb-6 flex flex-col md:flex-row gap-6">
+      <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 mb-6 flex flex-col md:flex-row gap-6">
         <div className="flex-1">
-          <label className="block text-sm font-bold text-blue-800 mb-2">Cari Nama Santri</label>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Cari Nama Santri</label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400"><IconSearch /></span>
-            <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Ketik nama yang datang..." className="w-full pl-10 p-3 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 bg-white" />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><IconSearch /></span>
+            <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Ketik nama yang datang..." className="w-full pl-10 p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner" />
           </div>
         </div>
         <div className="md:w-64">
-          <label className="block text-sm font-bold text-blue-800 mb-2">Filter Status</label>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full p-3 border border-blue-200 rounded-xl outline-none font-bold text-blue-700 focus:ring-2 focus:ring-blue-400 bg-white">
+          <label className="block text-sm font-bold text-gray-300 mb-2">Filter Status</label>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none font-bold text-gold-500 shadow-inner focus:ring-1 focus:ring-gold-500/50 bg-dark-900">
             <option value="Semua">Tampilkan Semua</option>
             <option value="Belum">Menunggu / Belum Selesai</option>
             <option value="Selesai">Sudah Selesai</option>
@@ -268,69 +268,69 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+      <div className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[750px]">
-            <thead className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-200">
+            <thead className="bg-dark-900 border-b border-gold-500/20">
               <tr>
-                <th className="p-4 text-blue-800 font-bold text-center w-24">No. ID Card</th>
-                <th className="p-4 text-blue-800 font-bold">Nama Santri</th>
-                <th className="p-4 text-blue-800 font-bold">Lokasi Sakan / Kamar</th>
-                <th className="p-4 text-blue-800 font-bold text-center">Status</th>
-                <th className="p-4 text-blue-800 font-bold text-center">Aksi</th>
+                <th className="p-4 text-gold-600 font-bold text-center w-24">No. ID Card</th>
+                <th className="p-4 text-gold-600 font-bold">Nama Santri</th>
+                <th className="p-4 text-gold-600 font-bold">Lokasi Sakan / Kamar</th>
+                <th className="p-4 text-gold-600 font-bold text-center">Status</th>
+                <th className="p-4 text-gold-600 font-bold text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {loading && !notif.show && dataGabungan.length === 0 ? (
-                <tr><td colSpan={5} className="p-10 text-center text-blue-400 font-medium">
+                <tr><td colSpan={5} className="p-10 text-center text-gray-500 font-medium">
                   <div className="flex items-center justify-center gap-3">
-                    <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin"></div>
                     Memuat antrean...
                   </div>
                 </td></tr>
               ) : dataDitampilkan.length === 0 ? (
-                <tr><td colSpan={5} className="p-10 text-center text-blue-300 italic font-medium">Data santri tidak ditemukan.</td></tr>
+                <tr><td colSpan={5} className="p-10 text-center text-gray-500 italic font-medium">Data santri tidak ditemukan.</td></tr>
               ) : (
                 dataDitampilkan.map((item) => {
                   if (!item.isIdCardTaken) nomorBelum++;
                   return (
-                    <tr key={item.id} className={`border-b border-blue-50 transition ${item.isIdCardTaken ? 'bg-green-50/30' : 'hover:bg-blue-50/30'}`}>
+                    <tr key={item.id} className={`border-b border-gold-500/5 transition ${item.isIdCardTaken ? 'bg-green-900/10' : 'hover:bg-dark-900/50'}`}>
                       <td className="p-4 text-center">
                         {item.isIdCardTaken ? (
-                          <span className="bg-green-600 text-white px-2.5 py-1 rounded-lg font-black text-sm shadow-sm inline-block min-w-[32px]">
+                          <span className="bg-green-500/20 text-green-500 border border-green-500/30 px-2.5 py-1 rounded-lg font-black text-sm shadow-sm inline-block min-w-[32px]">
                             {item.nomorIdCard || '-'}
                           </span>
                         ) : (
-                          <span className="bg-blue-100 text-blue-600 px-2.5 py-1 rounded-lg font-bold text-sm inline-block min-w-[32px]">
+                          <span className="bg-dark-900 text-gray-600 px-2.5 py-1 rounded-lg font-bold text-sm inline-block min-w-[32px]">
                             -
                           </span>
                         )}
                       </td>
                       <td className="p-4">
-                        <p className="font-bold text-blue-900 text-lg">
+                        <p className="font-bold text-gray-200 text-lg">
                           {item.santri.nama}
                         </p>
-                        <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded text-white ${item.santri.kategori === 'LAMA' ? 'bg-orange-500' : item.santri.kategori === 'KSU' ? 'bg-purple-600' : 'bg-blue-500'}`}>{item.santri.kategori}</span>
+                        <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded text-white shadow-sm ${item.santri.kategori === 'LAMA' ? 'bg-orange-600' : item.santri.kategori === 'KSU' ? 'bg-purple-700' : 'bg-blue-600'}`}>{item.santri.kategori}</span>
                       </td>
                       <td className="p-4">
-                        <p className="font-bold text-green-700">{item.lemari.kamar.sakan.nama}</p>
-                        <p className="text-sm text-blue-500 font-medium">Kamar {item.lemari.kamar.nama} - Loker {item.lemari.nomor}</p>
+                        <p className="font-bold text-gold-400">{item.lemari.kamar.sakan.nama}</p>
+                        <p className="text-sm text-gray-400 font-medium">Kamar {item.lemari.kamar.nama} - Loker {item.lemari.nomor}</p>
                       </td>
                       <td className="p-4 text-center">
                         {item.isIdCardTaken ? (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-bold border border-green-300">
+                          <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-500 px-3 py-1.5 rounded-full text-sm font-bold border border-green-500/30">
                             <IconCheck /> Selesai
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full text-sm font-bold border border-yellow-300">
+                          <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-3 py-1.5 rounded-full text-sm font-bold border border-yellow-500/30">
                             <IconClock /> Menunggu
                           </span>
                         )}
                       </td>
                       <td className="p-4 text-center">
                         {!item.isIdCardTaken ? (
-                          <button onClick={() => submitIdCard(item.id, item.santri.nama)} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Serahkan Kartu</button>
-                        ) : <span className="text-blue-300 font-medium text-sm italic">Selesai</span>}
+                          <button onClick={() => submitIdCard(item.id, item.santri.nama)} className="bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Serahkan Kartu</button>
+                        ) : <span className="text-gray-500 font-medium text-sm italic">Selesai</span>}
                       </td>
                     </tr>
                   );
