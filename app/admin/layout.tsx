@@ -43,12 +43,18 @@ const IconGradCap = () => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0112 21a12.083 12.083 0 01-6.16-10.422L12 14zm-4 6v-7.5l4-2.222" />
   </svg>
 );
+const IconStore = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+);
 
 const menuItems = [
   { href: "/admin/", label: "Halaman Utama", icon: <IconChart /> },
   { href: "/admin/dashboard", label: "Dashboard Muasis", icon: <IconHome /> },
   { href: "/admin/asrama", label: "Meja Asrama", icon: <IconBed /> },
   { href: "/admin/id-card", label: "Meja ID Card", icon: <IconIdCard /> },
+  { href: "/admin/mimstore", label: "Mims Store", icon: <IconStore /> },
 ];
 
 const masterItems = [

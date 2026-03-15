@@ -40,6 +40,11 @@ const IconPlus = () => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
   </svg>
 );
+const IconStar = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+  </svg>
+);
 
 export default function MejaAsramaPage() {
   const [dataLokasi, setDataLokasi] = useState<any[]>([]);
@@ -283,7 +288,14 @@ export default function MejaAsramaPage() {
                     return (
                       <div key={kamar.id} className="p-3 rounded-xl border border-gold-500/10 bg-dark-900/50">
                         <div className="flex justify-between items-center mb-2 pb-2 border-b border-gold-500/10">
-                          <h4 className="font-bold text-gold-400">Kamar {kamar.nama}</h4>
+                          <h4 className="font-bold text-gold-400 flex items-center gap-2">
+                            Kamar {kamar.nama}
+                            {kamar.isPriority && (
+                              <span className="flex items-center gap-1 bg-orange-500/20 text-orange-500 px-1.5 py-0.5 rounded text-[10px] font-black border border-orange-500/30 animate-pulse">
+                                <IconStar className="h-3 w-3" /> PRIORITAS
+                              </span>
+                            )}
+                          </h4>
                           <span className="text-xs font-bold text-gold-500 bg-dark-800 px-2 py-0.5 rounded-lg border border-gold-500/20">
                             Kosong: {kosong}/{totalK}
                           </span>

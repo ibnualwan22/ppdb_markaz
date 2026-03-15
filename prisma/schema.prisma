@@ -25,6 +25,7 @@ model Kamar {
   nama      String
   sakanId   String
   isLocked  Boolean  @default(false) // <--- TAMBAHKAN BARIS INI
+  isPriority Boolean @default(false) // Penanda prioritas isi kamar dari Muasis
   sakan     Sakan    @relation(fields: [sakanId], references: [id], onDelete: Cascade)
   lemari    Lemari[]
 }
@@ -81,6 +82,16 @@ model RiwayatDufah {
   status          String   @default("PRE_LIST") // "PRE_LIST", "ASSIGNED", "CHECKED_IN"
   isIdCardTaken   Boolean  @default(false)
   nomorIdCard     Int?
+
+  // Mims Store Checklist
+  isDresscodeTaken      Boolean  @default(false)
+  ukuranDresscode       String?
+  isToteBagTaken        Boolean  @default(false)
+  isPinTaken            Boolean  @default(false)
+  isSongkokKhimarTaken  Boolean  @default(false)
+  ukuranSongkok         String?
+  isMalzamahTaken       Boolean  @default(false)
+  isTabirotTaken        Boolean  @default(false)
 
   bulanKe         Int      @default(1)
   updatedAt       DateTime @default(now()) @updatedAt

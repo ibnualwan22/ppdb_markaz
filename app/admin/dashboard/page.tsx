@@ -29,6 +29,11 @@ const IconX = ({ className = "h-4 w-4" }: { className?: string }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
+const IconStar = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+  </svg>
+);
 const IconMale = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline text-blue-500" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
@@ -132,6 +137,32 @@ export default function DashboardMuasisPage() {
     }
 
     // Restore scroll position
+    requestAnimationFrame(() => {
+      if (scrollContainer) scrollContainer.scrollTop = scrollTop;
+    });
+  };
+
+  const togglePriority = async (id: string, currentPriority: boolean) => {
+    const scrollContainer = mainRef.current?.parentElement;
+    const scrollTop = scrollContainer?.scrollTop || 0;
+
+    // Optimistic Update
+    setDataSakan(prevData => prevData.map(s => ({
+      ...s,
+      kamar: s.kamar.map((k: any) => k.id === id ? { ...k, isPriority: !currentPriority } : k)
+    })));
+
+    try {
+      await fetch(`/api/kamar/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPriority: !currentPriority }),
+      });
+    } catch (error) {
+      console.error(error);
+      muatData(true);
+    }
+
     requestAnimationFrame(() => {
       if (scrollContainer) scrollContainer.scrollTop = scrollTop;
     });
@@ -261,9 +292,18 @@ export default function DashboardMuasisPage() {
                                 disabled={sakan.isLocked}
                                 className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${kamar.isLocked ? 'bg-yellow-500/10 text-yellow-600 border-yellow-600/30 hover:bg-yellow-500/20' : 'bg-gold-500/10 text-gold-500 border-gold-500/30 hover:bg-gold-500/20'}`}
                               >
-                                {kamar.isLocked ? <><IconUnlock className="h-3 w-3" /> Buka</> : <><IconLock className="h-3 w-3" /> Kunci</>}
+                              {kamar.isLocked ? <><IconUnlock className="h-3 w-3" /> Buka</> : <><IconLock className="h-3 w-3" /> Kunci</>}
                               </button>
                               
+                              <button 
+                                onClick={() => togglePriority(kamar.id, kamar.isPriority)}
+                                disabled={sakan.isLocked}
+                                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${kamar.isPriority ? 'bg-orange-500 text-white border-orange-600' : 'bg-dark-800 text-gray-500 border-gray-700 hover:border-orange-500/50'}`}
+                                title={kamar.isPriority ? "Hapus Prioritas" : "Set Prioritas Isi"}
+                              >
+                                <IconStar className={kamar.isPriority ? "text-white" : "text-gray-500"} /> {kamar.isPriority ? "Prioritas" : "Biasa"}
+                              </button>
+
                               {!isKamarLocked && (
                                 <span className="text-xs font-bold bg-dark-800 text-gold-500 px-2 py-1 rounded-lg border border-gold-500/20">
                                   Isi: {terisiKamar} / {totalLemariKamar}
