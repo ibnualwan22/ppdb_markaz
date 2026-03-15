@@ -149,11 +149,14 @@ export default function DashboardMuasisPage() {
     // Optimistic Update
     setDataSakan(prevData => prevData.map(s => ({
       ...s,
-      kamar: s.kamar.map((k: any) => k.id === id ? { ...k, isPriority: !currentPriority } : k)
+      kamar: s.kamar.map((k: any) => ({
+        ...k,
+        lemari: k.lemari.map((l: any) => l.id === id ? { ...l, isPriority: !currentPriority } : l)
+      }))
     })));
 
     try {
-      await fetch(`/api/kamar/${id}`, {
+      await fetch(`/api/lemari/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPriority: !currentPriority }),
@@ -294,15 +297,6 @@ export default function DashboardMuasisPage() {
                               >
                               {kamar.isLocked ? <><IconUnlock className="h-3 w-3" /> Buka</> : <><IconLock className="h-3 w-3" /> Kunci</>}
                               </button>
-                              
-                              <button 
-                                onClick={() => togglePriority(kamar.id, kamar.isPriority)}
-                                disabled={sakan.isLocked}
-                                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${kamar.isPriority ? 'bg-orange-500 text-white border-orange-600' : 'bg-dark-800 text-gray-500 border-gray-700 hover:border-orange-500/50'}`}
-                                title={kamar.isPriority ? "Hapus Prioritas" : "Set Prioritas Isi"}
-                              >
-                                <IconStar className={kamar.isPriority ? "text-white" : "text-gray-500"} /> {kamar.isPriority ? "Prioritas" : "Biasa"}
-                              </button>
 
                               {!isKamarLocked && (
                                 <span className="text-xs font-bold bg-dark-800 text-gold-500 px-2 py-1 rounded-lg border border-gold-500/20">
@@ -355,7 +349,7 @@ export default function DashboardMuasisPage() {
                                       : 'bg-dark-900/30 border-gray-800 border-dashed hover:border-gold-500/30'
                                 }`}>
                                   <div className="flex justify-between items-start mb-1">
-                                    <span className="text-[10px] font-black text-gray-400 bg-dark-900 border border-gray-800 px-1.5 py-0.5 rounded shadow-sm">
+                                    <span className={`text-[10px] font-black ${lemari.isPriority ? 'text-orange-500 border-orange-500/50 bg-orange-500/10' : 'text-gray-400 border-gray-800 bg-dark-900'} px-1.5 py-0.5 rounded shadow-sm border`}>
                                       {lemari.nomor}
                                     </span>
                                     
@@ -364,6 +358,15 @@ export default function DashboardMuasisPage() {
                                         <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded text-white ${dataSantri.kategori === 'KSU' ? 'bg-purple-600' : dataSantri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
                                           {dataSantri.kategori}
                                         </span>
+                                      )}
+                                      {!isTerisi && (
+                                        <button
+                                          onClick={() => togglePriority(lemari.id, lemari.isPriority)}
+                                          className={`text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold transition-opacity border ${lemari.isPriority ? 'bg-orange-500/20 text-orange-500 border-orange-500/30 opacity-100' : 'bg-dark-800 border-gold-500/20 hover:bg-gold-500/10 text-gold-500 md:opacity-0 md:group-hover:opacity-100'}`}
+                                          title={lemari.isPriority ? "Hapus Prioritas" : "Set Prioritas Lemari"}
+                                        >
+                                          <IconStar className="h-2.5 w-2.5" />
+                                        </button>
                                       )}
                                       {/* TOMBOL KUNCI LEMARI - visible on mobile, hover on desktop */}
                                       <button 
