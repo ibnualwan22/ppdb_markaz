@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     });
     if (cekLemari) return NextResponse.json({ error: "Gagal: Lemari ini sudah terisi!" }, { status: 400 });
 
+    const parsedBulanKe = kategori === "LAMA" && bulanKe ? parseInt(bulanKe, 10) : 1;
+
     const santriBaru = await prisma.santri.create({
       data: {
         nama: nama,
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
             // ==========================================
             isIdCardTaken: kategori === "KSU" ? true : false, 
             
-            bulanKe: kategori === "LAMA" ? parseInt(bulanKe) : 1
+            bulanKe: parsedBulanKe
           }
         }
       },

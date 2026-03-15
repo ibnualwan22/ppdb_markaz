@@ -222,7 +222,7 @@ export default function MejaAsramaPage() {
 
   // Fungsi helper untuk mengecek apakah sebuah Sakan memiliki lemari prioritas
   const hasPriorityLemari = (sakan: any) => {
-    return sakan.kamar.some((kamar: any) => 
+    return sakan.kamar.some((kamar: any) =>
       kamar.lemari.some((lemari: any) => lemari.isPriority && !lemari.isLocked && (!lemari.penghuni || lemari.penghuni.length === 0))
     );
   };
@@ -233,17 +233,17 @@ export default function MejaAsramaPage() {
   const sortSakan = (a: any, b: any) => {
     const aPriority = hasPriorityLemari(a);
     const bPriority = hasPriorityLemari(b);
-    
+
     if (aPriority && !bPriority) return -1;
     if (!aPriority && bPriority) return 1;
-    
+
     return a.nama.localeCompare(b.nama);
   };
 
   const sakanBanin = dataLokasi
     .filter(s => s.kategori !== "BANAT" && !s.isLocked && (filterGender === "SEMUA" || filterGender === "BANIN"))
     .sort(sortSakan);
-    
+
   const sakanBanat = dataLokasi
     .filter(s => s.kategori === "BANAT" && !s.isLocked && (filterGender === "SEMUA" || filterGender === "BANAT"))
     .sort(sortSakan);
@@ -415,7 +415,7 @@ export default function MejaAsramaPage() {
       {/* WIDGET MENGAMBANG: ANTREAN ROLLING */}
       <div className={`fixed bottom-0 right-0 sm:right-6 z-40 transition-all duration-300 ${isAntreanOpen ? 'translate-y-0' : 'translate-y-[calc(100%-3.5rem)]'}`}>
         <div className="bg-dark-800 shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-gold-500/30 sm:rounded-tl-2xl sm:rounded-tr-2xl flex flex-col w-screen sm:w-[360px] h-[55vh] max-h-[450px]">
-          <div 
+          <div
             className="flex justify-between items-center p-4 border-b border-gold-500/20 bg-dark-900 cursor-pointer hover:bg-dark-800 transition-colors sm:rounded-t-2xl group"
             onClick={() => setIsAntreanOpen(!isAntreanOpen)}
           >
@@ -431,7 +431,7 @@ export default function MejaAsramaPage() {
               </svg>
             </button>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-4 bg-dark-800">
             {antrean.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -492,7 +492,16 @@ export default function MejaAsramaPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-300 mb-1">Kategori Santri</label>
-                  <select value={kategori} onChange={(e) => setKategori(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner">
+                  <select
+                    value={kategori}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setKategori(val);
+                      if (val === "LAMA" && bulanKe === "1") setBulanKe("2");
+                      if (val !== "LAMA") setBulanKe("1");
+                    }}
+                    className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner"
+                  >
                     <option value="BARU">BARU</option>
                     <option value="LAMA">LAMA</option>
                     <option value="KSU">KSU</option>
@@ -506,7 +515,15 @@ export default function MejaAsramaPage() {
                   <select value={bulanKe} onChange={(e) => setBulanKe(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 focus:ring-1 focus:ring-gold-500/50">
                     <option value="2">Bulan ke-2 (Baru menempati bulan lalu)</option>
                     <option value="3">Bulan ke-3 (Bulan depan wajib rolling)</option>
+                    <option value="4">Bulan ke-4 (testing)</option>
+                    <option value="5">Bulan ke-5 (testing)</option>
                     <option value="6">Bulan ke-6 (testing)</option>
+                    <option value="7">Bulan ke-7 (testing)</option>
+                    <option value="8">Bulan ke-8 (testing)</option>
+                    <option value="9">Bulan ke-9 (testing)</option>
+                    <option value="10">Bulan ke-10 (testing)</option>
+                    <option value="11">Bulan ke-11 (testing)</option>
+                    <option value="12">Bulan ke-12 (testing)</option>
                   </select>
                 </div>
               )}
