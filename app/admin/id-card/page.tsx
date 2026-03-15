@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePusher } from "../../providers/PusherProvider";
 import { swalConfirm, swalSuccess, swalError, swalNotif } from "../../lib/swal";
+import { Protect, usePermissions } from "@/components/Protect";
 
 // SVG Icon Components
 const IconBell = () => (
@@ -39,6 +40,8 @@ export default function MejaIdCardPage() {
 
   const [keyword, setKeyword] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
+  const { hasAccess } = usePermissions();
+  const canManageIdCard = hasAccess("manage_idcard");
 
   // STATE NOTIFIKASI & TRACKING REAL-TIME
   const [notif, setNotif] = useState({ show: false, pesan: "", namaTarget: "" });
@@ -222,6 +225,7 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
   let nomorBelum = 0;
 
   return (
+    <Protect permission="view_idcard" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat antrean ID Card.</div>}>
     <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen relative overflow-hidden">
 
       {/* POP-UP NOTIFIKASI */}
@@ -329,7 +333,9 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                       </td>
                       <td className="p-4 text-center">
                         {!item.isIdCardTaken ? (
-                          <button onClick={() => submitIdCard(item.id, item.santri.nama)} className="bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Serahkan Kartu</button>
+                          canManageIdCard ? (
+                            <button onClick={() => submitIdCard(item.id, item.santri.nama)} className="bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Serahkan Kartu</button>
+                          ) : <span className="text-gray-500 font-medium text-sm italic">Menunggu diserahkan</span>
                         ) : <span className="text-gray-500 font-medium text-sm italic">Selesai</span>}
                       </td>
                     </tr>
@@ -341,5 +347,6 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
         </div>
       </div>
     </div>
+    </Protect>
   );
 }

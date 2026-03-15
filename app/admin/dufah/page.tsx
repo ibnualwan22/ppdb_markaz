@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { swalConfirm, swalSuccess, swalError } from "../../lib/swal";
+import { Protect } from "@/components/Protect";
 
 // SVG Icon Components
 const IconCalendar = () => (
@@ -128,6 +129,7 @@ export default function ManajemenDufahPage() {
   };
 
   return (
+    <Protect permission="manage_dufah" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk mengelola manajemen duf'ah.</div>}>
     <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen">
       <div className="mb-8 border-b border-gold-500/10 pb-6">
         <h1 className="text-3xl font-extrabold text-gold-500">Manajemen Duf&apos;ah</h1>
@@ -259,5 +261,6 @@ export default function ManajemenDufahPage() {
       )}
 
     </div>
+    </Protect>
   );
 }

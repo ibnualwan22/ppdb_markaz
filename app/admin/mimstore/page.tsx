@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePusher } from "../../providers/PusherProvider";
 import { swalNotif, swalError } from "../../lib/swal";
+import { Protect, usePermissions } from "@/components/Protect";
 
 // SVG Icon Components
 const IconBell = () => (
@@ -21,6 +22,8 @@ export default function MimStorePage() {
   const [dufahNama, setDufahNama] = useState("");
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
+  const { hasAccess } = usePermissions();
+  const canManageMimstore = hasAccess("manage_mimstore");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,6 +131,7 @@ export default function MimStorePage() {
   };
 
   return (
+    <Protect permission="view_mimstore" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat Mims Store.</div>}>
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-screen relative overflow-hidden">
       
       {/* POP-UP NOTIFIKASI */}
@@ -208,14 +212,16 @@ export default function MimStorePage() {
                     <td className="p-4 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
-                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                          <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? 'cursor-pointer' : 'cursor-not-allowed opacity-75'}`}
                             checked={item.isDresscodeTaken}
                             onChange={(e) => handleUpdate(item.id, 'isDresscodeTaken', e.target.checked)}
+                            disabled={!canManageMimstore}
                           />
                           <span className="text-xs font-bold text-gray-300">DC</span>
                         </label>
-                        <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner"
+                        <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner disabled:opacity-80 disabled:cursor-not-allowed"
                           defaultValue={item.ukuranDresscode || ""}
+                          disabled={!canManageMimstore}
                           onBlur={(e) => {
                             if (e.target.value !== item.ukuranDresscode) {
                               handleUpdate(item.id, 'ukuranDresscode', e.target.value);
@@ -229,9 +235,10 @@ export default function MimStorePage() {
                     <td className="p-4 text-center">
                       <div className="flex justify-center flex-col items-center">
                         <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
-                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                          <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? 'cursor-pointer' : 'cursor-not-allowed opacity-75'}`}
                             checked={item.isToteBagTaken}
                             onChange={(e) => handleUpdate(item.id, 'isToteBagTaken', e.target.checked)}
+                            disabled={!canManageMimstore}
                           />
                           <span className="text-xs font-bold text-gray-300">TB</span>
                         </label>
@@ -242,9 +249,10 @@ export default function MimStorePage() {
                     <td className="p-4 text-center">
                       <div className="flex justify-center flex-col items-center">
                         <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
-                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                          <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? 'cursor-pointer' : 'cursor-not-allowed opacity-75'}`}
                             checked={item.isPinTaken}
                             onChange={(e) => handleUpdate(item.id, 'isPinTaken', e.target.checked)}
+                            disabled={!canManageMimstore}
                           />
                           <span className="text-xs font-bold text-gray-300">Pin</span>
                         </label>
@@ -256,15 +264,17 @@ export default function MimStorePage() {
                       <div className="flex flex-col items-center gap-2 text-xs font-medium">
                         <div className="flex flex-col items-center gap-2">
                           <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
-                            <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                            <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? 'cursor-pointer' : 'cursor-not-allowed opacity-75'}`}
                               checked={item.isSongkokKhimarTaken}
                               onChange={(e) => handleUpdate(item.id, 'isSongkokKhimarTaken', e.target.checked)}
+                              disabled={!canManageMimstore}
                             />
                             <span className="text-xs font-bold text-gray-300">{item.santri.gender === 'BANIN' ? 'SK' : 'KM'}</span>
                           </label>
                           {item.santri.gender === 'BANIN' && (
-                            <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner"
+                            <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner disabled:opacity-80 disabled:cursor-not-allowed"
                               defaultValue={item.ukuranSongkok || ""}
+                              disabled={!canManageMimstore}
                               onBlur={(e) => {
                                 if (e.target.value !== item.ukuranSongkok) {
                                   handleUpdate(item.id, 'ukuranSongkok', e.target.value);
@@ -280,9 +290,10 @@ export default function MimStorePage() {
                     <td className="p-4 text-center">
                       <div className="flex justify-center flex-col items-center">
                         <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
-                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
+                          <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? 'cursor-pointer' : 'cursor-not-allowed opacity-75'}`}
                             checked={item.isMalzamahTaken}
                             onChange={(e) => handleUpdate(item.id, 'isMalzamahTaken', e.target.checked)}
+                            disabled={!canManageMimstore}
                           />
                           <span className="text-xs font-bold text-gray-300">MZ</span>
                         </label>
@@ -293,9 +304,10 @@ export default function MimStorePage() {
                     <td className="p-4 text-center">
                       <div className="flex justify-center flex-col items-center">
                         <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 transition">
-                          <input type="checkbox" className="w-5 h-5 accent-gold-500 cursor-pointer"
-                            checked={item.isTabirotTaken}
-                            onChange={(e) => handleUpdate(item.id, 'isTabirotTaken', e.target.checked)}
+                          <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? 'cursor-pointer' : 'cursor-not-allowed opacity-75'}`}
+                             checked={item.isTabirotTaken}
+                             onChange={(e) => handleUpdate(item.id, 'isTabirotTaken', e.target.checked)}
+                             disabled={!canManageMimstore}
                           />
                           <span className="text-xs font-bold text-gray-300">Tab</span>
                         </label>
@@ -330,5 +342,6 @@ export default function MimStorePage() {
         )}
       </div>
     </div>
+    </Protect>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { swalConfirm, swalSuccess, swalError, swalDanger, swalInput } from "../../lib/swal";
 import { usePusher } from "../../providers/PusherProvider";
+import { Protect } from "@/components/Protect";
 
 // SVG Icon Components
 const IconLock = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
@@ -311,6 +312,7 @@ export default function MasterLokasiPage() {
   };
 
   return (
+    <Protect permission="manage_asrama" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk mengelola asrama.</div>}>
     <div ref={mainRef} className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="mb-8 border-b border-gold-500/10 pb-6">
         <h1 className="text-3xl font-extrabold text-gold-500">Master Lokasi Asrama</h1>
@@ -429,5 +431,6 @@ export default function MasterLokasiPage() {
         </div>
       )}
     </div>
+    </Protect>
   );
 }

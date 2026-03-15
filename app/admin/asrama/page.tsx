@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePusher } from "../../providers/PusherProvider";
 import { swalSuccess, swalError, swalNotif } from "../../lib/swal";
+import { Protect, usePermissions } from "@/components/Protect";
 
 // SVG Icon Components
 const IconLock = ({ className = "h-4 w-4" }: { className?: string }) => (
@@ -53,6 +54,8 @@ export default function MejaAsramaPage() {
   const [loading, setLoading] = useState(false);
   const [filterGender, setFilterGender] = useState("SEMUA");
   const [isAntreanOpen, setIsAntreanOpen] = useState(true);
+  const { hasAccess } = usePermissions();
+  const canAssignLemari = hasAccess("assign_lemari");
 
   // State Modal Input Santri Baru (klik dari denah)
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
@@ -351,16 +354,16 @@ export default function MejaAsramaPage() {
                             return (
                               <button
                                 key={lemari.id}
-                                onClick={() => bukaInputModal(sakan, kamar, lemari)}
-                                className={`p-2 rounded-lg border border-dashed min-h-[65px] flex flex-col justify-between hover:border-gold-500/50 hover:shadow-md transition-all group cursor-pointer ${lemari.isPriority ? 'bg-orange-500/10 border-orange-500/50 ring-1 ring-orange-500/30 hover:bg-orange-500/20' : 'border-gray-800 bg-dark-900/30 hover:bg-gold-500/5'}`}
+                                onClick={() => canAssignLemari ? bukaInputModal(sakan, kamar, lemari) : null}
+                                className={`p-2 rounded-lg border border-dashed min-h-[65px] flex flex-col justify-between transition-all group ${canAssignLemari ? 'hover:border-gold-500/50 hover:shadow-md cursor-pointer' : 'cursor-default'} ${lemari.isPriority ? 'bg-orange-500/10 border-orange-500/50 ring-1 ring-orange-500/30 ' + (canAssignLemari ? 'hover:bg-orange-500/20' : '') : 'border-gray-800 bg-dark-900/30 ' + (canAssignLemari ? 'hover:bg-gold-500/5' : '')}`}
                               >
                                 <div className="flex items-center gap-1 self-start">
                                   <span className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm border ${lemari.isPriority ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' : 'text-gray-400 bg-dark-900 border-gray-800'}`}>{lemari.nomor}</span>
                                   {lemari.isPriority && <IconStar className="h-3 w-3 text-orange-500 animate-pulse" title="Prioritas Pengisian" />}
                                 </div>
                                 <div className="text-center w-full">
-                                  <p className={`text-xs italic font-medium group-hover:hidden ${lemari.isPriority ? 'text-orange-500/80' : 'text-gray-600'}`}>{lemari.isPriority ? "Prioritas" : "Kosong"}</p>
-                                  <p className="text-xs text-gold-500 font-bold hidden group-hover:flex items-center justify-center gap-1"><IconPlus /> Isi Santri</p>
+                                  <p className={`text-xs italic font-medium ${canAssignLemari ? 'group-hover:hidden' : ''} ${lemari.isPriority ? 'text-orange-500/80' : 'text-gray-600'}`}>{lemari.isPriority ? "Prioritas" : "Kosong"}</p>
+                                  {canAssignLemari && <p className="text-xs text-gold-500 font-bold hidden group-hover:flex items-center justify-center gap-1"><IconPlus /> Isi Santri</p>}
                                 </div>
                               </button>
                             );
@@ -379,207 +382,210 @@ export default function MejaAsramaPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-screen relative pb-24">
+    <Protect permission="view_asrama" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat meja asrama.</div>}>
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-screen relative pb-24">
+        {/* POP-UP NOTIFIKASI */}
+        <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
+          <div className="bg-white border-l-4 border-blue-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px]">
+            <div className="bg-blue-100 p-2 rounded-full animate-pulse"><IconCreditCard /></div>
+            <div>
+              <h4 className="font-bold text-blue-800 text-sm">Update ID Card</h4>
+              <p className="text-gray-600 text-xs font-medium">{notif.pesan}</p>
+            </div>
+          </div>
+        </div>
 
-      {/* POP-UP NOTIFIKASI */}
-      <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
-        <div className="bg-white border-l-4 border-blue-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px]">
-          <div className="bg-blue-100 p-2 rounded-full animate-pulse"><IconCreditCard /></div>
+        <div className="mb-8 border-b border-gold-500/10 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h4 className="font-bold text-blue-800 text-sm">Update ID Card</h4>
-            <p className="text-gray-600 text-xs font-medium">{notif.pesan}</p>
+            <h1 className="text-3xl font-extrabold text-gold-500">Meja Asrama & Penempatan</h1>
+            <p className="text-gray-400 mt-1 font-medium">Klik lemari kosong untuk menempatkan santri baru.</p>
+          </div>
+          <div className="flex bg-dark-800 p-1 rounded-xl border border-gold-500/20 shadow-inner">
+            <button onClick={() => setFilterGender('SEMUA')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'SEMUA' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Semua</button>
+            <button onClick={() => setFilterGender('BANIN')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'BANIN' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Banin</button>
+            <button onClick={() => setFilterGender('BANAT')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'BANAT' ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Banat</button>
           </div>
         </div>
-      </div>
 
-      <div className="mb-8 border-b border-gold-500/10 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gold-500">Meja Asrama & Penempatan</h1>
-          <p className="text-gray-400 mt-1 font-medium">Klik lemari kosong untuk menempatkan santri baru.</p>
+        <div className="w-full">
+          {sakanBanin.length > 0 && <RenderDenahBlock data={sakanBanin} judul="Area Banin (Putra)" warnaTema="biru" />}
+          {sakanBanat.length > 0 && <RenderDenahBlock data={sakanBanat} judul="Area Banat (Putri)" warnaTema="pink" />}
+          {sakanBanin.length === 0 && sakanBanat.length === 0 && (
+            <div className="text-center py-20 text-blue-300 font-medium">Belum ada data Sakan.</div>
+          )}
         </div>
-        <div className="flex bg-dark-800 p-1 rounded-xl border border-gold-500/20 shadow-inner">
-          <button onClick={() => setFilterGender('SEMUA')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'SEMUA' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Semua</button>
-          <button onClick={() => setFilterGender('BANIN')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'BANIN' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Banin</button>
-          <button onClick={() => setFilterGender('BANAT')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'BANAT' ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Banat</button>
-        </div>
-      </div>
 
-      <div className="w-full">
-        {sakanBanin.length > 0 && <RenderDenahBlock data={sakanBanin} judul="Area Banin (Putra)" warnaTema="biru" />}
-        {sakanBanat.length > 0 && <RenderDenahBlock data={sakanBanat} judul="Area Banat (Putri)" warnaTema="pink" />}
-        {sakanBanin.length === 0 && sakanBanat.length === 0 && (
-          <div className="text-center py-20 text-blue-300 font-medium">Belum ada data Sakan.</div>
-        )}
-      </div>
-
-      {/* WIDGET MENGAMBANG: ANTREAN ROLLING */}
-      <div className={`fixed bottom-0 right-0 sm:right-6 z-40 transition-all duration-300 ${isAntreanOpen ? 'translate-y-0' : 'translate-y-[calc(100%-3.5rem)]'}`}>
-        <div className="bg-dark-800 shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-gold-500/30 sm:rounded-tl-2xl sm:rounded-tr-2xl flex flex-col w-screen sm:w-[360px] h-[55vh] max-h-[450px]">
-          <div
-            className="flex justify-between items-center p-4 border-b border-gold-500/20 bg-dark-900 cursor-pointer hover:bg-dark-800 transition-colors sm:rounded-t-2xl group"
-            onClick={() => setIsAntreanOpen(!isAntreanOpen)}
-          >
-            <h2 className="text-sm font-black text-gold-500 flex items-center gap-2 uppercase tracking-widest">
-              <IconClipboard /> Antrean Rolling
-              {antrean.length > 0 && (
-                <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow-sm ml-1">{antrean.length}</span>
-              )}
-            </h2>
-            <button className="text-gray-400 group-hover:text-white transition-transform">
-              <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transform transition-transform duration-300 ${isAntreanOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 bg-dark-800">
-            {antrean.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <IconInbox /><p className="font-medium mt-2 text-sm">Sedang kosong.</p>
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {antrean.map((item) => (
-                  <li key={item.id} className="p-3 border border-gold-500/10 rounded-xl flex justify-between items-center bg-dark-900/80 border-l-4 border-l-gold-500 hover:border-gold-500/40 transition-all shadow-sm">
-                    <div className="overflow-hidden mr-3">
-                      <p className="font-bold text-gray-200 text-sm flex items-center gap-1.5 truncate">
-                        <span className="truncate">{item.santri.nama}</span> {item.santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
-                      </p>
-                      <div className="flex flex-col gap-1 items-start mt-1.5">
-                        <span className="text-[9px] font-black text-white bg-red-600 px-1.5 py-0.5 rounded shadow-sm tracking-widest">Wajib Rolling</span>
-                        {item.keteranganSakanLama && (
-                          <span className="text-[10px] font-medium text-gray-400 italic flex items-center gap-1 truncate max-w-[180px]" title={item.keteranganSakanLama}>
-                            <IconLock className="h-2.5 w-2.5 opacity-60 flex-shrink-0" /> {item.keteranganSakanLama}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button onClick={(e) => { e.stopPropagation(); bukaModalAntrean(item.id, item.santri.nama, item.santri.gender); }} className="bg-gold-500 text-black hover:bg-gold-400 px-3 py-1.5 rounded-lg text-xs font-black shadow-md transition-all active:scale-95 shrink-0">
-                      Pilih
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* MODAL INPUT SANTRI BARU (Dari klik denah) */}
-      {isInputModalOpen && selectedLemari && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gold-500/20" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className={`p-5 bg-dark-900 border-b border-gold-500/10`}>
-              <h2 className="text-xl font-bold text-gold-500">Input Santri ke Kamar</h2>
-              <p className="text-gray-400 text-sm mt-1">
-                {selectedSakan?.nama} → Kamar {selectedKamar?.nama} → Lemari {selectedLemari?.nomor}
-              </p>
-            </div>
-
-            <form onSubmit={simpanSantriDariDenah} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Nama Lengkap</label>
-                <input type="text" value={namaSantri} onChange={(e) => setNamaSantri(e.target.value)} placeholder="Cth: Ahmad / Siti" className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 focus:border-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner" required />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-1">Gender</label>
-                  <select value={genderSantri} onChange={(e) => setGenderSantri(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 font-bold text-gold-500 shadow-inner" disabled>
-                    <option value="BANIN">Putra (BANIN)</option>
-                    <option value="BANAT">Putri (BANAT)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-1">Kategori Santri</label>
-                  <select
-                    value={kategori}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setKategori(val);
-                      if (val === "LAMA" && bulanKe === "1") setBulanKe("2");
-                      if (val !== "LAMA") setBulanKe("1");
-                    }}
-                    className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner"
-                  >
-                    <option value="BARU">BARU</option>
-                    <option value="LAMA">LAMA</option>
-                    <option value="KSU">KSU</option>
-                  </select>
-                </div>
-              </div>
-
-              {kategori === "LAMA" && (
-                <div className="bg-yellow-900/10 p-4 rounded-xl border border-yellow-500/20">
-                  <label className="block text-sm font-bold text-yellow-500 mb-1">Sudah menetap berapa bulan?</label>
-                  <select value={bulanKe} onChange={(e) => setBulanKe(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 focus:ring-1 focus:ring-gold-500/50">
-                    <option value="2">Bulan ke-2 (Baru menempati bulan lalu)</option>
-                    <option value="3">Bulan ke-3 (Bulan depan wajib rolling)</option>
-                    <option value="4">Bulan ke-4 (testing)</option>
-                    <option value="5">Bulan ke-5 (testing)</option>
-                    <option value="6">Bulan ke-6 (testing)</option>
-                    <option value="7">Bulan ke-7 (testing)</option>
-                    <option value="8">Bulan ke-8 (testing)</option>
-                    <option value="9">Bulan ke-9 (testing)</option>
-                    <option value="10">Bulan ke-10 (testing)</option>
-                    <option value="11">Bulan ke-11 (testing)</option>
-                    <option value="12">Bulan ke-12 (testing)</option>
-                  </select>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gold-500/10">
-                <button type="button" onClick={tutupInputModal} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
-                <button type="submit" disabled={loading} className={`px-6 py-2.5 text-black font-bold rounded-xl shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all active:scale-95 disabled:opacity-50 bg-gold-500 hover:bg-gold-400`}>
-                  {loading ? "Menyimpan..." : "Simpan & Assign"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL PENEMPATAN ANTREAN */}
-      {isModalOpen && santriAntrean && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gold-500/20" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className="p-5 bg-dark-900 border-b border-gold-500/10">
-              <h2 className="text-xl font-bold text-gold-500">Penempatan Kamar Baru</h2>
-              <p className="text-gray-400 text-sm mt-1">Untuk: <strong className="text-gray-200">{santriAntrean.nama}</strong> ({santriAntrean.gender})</p>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Sakan</label>
-                <select value={modalSakanId} onChange={(e) => { setModalSakanId(e.target.value); setModalKamarId(""); setModalLemariId(""); }} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 font-bold focus:ring-1 focus:ring-gold-500/50 shadow-inner">
-                  <option value="">-- Pilih Sakan --</option>
-                  {sakanDifilterModal.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Kamar</label>
-                <select value={modalKamarId} onChange={(e) => { setModalKamarId(e.target.value); setModalLemariId(""); }} disabled={!modalSakanId} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 shadow-inner">
-                  <option value="">-- Pilih Kamar --</option>
-                  {modalDaftarKamar.map((k: any) => <option key={k.id} value={k.id}>Kamar {k.nama}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Lemari</label>
-                <select value={modalLemariId} onChange={(e) => setModalLemariId(e.target.value)} disabled={!modalKamarId} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 shadow-inner">
-                  <option value="">-- Pilih Lemari --</option>
-                  {modalLemariTersedia.map((l: any) => <option key={l.id} value={l.id}>Lemari {l.nomor}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
-              <button onClick={tutupModal} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
-              <button onClick={eksekusiAssignModal} disabled={!modalLemariId} className={`px-6 py-2.5 text-black font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)] bg-gold-500 hover:bg-gold-400`}>
-                Simpan Penempatan
+        {/* WIDGET MENGAMBANG: ANTREAN ROLLING */}
+        <div className={`fixed bottom-0 right-0 sm:right-6 z-40 transition-all duration-300 ${isAntreanOpen ? 'translate-y-0' : 'translate-y-[calc(100%-3.5rem)]'}`}>
+          <div className="bg-dark-800 shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-gold-500/30 sm:rounded-tl-2xl sm:rounded-tr-2xl flex flex-col w-screen sm:w-[360px] h-[55vh] max-h-[450px]">
+            <div
+              className="flex justify-between items-center p-4 border-b border-gold-500/20 bg-dark-900 cursor-pointer hover:bg-dark-800 transition-colors sm:rounded-t-2xl group"
+              onClick={() => setIsAntreanOpen(!isAntreanOpen)}
+            >
+              <h2 className="text-sm font-black text-gold-500 flex items-center gap-2 uppercase tracking-widest">
+                <IconClipboard /> Antrean Rolling
+                {antrean.length > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow-sm ml-1">{antrean.length}</span>
+                )}
+              </h2>
+              <button className="text-gray-400 group-hover:text-white transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transform transition-transform duration-300 ${isAntreanOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                </svg>
               </button>
             </div>
+
+            <div className="flex-1 overflow-y-auto p-4 bg-dark-800">
+              {antrean.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <IconInbox /><p className="font-medium mt-2 text-sm">Sedang kosong.</p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {antrean.map((item) => (
+                    <li key={item.id} className="p-3 border border-gold-500/10 rounded-xl flex justify-between items-center bg-dark-900/80 border-l-4 border-l-gold-500 hover:border-gold-500/40 transition-all shadow-sm">
+                      <div className="overflow-hidden mr-3">
+                        <p className="font-bold text-gray-200 text-sm flex items-center gap-1.5 truncate">
+                          <span className="truncate">{item.santri.nama}</span> {item.santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
+                        </p>
+                        <div className="flex flex-col gap-1 items-start mt-1.5">
+                          <span className="text-[9px] font-black text-white bg-red-600 px-1.5 py-0.5 rounded shadow-sm tracking-widest">Wajib Rolling</span>
+                          {item.keteranganSakanLama && (
+                            <span className="text-[10px] font-medium text-gray-400 italic flex items-center gap-1 truncate max-w-[180px]" title={item.keteranganSakanLama}>
+                              <IconLock className="h-2.5 w-2.5 opacity-60 flex-shrink-0" /> {item.keteranganSakanLama}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {canAssignLemari && (
+                        <button onClick={(e) => { e.stopPropagation(); bukaModalAntrean(item.id, item.santri.nama, item.santri.gender); }} className="bg-gold-500 text-black hover:bg-gold-400 px-3 py-1.5 rounded-lg text-xs font-black shadow-md transition-all active:scale-95 shrink-0">
+                          Pilih
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
-      )}
 
-    </div>
+        {/* MODAL INPUT SANTRI BARU (Dari klik denah) */}
+        {isInputModalOpen && selectedLemari && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gold-500/20" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className={`p-5 bg-dark-900 border-b border-gold-500/10`}>
+                <h2 className="text-xl font-bold text-gold-500">Input Santri ke Kamar</h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  {selectedSakan?.nama} → Kamar {selectedKamar?.nama} → Lemari {selectedLemari?.nomor}
+                </p>
+              </div>
+
+              <form onSubmit={simpanSantriDariDenah} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Nama Lengkap</label>
+                  <input type="text" value={namaSantri} onChange={(e) => setNamaSantri(e.target.value)} placeholder="Cth: Ahmad / Siti" className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 focus:border-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner" required />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Gender</label>
+                    <select value={genderSantri} onChange={(e) => setGenderSantri(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 font-bold text-gold-500 shadow-inner" disabled>
+                      <option value="BANIN">Putra (BANIN)</option>
+                      <option value="BANAT">Putri (BANAT)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Kategori Santri</label>
+                    <select
+                      value={kategori}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setKategori(val);
+                        if (val === "LAMA" && bulanKe === "1") setBulanKe("2");
+                        if (val !== "LAMA") setBulanKe("1");
+                      }}
+                      className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner"
+                    >
+                      <option value="BARU">BARU</option>
+                      <option value="LAMA">LAMA</option>
+                      <option value="KSU">KSU</option>
+                    </select>
+                  </div>
+                </div>
+
+                {kategori === "LAMA" && (
+                  <div className="bg-yellow-900/10 p-4 rounded-xl border border-yellow-500/20">
+                    <label className="block text-sm font-bold text-yellow-500 mb-1">Sudah menetap berapa bulan?</label>
+                    <select value={bulanKe} onChange={(e) => setBulanKe(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 focus:ring-1 focus:ring-gold-500/50">
+                      <option value="2">Bulan ke-2 (Baru menempati bulan lalu)</option>
+                      <option value="3">Bulan ke-3 (Bulan depan wajib rolling)</option>
+                      <option value="4">Bulan ke-4 (testing)</option>
+                      <option value="5">Bulan ke-5 (testing)</option>
+                      <option value="6">Bulan ke-6 (testing)</option>
+                      <option value="7">Bulan ke-7 (testing)</option>
+                      <option value="8">Bulan ke-8 (testing)</option>
+                      <option value="9">Bulan ke-9 (testing)</option>
+                      <option value="10">Bulan ke-10 (testing)</option>
+                      <option value="11">Bulan ke-11 (testing)</option>
+                      <option value="12">Bulan ke-12 (testing)</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gold-500/10">
+                  <button type="button" onClick={tutupInputModal} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                  <button type="submit" disabled={loading} className={`px-6 py-2.5 text-black font-bold rounded-xl shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all active:scale-95 disabled:opacity-50 bg-gold-500 hover:bg-gold-400`}>
+                    {loading ? "Menyimpan..." : "Simpan & Assign"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL PENEMPATAN ANTREAN */}
+        {isModalOpen && santriAntrean && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gold-500/20" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="p-5 bg-dark-900 border-b border-gold-500/10">
+                <h2 className="text-xl font-bold text-gold-500">Penempatan Kamar Baru</h2>
+                <p className="text-gray-400 text-sm mt-1">Untuk: <strong className="text-gray-200">{santriAntrean.nama}</strong> ({santriAntrean.gender})</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Sakan</label>
+                  <select value={modalSakanId} onChange={(e) => { setModalSakanId(e.target.value); setModalKamarId(""); setModalLemariId(""); }} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 font-bold focus:ring-1 focus:ring-gold-500/50 shadow-inner">
+                    <option value="">-- Pilih Sakan --</option>
+                    {sakanDifilterModal.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Kamar</label>
+                  <select value={modalKamarId} onChange={(e) => { setModalKamarId(e.target.value); setModalLemariId(""); }} disabled={!modalSakanId} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 shadow-inner">
+                    <option value="">-- Pilih Kamar --</option>
+                    {modalDaftarKamar.map((k: any) => <option key={k.id} value={k.id}>Kamar {k.nama}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Lemari</label>
+                  <select value={modalLemariId} onChange={(e) => setModalLemariId(e.target.value)} disabled={!modalKamarId} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 shadow-inner">
+                    <option value="">-- Pilih Lemari --</option>
+                    {modalLemariTersedia.map((l: any) => <option key={l.id} value={l.id}>Lemari {l.nomor}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+                <button onClick={tutupModal} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                <button onClick={eksekusiAssignModal} disabled={!modalLemariId} className={`px-6 py-2.5 text-black font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)] bg-gold-500 hover:bg-gold-400`}>
+                  Simpan Penempatan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </Protect>
   );
 }

@@ -5,6 +5,7 @@ import { swalConfirm, swalSuccess, swalError, swalDanger } from "../../lib/swal"
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { Protect, usePermissions } from "@/components/Protect";
 
 // SVG Icon Components
 const IconSearch = () => (
@@ -61,6 +62,8 @@ const IconFemale = () => (
 export default function MasterSantriPage() {
   const [dataSantri, setDataSantri] = useState<any[]>([]);
   const [daftarDufah, setDaftarDufah] = useState<any[]>([]);
+  const { hasAccess } = usePermissions();
+  const canManageSantri = hasAccess("manage_santri");
 
   const [keyword, setKeyword] = useState("");
   const [filterDufah, setFilterDufah] = useState("AKTIF");
@@ -332,399 +335,407 @@ export default function MasterSantriPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gold-500/10 pb-6">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gold-500">Master Data Santri</h1>
-          <p className="text-gray-400 mt-1 font-medium">Kelola status aktif, Check Out, edit data, dan riwayat penempatan asrama.</p>
-        </div>
-        <div className="flex flex-wrap gap-2 justify-end">
-          <button onClick={exportToExcel} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
-            <IconDocument /> Excel
-          </button>
-          <button onClick={exportToPDF} className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
-            <IconDocument /> PDF
-          </button>
-          <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] text-sm flex items-center gap-1 transition-all active:scale-95">
-            <IconClipboard /> Laporan WA
-          </button>
-        </div>
-      </div>
-
-      {/* FILTER AREA */}
-      <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <Protect permission="view_santri" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat master data santri.</div>}>
+      <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen relative">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gold-500/10 pb-6">
           <div>
-            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Periode / Duf&apos;ah</label>
-            <select
-              value={filterDufah}
-              onChange={(e) => setFilterDufah(e.target.value)}
-              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
-            >
-              <optgroup label="Data Terkini">
-                <option value="AKTIF">Santri Aktif Saat Ini</option>
-                <option value="ALL">Semua Data Global</option>
-              </optgroup>
+            <h1 className="text-3xl font-extrabold text-gold-500">Master Data Santri</h1>
+            <p className="text-gray-400 mt-1 font-medium">Kelola status aktif, Check Out, edit data, dan riwayat penempatan asrama.</p>
+          </div>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={exportToExcel} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
+              <IconDocument /> Excel
+            </button>
+            <button onClick={exportToPDF} className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
+              <IconDocument /> PDF
+            </button>
+            <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] text-sm flex items-center gap-1 transition-all active:scale-95">
+              <IconClipboard /> Laporan WA
+            </button>
+          </div>
+        </div>
 
-              <optgroup label="Histori Per Duf'ah">
-                {daftarDufah.map((d) => (
-                  <option key={d.id} value={d.id}>Riwayat {d.nama}</option>
+        {/* FILTER AREA */}
+        <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Periode / Duf&apos;ah</label>
+              <select
+                value={filterDufah}
+                onChange={(e) => setFilterDufah(e.target.value)}
+                className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
+              >
+                <optgroup label="Data Terkini">
+                  <option value="AKTIF">Santri Aktif Saat Ini</option>
+                  <option value="ALL">Semua Data Global</option>
+                </optgroup>
+
+                <optgroup label="Histori Per Duf'ah">
+                  {daftarDufah.map((d) => (
+                    <option key={d.id} value={d.id}>Riwayat {d.nama}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Gender</label>
+              <select
+                value={filterGender}
+                onChange={(e) => setFilterGender(e.target.value)}
+                className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
+              >
+                <option value="SEMUA">Semua Gender</option>
+                <option value="BANIN">Banin (Putra)</option>
+                <option value="BANAT">Banat (Putri)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Kategori</label>
+              <select
+                value={filterKategori}
+                onChange={(e) => setFilterKategori(e.target.value)}
+                className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
+              >
+                <option value="SEMUA">Semua Kategori</option>
+                <option value="BARU">Baru</option>
+                <option value="LAMA">Lama</option>
+                <option value="KSU">KSU</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Bulan Ke</label>
+              <select
+                value={filterBulanKe}
+                onChange={(e) => setFilterBulanKe(e.target.value)}
+                className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
+              >
+                <option value="SEMUA">Semua Bulan</option>
+                {[...Array(12)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1}</option>
                 ))}
-              </optgroup>
-            </select>
-          </div>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Gender</label>
-            <select
-              value={filterGender}
-              onChange={(e) => setFilterGender(e.target.value)}
-              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
-            >
-              <option value="SEMUA">Semua Gender</option>
-              <option value="BANIN">Banin (Putra)</option>
-              <option value="BANAT">Banat (Putri)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Kategori</label>
-            <select
-              value={filterKategori}
-              onChange={(e) => setFilterKategori(e.target.value)}
-              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
-            >
-              <option value="SEMUA">Semua Kategori</option>
-              <option value="BARU">Baru</option>
-              <option value="LAMA">Lama</option>
-              <option value="KSU">KSU</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Bulan Ke</label>
-            <select
-              value={filterBulanKe}
-              onChange={(e) => setFilterBulanKe(e.target.value)}
-              className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
-            >
-              <option value="SEMUA">Semua Bulan</option>
-              {[...Array(12)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>{i + 1}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Cari Nama</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-600"><IconSearch /></span>
-              <input
-                type="text"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Cari santri..."
-                className="w-full pl-10 pr-4 p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 shadow-inner text-gray-200 placeholder:text-gray-600 text-sm"
-              />
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Cari Nama</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-600"><IconSearch /></span>
+                <input
+                  type="text"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder="Cari santri..."
+                  className="w-full pl-10 pr-4 p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 shadow-inner text-gray-200 placeholder:text-gray-600 text-sm"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Counter */}
-      <div className="mb-4 flex items-center gap-3">
-        <span className="bg-dark-800 text-gold-500 font-bold text-sm px-3 py-1.5 rounded-xl border border-gold-500/20">
-          Total: {dataDitampilkan.length} santri
-        </span>
-      </div>
+        {/* Counter */}
+        <div className="mb-4 flex items-center gap-3">
+          <span className="bg-dark-800 text-gold-500 font-bold text-sm px-3 py-1.5 rounded-xl border border-gold-500/20">
+            Total: {dataDitampilkan.length} santri
+          </span>
+        </div>
 
-      {/* TABEL MASTER SANTRI */}
-      <div className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead className="bg-dark-900 border-b border-gold-500/20 sticky top-0 z-10">
-              <tr>
-                <th className="p-4 text-gold-600 font-bold text-center w-12">No</th>
-                <th className="p-4 text-gold-600 font-bold">Nama Lengkap</th>
-                <th className="p-4 text-gold-600 font-bold text-center">No. ID Card</th>
-                <th className="p-4 text-gold-600 font-bold text-center">Bulan Ke-</th>
-                <th className="p-4 text-gold-600 font-bold">Kategori</th>
-                <th className="p-4 text-gold-600 font-bold">Status</th>
-                <th className="p-4 text-gold-600 font-bold text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+        {/* TABEL MASTER SANTRI */}
+        <div className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead className="bg-dark-900 border-b border-gold-500/20 sticky top-0 z-10">
                 <tr>
-                  <td colSpan={7} className="p-10 text-center">
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin"></div>
-                      <span className="text-gray-400 font-medium">Memuat data...</span>
-                    </div>
-                  </td>
+                  <th className="p-4 text-gold-600 font-bold text-center w-12">No</th>
+                  <th className="p-4 text-gold-600 font-bold">Nama Lengkap</th>
+                  <th className="p-4 text-gold-600 font-bold text-center">No. ID Card</th>
+                  <th className="p-4 text-gold-600 font-bold text-center">Bulan Ke-</th>
+                  <th className="p-4 text-gold-600 font-bold">Kategori</th>
+                  <th className="p-4 text-gold-600 font-bold">Status</th>
+                  <th className="p-4 text-gold-600 font-bold text-center">Aksi</th>
                 </tr>
-              ) : dataDitampilkan.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-10 text-center text-gray-500 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
-                </tr>
-              ) : (
-                (() => {
-                  const totalPages = Math.ceil(dataDitampilkan.length / itemsPerPage);
-                  const currentData = dataDitampilkan.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                  return currentData.map((santri, i) => {
-                    const index = (currentPage - 1) * itemsPerPage + i;
-                    return (
-                      <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
-                        <td className="p-4 text-center">
-                      <span className="bg-dark-900 border border-gold-500/20 text-gold-500 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
-                        {index + 1}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-500 line-through' : 'text-gray-200'}`}>
-                        {santri.nama} {santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
-                      </p>
-                    </td>
-                    <td className="p-4 text-center font-bold text-gold-400">
-                      {santri.kategori === 'KSU' ? '-' : santri.riwayat?.[0]?.nomorIdCard || '-'}
-                    </td>
-                    <td className="p-4 text-center font-bold text-gold-400">
-                      {santri.riwayat?.[0]?.bulanKe || '-'}
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 text-xs font-bold rounded-lg shadow-sm text-white ${santri.kategori === 'KSU' ? 'bg-purple-900/80' : santri.kategori === 'LAMA' ? 'bg-orange-800' : 'bg-green-800'}`}>
-                        {santri.kategori}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      {santri.isAktif ? (
-                        <span className="px-3 py-1 bg-green-900/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
-                          <IconCheck /> Aktif
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 bg-red-900/20 text-red-500 border border-red-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
-                          <IconX /> Keluar
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex justify-center gap-1.5 flex-wrap">
-                        <button
-                          onClick={() => setRiwayatTerpilih(santri)}
-                          className="bg-dark-900 text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gold-500/20 flex items-center gap-1"
-                        >
-                          <IconDocument /> Riwayat
-                        </button>
-
-                        <button
-                          onClick={() => bukaEditModal(santri)}
-                          className="bg-dark-900 text-gray-400 hover:text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gray-700 flex items-center gap-1"
-                        >
-                          <IconEdit /> Edit
-                        </button>
-
-                        <button
-                          onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
-                          className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
-                        >
-                          {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
-                        </button>
-
-                        <button
-                          onClick={() => hapusSantri(santri.id, santri.nama)}
-                          className="bg-dark-900 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-900/20 transition text-xs font-bold border border-red-900/50 flex items-center gap-1"
-                        >
-                          <IconTrash /> Hapus
-                        </button>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="p-10 text-center">
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="w-6 h-6 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin"></div>
+                        <span className="text-gray-400 font-medium">Memuat data...</span>
                       </div>
                     </td>
                   </tr>
-                );
-              })})()
-              )}
-            </tbody>
-          </table>
+                ) : dataDitampilkan.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-10 text-center text-gray-500 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
+                  </tr>
+                ) : (
+                  (() => {
+                    const totalPages = Math.ceil(dataDitampilkan.length / itemsPerPage);
+                    const currentData = dataDitampilkan.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    return currentData.map((santri, i) => {
+                      const index = (currentPage - 1) * itemsPerPage + i;
+                      return (
+                        <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
+                          <td className="p-4 text-center">
+                        <span className="bg-dark-900 border border-gold-500/20 text-gold-500 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-500 line-through' : 'text-gray-200'}`}>
+                          {santri.nama} {santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
+                        </p>
+                      </td>
+                      <td className="p-4 text-center font-bold text-gold-400">
+                        {santri.kategori === 'KSU' ? '-' : santri.riwayat?.[0]?.nomorIdCard || '-'}
+                      </td>
+                      <td className="p-4 text-center font-bold text-gold-400">
+                        {santri.riwayat?.[0]?.bulanKe || '-'}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 text-xs font-bold rounded-lg shadow-sm text-white ${santri.kategori === 'KSU' ? 'bg-purple-900/80' : santri.kategori === 'LAMA' ? 'bg-orange-800' : 'bg-green-800'}`}>
+                          {santri.kategori}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        {santri.isAktif ? (
+                          <span className="px-3 py-1 bg-green-900/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                            <IconCheck /> Aktif
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-red-900/20 text-red-500 border border-red-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                            <IconX /> Keluar
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex justify-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => setRiwayatTerpilih(santri)}
+                            className="bg-dark-900 text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gold-500/20 flex items-center gap-1"
+                          >
+                            <IconDocument /> Riwayat
+                          </button>
+
+                          {canManageSantri && (
+                            <button
+                              onClick={() => bukaEditModal(santri)}
+                              className="bg-dark-900 text-gray-400 hover:text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gray-700 flex items-center gap-1"
+                            >
+                              <IconEdit /> Edit
+                            </button>
+                          )}
+
+                          {canManageSantri && (
+                            <button
+                              onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
+                              className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
+                            >
+                              {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
+                            </button>
+                          )}
+
+                          {canManageSantri && (
+                            <button
+                              onClick={() => hapusSantri(santri.id, santri.nama)}
+                              className="bg-dark-900 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-900/20 transition text-xs font-bold border border-red-900/50 flex items-center gap-1"
+                            >
+                              <IconTrash /> Hapus
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })})()
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* PAGINATION UI */}
+          {Math.ceil(dataDitampilkan.length / itemsPerPage) > 1 && (
+            <div className="p-4 border-t border-gold-500/20 bg-dark-900 flex flex-col md:flex-row justify-between items-center gap-4">
+              <span className="text-sm text-gray-400 font-medium">Halaman {currentPage} dari {Math.ceil(dataDitampilkan.length / itemsPerPage)}</span>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} 
+                  disabled={currentPage === 1} 
+                  className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
+                >
+                  Prev
+                </button>
+                
+                <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
+                  {[...Array(Math.ceil(dataDitampilkan.length / itemsPerPage))].map((_, i) => {
+                    // Basic windowed pagination display for many pages
+                    const total = Math.ceil(dataDitampilkan.length / itemsPerPage);
+                    if (
+                      i === 0 || 
+                      i === total - 1 || 
+                      (i >= currentPage - 2 && i <= currentPage)
+                    ) {
+                      return (
+                        <button 
+                          key={i + 1} 
+                          onClick={() => setCurrentPage(i + 1)} 
+                          className={`w-10 h-10 rounded-lg font-bold border transition shrink-0 ${currentPage === i + 1 ? 'bg-gold-500 text-black border-gold-500 shadow-sm' : 'bg-dark-800 text-gray-400 border-gray-700 hover:border-gold-500/50'}`}
+                        >
+                          {i + 1}
+                        </button>
+                      );
+                    } else if (
+                      (i === 1 && currentPage > 3) || 
+                      (i === total - 2 && currentPage < total - 2)
+                    ) {
+                      return <span key={`ellipsis-${i}`} className="w-10 h-10 flex items-center justify-center text-gray-500 shrink-0">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(dataDitampilkan.length / itemsPerPage), prev + 1))} 
+                  disabled={currentPage === Math.ceil(dataDitampilkan.length / itemsPerPage)} 
+                  className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* PAGINATION UI */}
-        {Math.ceil(dataDitampilkan.length / itemsPerPage) > 1 && (
-          <div className="p-4 border-t border-gold-500/20 bg-dark-900 flex flex-col md:flex-row justify-between items-center gap-4">
-            <span className="text-sm text-gray-400 font-medium">Halaman {currentPage} dari {Math.ceil(dataDitampilkan.length / itemsPerPage)}</span>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} 
-                disabled={currentPage === 1} 
-                className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
-              >
-                Prev
-              </button>
-              
-              <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
-                {[...Array(Math.ceil(dataDitampilkan.length / itemsPerPage))].map((_, i) => {
-                  // Basic windowed pagination display for many pages
-                  const total = Math.ceil(dataDitampilkan.length / itemsPerPage);
-                  if (
-                    i === 0 || 
-                    i === total - 1 || 
-                    (i >= currentPage - 2 && i <= currentPage)
-                  ) {
-                    return (
-                      <button 
-                        key={i + 1} 
-                        onClick={() => setCurrentPage(i + 1)} 
-                        className={`w-10 h-10 rounded-lg font-bold border transition shrink-0 ${currentPage === i + 1 ? 'bg-gold-500 text-black border-gold-500 shadow-sm' : 'bg-dark-800 text-gray-400 border-gray-700 hover:border-gold-500/50'}`}
-                      >
-                        {i + 1}
-                      </button>
-                    );
-                  } else if (
-                    (i === 1 && currentPage > 3) || 
-                    (i === total - 2 && currentPage < total - 2)
-                  ) {
-                    return <span key={`ellipsis-${i}`} className="w-10 h-10 flex items-center justify-center text-gray-500 shrink-0">...</span>;
-                  }
-                  return null;
-                })}
+        {/* MODAL EDIT SANTRI */}
+        {editModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="bg-dark-900 border-b border-gold-500/10 p-5">
+                <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconEdit /> Edit Data Santri</h2>
+                <p className="text-gray-400 text-sm mt-1">Perbarui informasi santri</p>
               </div>
 
-              <button 
-                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(dataDitampilkan.length / itemsPerPage), prev + 1))} 
-                disabled={currentPage === Math.ceil(dataDitampilkan.length / itemsPerPage)} 
-                className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
-              >
-                Next
-              </button>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Nama Lengkap</label>
+                  <input type="text" value={editNama} onChange={(e) => setEditNama(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Kategori</label>
+                    <select value={editKategori} onChange={(e) => setEditKategori(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
+                      <option value="BARU">BARU</option>
+                      <option value="LAMA">LAMA</option>
+                      <option value="KSU">KSU</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Gender</label>
+                    <select value={editGender} onChange={(e) => setEditGender(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
+                      <option value="BANIN">Banin</option>
+                      <option value="BANAT">Banat</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Bulan Ke-</label>
+                    <input type="number" value={editBulanKe} onChange={(e) => setEditBulanKe(e.target.value)} min="1" className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" disabled={!editRiwayatId} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Nomor ID Card</label>
+                    <input type="number" value={editNomorIdCard} onChange={(e) => setEditNomorIdCard(e.target.value)} placeholder="-" className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" disabled={!editRiwayatId || editKategori === "KSU"} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+                <button onClick={() => setEditModal(null)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                <button onClick={simpanEdit} disabled={editLoading} className="px-6 py-2.5 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                  {editLoading ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
             </div>
           </div>
         )}
-      </div>
 
-      {/* MODAL EDIT SANTRI */}
-      {editModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className="bg-dark-900 border-b border-gold-500/10 p-5">
-              <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconEdit /> Edit Data Santri</h2>
-              <p className="text-gray-400 text-sm mt-1">Perbarui informasi santri</p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Nama Lengkap</label>
-                <input type="text" value={editNama} onChange={(e) => setEditNama(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        {/* MODAL RIWAYAT */}
+        {riwayatTerpilih && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="bg-dark-900 border-b border-gold-500/10 p-5 flex justify-between items-center">
                 <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-1">Kategori</label>
-                  <select value={editKategori} onChange={(e) => setEditKategori(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
-                    <option value="BARU">BARU</option>
-                    <option value="LAMA">LAMA</option>
-                    <option value="KSU">KSU</option>
-                  </select>
+                  <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconDocument /> Buku Riwayat Asrama</h2>
+                  <p className="text-gray-400 text-sm mt-1">Santri: <strong className="text-gray-200">{riwayatTerpilih.nama}</strong></p>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-1">Gender</label>
-                  <select value={editGender} onChange={(e) => setEditGender(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
-                    <option value="BANIN">Banin</option>
-                    <option value="BANAT">Banat</option>
-                  </select>
-                </div>
+                <button onClick={() => setRiwayatTerpilih(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-1">Bulan Ke-</label>
-                  <input type="number" value={editBulanKe} onChange={(e) => setEditBulanKe(e.target.value)} min="1" className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" disabled={!editRiwayatId} />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-300 mb-1">Nomor ID Card</label>
-                  <input type="number" value={editNomorIdCard} onChange={(e) => setEditNomorIdCard(e.target.value)} placeholder="-" className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" disabled={!editRiwayatId || editKategori === "KSU"} />
-                </div>
-              </div>
-            </div>
 
-            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
-              <button onClick={() => setEditModal(null)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
-              <button onClick={simpanEdit} disabled={editLoading} className="px-6 py-2.5 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                {editLoading ? "Menyimpan..." : "Simpan Perubahan"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="p-6 overflow-y-auto flex-1">
+                {riwayatTerpilih.riwayat.length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">Belum ada catatan riwayat penempatan.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {riwayatTerpilih.riwayat.map((rekamJejejak: any, index: number) => (
+                      <div key={rekamJejejak.id} className="bg-dark-900 p-4 rounded-xl border border-gold-500/10 shadow-sm flex items-start gap-4 hover:border-gold-500/30 transition">
+                        <div className="bg-dark-800 text-gold-500 font-bold w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-gold-500/20">
+                          #{riwayatTerpilih.riwayat.length - index}
+                        </div>
 
-      {/* MODAL RIWAYAT */}
-      {riwayatTerpilih && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className="bg-dark-900 border-b border-gold-500/10 p-5 flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconDocument /> Buku Riwayat Asrama</h2>
-                <p className="text-gray-400 text-sm mt-1">Santri: <strong className="text-gray-200">{riwayatTerpilih.nama}</strong></p>
-              </div>
-              <button onClick={() => setRiwayatTerpilih(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl transition">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1">
-              {riwayatTerpilih.riwayat.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">Belum ada catatan riwayat penempatan.</div>
-              ) : (
-                <div className="space-y-4">
-                  {riwayatTerpilih.riwayat.map((rekamJejejak: any, index: number) => (
-                    <div key={rekamJejejak.id} className="bg-dark-900 p-4 rounded-xl border border-gold-500/10 shadow-sm flex items-start gap-4 hover:border-gold-500/30 transition">
-                      <div className="bg-dark-800 text-gold-500 font-bold w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-gold-500/20">
-                        #{riwayatTerpilih.riwayat.length - index}
-                      </div>
-
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg text-gold-400 border-b border-gold-500/10 pb-1 mb-2">
-                          {rekamJejejak.dufah?.nama || "Duf'ah Tidak Diketahui"}
-                        </h3>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <p className="text-gray-400">Status ID Card:</p>
-                            <p className="font-semibold text-gray-200 flex items-center gap-1">
-                              {rekamJejejak.isIdCardTaken ? <><IconCheck /> Diambil</> : "Menunggu"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-400">Status Kamar:</p>
-                            <p className="font-semibold text-gray-200">
-                              {rekamJejejak.status === "ASSIGNED" ? "Mendapat Kamar" : "Antrean / Belum Dapat"}
-                            </p>
-                          </div>
-                          <div className="col-span-2 mt-1 bg-dark-800 p-2 rounded-lg border border-gold-500/10">
-                            <p className="text-gray-400 text-xs">Lokasi Lemari (Bulan ke-{rekamJejejak.bulanKe}):</p>
-                            <p className="font-bold text-gray-200">
-                              {rekamJejejak.lemari
-                                ? `${rekamJejejak.lemari.kamar.sakan.nama} | Kamar ${rekamJejejak.lemari.kamar.nama} - Loker ${rekamJejejak.lemari.nomor}`
-                                : "Belum ditentukan"
-                              }
-                            </p>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-gold-400 border-b border-gold-500/10 pb-1 mb-2">
+                            {rekamJejejak.dufah?.nama || "Duf'ah Tidak Diketahui"}
+                          </h3>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <p className="text-gray-400">Status ID Card:</p>
+                              <p className="font-semibold text-gray-200 flex items-center gap-1">
+                                {rekamJejejak.isIdCardTaken ? <><IconCheck /> Diambil</> : "Menunggu"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Status Kamar:</p>
+                              <p className="font-semibold text-gray-200">
+                                {rekamJejejak.status === "ASSIGNED" ? "Mendapat Kamar" : "Antrean / Belum Dapat"}
+                              </p>
+                            </div>
+                            <div className="col-span-2 mt-1 bg-dark-800 p-2 rounded-lg border border-gold-500/10">
+                              <p className="text-gray-400 text-xs">Lokasi Lemari (Bulan ke-{rekamJejejak.bulanKe}):</p>
+                              <p className="font-bold text-gray-200">
+                                {rekamJejejak.lemari
+                                  ? `${rekamJejejak.lemari.kamar.sakan.nama} | Kamar ${rekamJejejak.lemari.kamar.nama} - Loker ${rekamJejejak.lemari.nomor}`
+                                  : "Belum ditentukan"
+                                }
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
-              <button onClick={() => setRiwayatTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
-                Tutup
-              </button>
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
+                <button onClick={() => setRiwayatTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-    </div>
+      </div>
+    </Protect>
   );
 }

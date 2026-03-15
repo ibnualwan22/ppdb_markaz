@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePusher } from "../../providers/PusherProvider";
 import { swalConfirm, swalSuccess, swalError } from "../../lib/swal";
+import { Protect, usePermissions } from "@/components/Protect";
 // SVG Icon Components
 const IconLock = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
@@ -52,6 +53,9 @@ export default function DashboardMuasisPage() {
   const [searchSantri, setSearchSantri] = useState("");
   const mainRef = useRef<HTMLDivElement>(null);
   const pusher = usePusher();
+  const { hasAccess } = usePermissions();
+  const canLockKamar = hasAccess("lock_kamar");
+  const canAssignLemari = hasAccess("assign_lemari");
 
   const muatData = useCallback(async (isBackground = false) => {
     if (!isBackground) setLoading(true);
@@ -247,12 +251,14 @@ export default function DashboardMuasisPage() {
                 
                 <div className={`${sakan.isLocked ? 'bg-dark-900 border-b border-gray-800' : bgHeader} p-5 text-gray-200 relative`}>
                   {/* TOMBOL KUNCI SAKAN */}
+                  {canLockKamar && (
                   <button 
                     onClick={() => toggleLock('sakan', sakan.id, sakan.isLocked)} 
                     className={`absolute top-4 right-4 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1 ${sakan.isLocked ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 backdrop-blur-sm'}`}
                   >
                     {sakan.isLocked ? <><IconUnlock className="h-3.5 w-3.5" /> Buka Sakan</> : <><IconLock className="h-3.5 w-3.5" /> Kunci Sakan</>}
                   </button>
+                  )}
 
                   <div className="flex justify-between items-end mb-3 mt-4">
                     <div>
@@ -290,6 +296,7 @@ export default function DashboardMuasisPage() {
                             </h4>
                             <div className="flex items-center gap-2">
                               {/* TOMBOL KUNCI KAMAR - always visible */}
+                              {canLockKamar && (
                               <button 
                                 onClick={() => toggleLock('kamar', kamar.id, kamar.isLocked)} 
                                 disabled={sakan.isLocked}
@@ -297,6 +304,7 @@ export default function DashboardMuasisPage() {
                               >
                               {kamar.isLocked ? <><IconUnlock className="h-3 w-3" /> Buka</> : <><IconLock className="h-3 w-3" /> Kunci</>}
                               </button>
+                              )}
 
                               {!isKamarLocked && (
                                 <span className="text-xs font-bold bg-dark-800 text-gold-500 px-2 py-1 rounded-lg border border-gold-500/20">
@@ -322,7 +330,7 @@ export default function DashboardMuasisPage() {
                                         {lemari.nomor}
                                       </span>
                                       {/* TOMBOL BUKA LEMARI - always visible on mobile */}
-                                      {!isKamarLocked && (
+                                      {!isKamarLocked && canLockKamar && (
                                         <button 
                                           onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)}
                                           className="text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 border border-yellow-500/30 px-1.5 py-0.5 rounded shadow-sm font-bold flex items-center gap-0.5"
@@ -359,7 +367,7 @@ export default function DashboardMuasisPage() {
                                           {dataSantri.kategori}
                                         </span>
                                       )}
-                                      {!isTerisi && (
+                                      {!isTerisi && canLockKamar && (
                                         <button
                                           onClick={() => togglePriority(lemari.id, lemari.isPriority)}
                                           className={`text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold transition-opacity border ${lemari.isPriority ? 'bg-orange-500/20 text-orange-500 border-orange-500/30 opacity-100' : 'bg-dark-800 border-gold-500/20 hover:bg-gold-500/10 text-gold-500 md:opacity-0 md:group-hover:opacity-100'}`}
@@ -369,6 +377,7 @@ export default function DashboardMuasisPage() {
                                         </button>
                                       )}
                                       {/* TOMBOL KUNCI LEMARI - visible on mobile, hover on desktop */}
+                                      {canLockKamar && (
                                       <button 
                                         onClick={() => toggleLock('lemari', lemari.id, lemari.isLocked)}
                                         className="text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold transition-opacity bg-dark-800 border border-gold-500/20 hover:bg-gold-500/10 text-gold-500 md:opacity-0 md:group-hover:opacity-100"
@@ -376,6 +385,7 @@ export default function DashboardMuasisPage() {
                                       >
                                         <IconLock className="h-2.5 w-2.5" />
                                       </button>
+                                      )}
                                     </div>
                                   </div>
                                   
@@ -406,6 +416,7 @@ export default function DashboardMuasisPage() {
   };
 
   return (
+    <Protect permission="view_dashboard" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat Dashboard Visual Muasis.</div>}>
     <div ref={mainRef} className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="mb-8 border-b border-gold-500/10 pb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -449,5 +460,6 @@ export default function DashboardMuasisPage() {
         <div className="text-center py-20 text-gray-500 font-medium">Belum ada data Sakan di Master Lokasi.</div>
       )}
     </div>
+    </Protect>
   );
 }

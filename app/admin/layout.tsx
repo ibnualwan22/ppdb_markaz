@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ReactNode, useState } from "react";
 import { usePathname } from "next/navigation";
 import { PusherProvider } from "../providers/PusherProvider";
+import { signOut, useSession } from "next-auth/react";
 
 // SVG Icon Components
 const IconChart = () => (
@@ -49,23 +50,61 @@ const IconStore = () => (
   </svg>
 );
 
+const IconUser = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>
+);
+
+const IconShield = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.965 11.965 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+  </svg>
+);
+
+const IconUserCircle = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const IconLogout = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+  </svg>
+);
+
 const menuItems = [
-  { href: "/admin/", label: "Halaman Utama", icon: <IconChart /> },
-  { href: "/admin/dashboard", label: "Dashboard Muasis", icon: <IconHome /> },
-  { href: "/admin/asrama", label: "Meja Asrama", icon: <IconBed /> },
-  { href: "/admin/id-card", label: "Meja ID Card", icon: <IconIdCard /> },
-  { href: "/admin/mimstore", label: "Mims Store", icon: <IconStore /> },
+  { href: "/admin/", label: "Halaman Utama", icon: <IconChart />, permission: "view_dashboard" },
+  { href: "/admin/dashboard", label: "Dashboard Muasis", icon: <IconHome />, permission: "view_dashboard" },
+  { href: "/admin/asrama", label: "Meja Asrama", icon: <IconBed />, permission: "view_asrama" },
+  { href: "/admin/id-card", label: "Meja ID Card", icon: <IconIdCard />, permission: "view_idcard" },
+  { href: "/admin/mimstore", label: "Mims Store", icon: <IconStore />, permission: "view_mimstore" },
 ];
 
 const masterItems = [
-  { href: "/admin/master", label: "Master Lokasi", icon: <IconCog /> },
-  { href: "/admin/dufah", label: "Manajemen Duf'ah", icon: <IconCalendar /> },
-  { href: "/admin/santri", label: "Master Santri", icon: <IconGradCap /> },
+  { href: "/admin/master", label: "Master Lokasi", icon: <IconCog />, permission: "manage_asrama" },
+  { href: "/admin/dufah", label: "Manajemen Duf'ah", icon: <IconCalendar />, permission: "manage_dufah" },
+  { href: "/admin/santri", label: "Master Santri", icon: <IconGradCap />, permission: "view_santri" },
+];
+
+const authItems = [
+  { href: "/admin/akun", label: "Manajemen Akun", icon: <IconUser />, permission: "manage_users" },
+  { href: "/admin/role", label: "Manajemen Role", icon: <IconShield />, permission: "manage_roles" },
+  { href: "/admin/profil", label: "Profil Saya", icon: <IconUserCircle />, permission: null }, // Semua user punya akses profil
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const userPermissions = (session?.user as any)?.permissions || [];
+  const hasAccess = (permission?: string | null) => {
+    if (!permission) return true; // Tidak butuh permission (misal Profil)
+    if (userPermissions.includes("all_access")) return true;
+    return userPermissions.includes(permission);
+  };
 
   const isActive = (href: string) => {
     if (href === "/admin/") return pathname === "/admin" || pathname === "/admin/";
@@ -119,22 +158,44 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-            <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Menu Utama</p>
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={linkClass(item.href)}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
+            
+            {menuItems.some(item => hasAccess(item.permission)) && (
+              <>
+                <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Menu Utama</p>
+                {menuItems.filter(item => hasAccess(item.permission)).map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={linkClass(item.href)}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                ))}
+              </>
+            )}
 
+            {masterItems.some(item => hasAccess(item.permission)) && (
+              <div className="pt-4 mt-4 border-t border-gold-500/10">
+                <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Pengaturan</p>
+                {masterItems.filter(item => hasAccess(item.permission)).map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={linkClass(item.href)}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+            
             <div className="pt-4 mt-4 border-t border-gold-500/10">
-              <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Pengaturan</p>
-              {masterItems.map((item) => (
+              <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Security & Akun</p>
+              {authItems.filter(item => hasAccess(item.permission)).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -148,9 +209,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-gold-500/10 text-center">
-            <p className="text-[10px] text-gray-500 font-medium">© 2026 Markaz Arabiyyah</p>
+          {/* Footer (Logout Button) */}
+          <div className="p-4 border-t border-gold-500/10">
+            <button
+              onClick={() => {
+                signOut({ callbackUrl: "/login" });
+              }}
+              className="flex items-center gap-3 p-3 w-full rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200"
+            >
+              <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                <IconLogout />
+              </span>
+              Log Out
+            </button>
           </div>
         </aside>
 

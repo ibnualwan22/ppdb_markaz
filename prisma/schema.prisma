@@ -103,3 +103,57 @@ model RiwayatDufah {
 
   @@unique([santriId, dufahId]) // Mencegah 1 santri terdaftar 2 kali di bulan yang sama
 }
+
+// ==========================================
+// 4. AUTHENTICATION & RBAC
+// ==========================================
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  nama      String
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  nama        String           @unique
+  users       User[]
+  permissions RolePermission[]
+  apiKeys     ApiKey[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id         String           @id @default(uuid())
+  namaAksi   String           @unique
+  deskripsi  String?
+  roles      RolePermission[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  namaProject String
+  roleId      String
+  isActive    Boolean  @default(true)
+  role        Role     @relation(fields: [roleId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
