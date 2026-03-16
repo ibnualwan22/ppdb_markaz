@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { usePusher } from "../../providers/PusherProvider";
 import { swalNotif, swalError } from "../../lib/swal";
 import { Protect, usePermissions } from "@/components/Protect";
@@ -16,6 +16,11 @@ const IconSearch = () => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
   </svg>
 );
+const IconX = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
 
 export default function MimStorePage() {
   const [data, setData] = useState<any[]>([]);
@@ -24,6 +29,46 @@ export default function MimStorePage() {
   const [keyword, setKeyword] = useState("");
   const { hasAccess } = usePermissions();
   const canManageMimstore = hasAccess("manage_mimstore");
+
+  // Modal State
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    if (!data) return null;
+    const dresscode = data.filter(d => !d.isDresscodeTaken);
+    const toteBag = data.filter(d => !d.isToteBagTaken);
+    const pin = data.filter(d => !d.isPinTaken);
+    const songkok = data.filter(d => !d.isSongkokKhimarTaken);
+    const malzamah = data.filter(d => !d.isMalzamahTaken);
+    const tabirot = data.filter(d => !d.isTabirotTaken);
+
+    // Grouping helper
+    const groupBySize = (items: any[], sizeKey: string) => {
+      // Create a sorted object by size for better display
+      const grouped = items.reduce((acc, item) => {
+        const size = item[sizeKey] || "Belum Diisi";
+        if (!acc[size]) acc[size] = [];
+        acc[size].push(item);
+        return acc;
+      }, {} as Record<string, any[]>);
+
+      // Sort keys (e.g. S, M, L, XL or string numerically)
+      return Object.keys(grouped).sort().reduce((acc, key) => {
+        acc[key] = grouped[key];
+        return acc;
+      }, {} as Record<string, any[]>);
+    };
+
+    return {
+      dresscode: { total: dresscode.length, grouped: groupBySize(dresscode, 'ukuranDresscode') },
+      toteBag: { total: toteBag.length, items: toteBag },
+      pin: { total: pin.length, items: pin },
+      songkok: { total: songkok.length, grouped: groupBySize(songkok, 'ukuranSongkok') },
+      malzamah: { total: malzamah.length, items: malzamah },
+      tabirot: { total: tabirot.length, items: tabirot },
+    };
+  }, [data]);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -151,6 +196,33 @@ export default function MimStorePage() {
           <p className="text-gray-400 mt-1 font-medium">Pembagian Atribut untuk Santri Baru ({dufahNama}).</p>
         </div>
       </div>
+
+      {stats && (
+        <div className="mb-6 z-10 relative">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { id: 'dresscode', label: 'Dresscode', count: stats.dresscode.total },
+              { id: 'pin', label: 'Pin / Dabus', count: stats.pin.total },
+              { id: 'toteBag', label: 'Tote Bag', count: stats.toteBag.total },
+              { id: 'songkok', label: 'Pechi/Khimar', count: stats.songkok.total },
+              { id: 'malzamah', label: 'Malzamah', count: stats.malzamah.total },
+              { id: 'tabirot', label: 'Ta\'birot', count: stats.tabirot.total },
+            ].map(cat => (
+              <div 
+                key={cat.id} 
+                onClick={() => setSelectedCategory(cat.id)}
+                className="bg-dark-800 p-4 py-5 rounded-2xl border border-gold-500/20 shadow-sm shadow-black/20 cursor-pointer hover:bg-gold-500/5 hover:border-gold-500/50 hover:shadow-gold-500/10 transition-all duration-300 flex flex-col items-center justify-center text-center group"
+              >
+                <span className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-2 group-hover:text-gray-300 transition-colors">{cat.label}</span>
+                <span className="text-3xl font-black text-gold-500 group-hover:scale-110 transition-transform">
+                  {cat.count} <span className="text-sm text-gray-500 font-semibold tracking-normal">Santri</span>
+                </span>
+                <span className="mt-2 text-[10px] text-gray-500 italic opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Klik untuk lihat detail</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 mb-6 flex flex-col md:flex-row gap-6">
         <div className="flex-1 w-full md:w-1/2">
@@ -341,6 +413,126 @@ export default function MimStorePage() {
           </div>
         )}
       </div>
+
+      {/* MODAL DETIL BELUM DIAMBIL */}
+      {selectedCategory && stats && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-dark-800 w-full max-w-2xl rounded-3xl shadow-2xl border border-gold-500/30 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gold-500/20 flex justify-between items-center bg-dark-900/80 rounded-t-3xl backdrop-blur-md">
+              <h3 className="text-xl font-bold text-gold-500 flex items-center gap-2">
+                <span className="bg-gold-500/10 p-2 rounded-xl text-gold-400">
+                  <IconBell />
+                </span>
+                Belum Mendapatkan: {
+                  { dresscode: 'Dresscode', toteBag: 'Tote Bag', pin: 'Pin / Dabus', songkok: 'Pechi/Khimar', malzamah: 'Malzamah', tabirot: 'Ta\'birot' }[selectedCategory]
+                }
+              </h3>
+              <button onClick={() => setSelectedCategory(null)} className="text-gray-400 hover:bg-dark-700 hover:text-white p-2 rounded-xl transition">
+                <IconX />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-dark-800/50">
+              {['dresscode', 'songkok'].includes(selectedCategory) ? (
+                // Grouped by Size
+                Object.entries((stats as any)[selectedCategory].grouped).map(([size, items]: [string, any]) => (
+                  <div key={size} className="mb-6 last:mb-0 bg-dark-900/60 p-5 rounded-2xl border border-gold-500/10 shadow-sm">
+                    <div className="flex items-center justify-between mb-4 border-b border-gold-500/10 pb-3">
+                      <h4 className="font-bold text-gray-200 flex items-center gap-2 text-lg">
+                        <div className="w-2 h-2 rounded-full bg-gold-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></div>
+                        {size === "Belum Diisi" ? <span className="text-red-400 italic font-medium">Ukuran Belum Diisi</span> : `Ukuran: ${size}`}
+                      </h4>
+                      <span className="bg-gold-500/10 text-gold-400 text-xs font-bold px-3 py-1.5 rounded-full border border-gold-500/20 shadow-inner">
+                        {items.length} Santri
+                      </span>
+                    </div>
+                    {items.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {items.map((item: any) => (
+                          <div key={item.id} className="bg-dark-800 border border-dark-700 hover:border-gold-500/30 p-3.5 rounded-xl flex flex-col transition-colors group cursor-default">
+                            <span className="text-sm font-bold text-gray-300 group-hover:text-gold-400 transition-colors uppercase">{item.santri.nama.length > 28 ? item.santri.nama.substring(0, 25) + '...' : item.santri.nama}</span>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold shadow-sm ${item.santri.gender === 'BANIN' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-pink-500/10 text-pink-400 border border-pink-500/20'}`}>
+                                {item.santri.gender}
+                              </span>
+                              {item.lemari ? (
+                                <span className="text-[10px] text-gray-500 font-medium tracking-wide">
+                                  {item.lemari.kamar.nama}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-red-400/80 italic tracking-wide">
+                                  Belum difilter kamar
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">Tidak ada santri pada kategori ini.</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                // Simple List
+                <div className="bg-dark-900/60 p-5 rounded-2xl border border-gold-500/10 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 border-b border-gold-500/10 pb-3">
+                    <h4 className="font-bold text-gray-200 flex items-center gap-2 text-lg">
+                      <div className="w-2 h-2 rounded-full bg-gold-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></div>
+                      Daftar Santri
+                    </h4>
+                    <span className="bg-gold-500/10 text-gold-400 text-xs font-bold px-3 py-1.5 rounded-full border border-gold-500/20 shadow-inner">
+                      {(stats as any)[selectedCategory].total} Santri
+                    </span>
+                  </div>
+                  {((stats as any)[selectedCategory].items || []).length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {((stats as any)[selectedCategory].items || []).map((item: any) => (
+                        <div key={item.id} className="bg-dark-800 border border-dark-700 hover:border-gold-500/30 p-3.5 rounded-xl flex flex-col transition-colors group cursor-default">
+                          <span className="text-sm font-bold text-gray-300 group-hover:text-gold-400 transition-colors uppercase">{item.santri.nama.length > 28 ? item.santri.nama.substring(0, 25) + '...' : item.santri.nama}</span>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold shadow-sm ${item.santri.gender === 'BANIN' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-pink-500/10 text-pink-400 border border-pink-500/20'}`}>
+                              {item.santri.gender}
+                            </span>
+                            {item.lemari ? (
+                                <span className="text-[10px] text-gray-500 font-medium tracking-wide">
+                                  {item.lemari.kamar.nama}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-red-400/80 italic tracking-wide">
+                                  Belum difilter kamar
+                                </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">Tidak ada santri.</p>
+                  )}
+                </div>
+              )}
+              
+              {((stats as any)[selectedCategory].total === 0) && (
+                <div className="text-center py-12 text-gray-500 italic flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-2xl bg-dark-900 border border-dark-700 flex items-center justify-center mb-4 shadow-sm">
+                    <svg className="w-10 h-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <span className="text-lg font-bold text-gray-400 mb-1">Sudah Lengkap</span>
+                  <p className="text-sm">Semua santri telah mendapatkan <span className="font-bold text-gray-300">{{ dresscode: 'Dresscode', toteBag: 'Tote Bag', pin: 'Pin / Dabus', songkok: 'Pechi/Khimar', malzamah: 'Malzamah', tabirot: 'Ta\'birot' }[selectedCategory]}</span>.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-gold-500/20 bg-dark-900/80 rounded-b-3xl flex justify-end backdrop-blur-md">
+              <button onClick={() => setSelectedCategory(null)} className="px-6 py-2.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-gray-500 text-gray-300 text-sm font-bold rounded-xl transition shadow-sm">
+                Tutup Jendela
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
     </Protect>
   );
