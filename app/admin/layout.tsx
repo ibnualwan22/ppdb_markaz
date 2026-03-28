@@ -96,6 +96,7 @@ const authItems = [
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -112,7 +113,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   };
 
   const linkClass = (href: string) =>
-    `flex items-center gap-3 p-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive(href)
+    `flex items-center ${desktopCollapsed ? 'justify-center p-3 md:px-0' : 'gap-3 p-3'} rounded-xl text-sm font-semibold transition-all duration-200 ${isActive(href)
       ? "bg-gold-500/10 text-gold-500 shadow-lg shadow-gold-500/5 backdrop-blur-sm border border-gold-500/20"
       : "text-gray-400 hover:bg-white/5 hover:text-gold-400"
     }`;
@@ -130,12 +131,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:static inset-y-0 left-0 z-50 w-72 bg-dark-800 border-r border-gold-500/10 flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-            }`}
+          className={`fixed md:relative inset-y-0 left-0 z-50 ${desktopCollapsed ? 'md:w-20' : 'md:w-72'} w-72 bg-dark-800 border-r border-gold-500/10 flex flex-col shadow-2xl transform transition-all duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
         >
           {/* Header */}
-          <div className="p-6 text-center border-b border-gold-500/10">
-            <div className="w-14 h-14 bg-dark-900 border border-gold-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-lg overflow-hidden">
+          <div className={`p-6 text-center border-b border-gold-500/10 flex flex-col items-center relative transition-all`}>
+            <div className={`transition-all duration-300 ${desktopCollapsed ? 'w-10 h-10 mb-0' : 'w-14 h-14 mb-3'} bg-dark-900 border border-gold-500/20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg overflow-hidden`}>
               <Image
                 src="/images/logo.png"
                 alt="Logo"
@@ -143,84 +143,104 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 height={40}
                 className="object-contain"
                 onError={(e) => {
-                  // Fallback: hide broken image and show text
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
                   if (target.parentElement) {
-                    target.parentElement.innerHTML = '<span style="font-size:14px;font-weight:700;color:white;">MA</span>';
+                    target.parentElement.innerHTML = `<span style="font-size:${desktopCollapsed?'10px':'14px'};font-weight:700;color:white;">MA</span>`;
                   }
                 }}
               />
             </div>
-            <h2 className="text-lg font-bold tracking-wide text-gold-500">PPDB Markaz Arabiyyah</h2>
-            <p className="text-xs text-gray-500 mt-1 font-medium">Portal Administrasi</p>
+            
+            <div className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${desktopCollapsed ? 'h-0 opacity-0' : 'h-auto opacity-100'}`}>
+              <h2 className="text-lg font-bold tracking-wide text-gold-500 mt-3">PPDB Markaz Arabiyyah</h2>
+              <p className="text-xs text-gray-500 mt-1 font-medium">Portal Administrasi</p>
+            </div>
+
+            <button 
+              onClick={() => setDesktopCollapsed(!desktopCollapsed)}
+              className="hidden md:flex absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 bg-gold-500 text-black rounded-full items-center justify-center shadow-lg hover:scale-110 transition-transform z-10"
+              title={desktopCollapsed ? "Perbesar Sidebar" : "Persempit Sidebar"}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-300 ${desktopCollapsed ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+            </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+          <nav className={`flex-1 ${desktopCollapsed ? 'p-2' : 'p-4'} space-y-1.5 overflow-y-auto overflow-x-hidden transition-all custom-scrollbar`}>
             
             {menuItems.some(item => hasAccess(item.permission)) && (
               <>
-                <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Menu Utama</p>
+                <p className={`text-[10px] font-bold text-gold-600/70 uppercase tracking-widest mb-2 transition-all ${desktopCollapsed ? 'px-0 text-center opacity-50 text-[8px] mt-4' : 'px-3 mt-2'}`}>
+                  {desktopCollapsed ? '---' : 'Menu Utama'}
+                </p>
                 {menuItems.filter(item => hasAccess(item.permission)).map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={linkClass(item.href)}
+                    title={desktopCollapsed ? item.label : undefined}
                     onClick={() => setSidebarOpen(false)}
                   >
                     <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
-                    {item.label}
+                    <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${desktopCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>{item.label}</span>
                   </Link>
                 ))}
               </>
             )}
 
             {masterItems.some(item => hasAccess(item.permission)) && (
-              <div className="pt-4 mt-4 border-t border-gold-500/10">
-                <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Pengaturan</p>
+              <div className={`pt-4 mt-4 border-t border-gold-500/10`}>
+                <p className={`text-[10px] font-bold text-gold-600/70 uppercase tracking-widest mb-2 transition-all ${desktopCollapsed ? 'px-0 text-center opacity-50 text-[8px]' : 'px-3'}`}>
+                  {desktopCollapsed ? '---' : 'Pengaturan'}
+                </p>
                 {masterItems.filter(item => hasAccess(item.permission)).map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={linkClass(item.href)}
+                    title={desktopCollapsed ? item.label : undefined}
                     onClick={() => setSidebarOpen(false)}
                   >
                     <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
-                    {item.label}
+                    <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${desktopCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>{item.label}</span>
                   </Link>
                 ))}
               </div>
             )}
             
-            <div className="pt-4 mt-4 border-t border-gold-500/10">
-              <p className="text-[10px] font-bold text-gold-600/70 uppercase tracking-widest px-3 mb-2">Security & Akun</p>
+            <div className={`pt-4 mt-4 border-t border-gold-500/10`}>
+              <p className={`text-[10px] font-bold text-gold-600/70 uppercase tracking-widest mb-2 transition-all ${desktopCollapsed ? 'px-0 text-center opacity-50 text-[8px]' : 'px-3'}`}>
+                {desktopCollapsed ? '---' : 'Security & Akun'}
+              </p>
               {authItems.filter(item => hasAccess(item.permission)).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={linkClass(item.href)}
+                  title={desktopCollapsed ? item.label : undefined}
                   onClick={() => setSidebarOpen(false)}
                 >
                   <span className="w-5 h-5 flex items-center justify-center shrink-0">{item.icon}</span>
-                  {item.label}
+                  <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${desktopCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>{item.label}</span>
                 </Link>
               ))}
             </div>
           </nav>
 
           {/* Footer (Logout Button) */}
-          <div className="p-4 border-t border-gold-500/10">
+          <div className={`p-4 border-t border-gold-500/10 transition-all ${desktopCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
             <button
               onClick={() => {
                 signOut({ callbackUrl: "/login" });
               }}
-              className="flex items-center gap-3 p-3 w-full rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200"
+              title={desktopCollapsed ? "Log Out" : undefined}
+              className={`flex items-center ${desktopCollapsed ? 'justify-center p-3' : 'gap-3 p-3 w-full'} rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200`}
             >
               <span className="w-5 h-5 flex items-center justify-center shrink-0">
                 <IconLogout />
               </span>
-              Log Out
+              <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${desktopCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>Log Out</span>
             </button>
           </div>
         </aside>
