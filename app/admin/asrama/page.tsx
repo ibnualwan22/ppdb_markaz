@@ -74,6 +74,12 @@ export default function MejaAsramaPage() {
   const [modalKamarId, setModalKamarId] = useState("");
   const [modalLemariId, setModalLemariId] = useState("");
 
+  // State Modal Tarik Santri Comeback
+  const [isTarikModalOpen, setIsTarikModalOpen] = useState(false);
+  const [tarikSearchKeyword, setTarikSearchKeyword] = useState("");
+  const [tarikResults, setTarikResults] = useState<any[]>([]);
+  const [isSearchingTarik, setIsSearchingTarik] = useState(false);
+
   const pusher = usePusher();
 
   // Notifikasi Real-time
@@ -184,10 +190,10 @@ export default function MejaAsramaPage() {
       tutupInputModal();
       await muatData();
 
-      // Kembalikan posisi scroll
-      requestAnimationFrame(() => {
+      // Kembalikan posisi scroll (delay sedikit agar DOM selesai render ulang)
+      setTimeout(() => {
         if (scrollContainer) scrollContainer.scrollTop = scrollTop;
-      });
+      }, 50);
     } else { swalError("Gagal menyimpan", data.error); }
   };
 
@@ -214,12 +220,56 @@ export default function MejaAsramaPage() {
       tutupModal();
       await muatData();
 
-      // Kembalikan posisi scroll
-      requestAnimationFrame(() => {
+      // Kembalikan posisi scroll (delay sedikit agar DOM selesai render ulang)
+      setTimeout(() => {
         if (scrollContainer) scrollContainer.scrollTop = scrollTop;
-      });
+      }, 50);
     } else {
       swalError("Gagal", data.error);
+    }
+  };
+
+  // Handler Tarik Santri Comeback
+  const cariSantriNonAktif = async (keyword: string) => {
+    setTarikSearchKeyword(keyword);
+    if (keyword.length < 3) {
+      setTarikResults([]);
+      return;
+    }
+    setIsSearchingTarik(true);
+    try {
+      const res = await fetch(`/api/asrama/santri-nonaktif?nama=${encodeURIComponent(keyword)}`);
+      if (res.ok) setTarikResults(await res.json());
+    } catch (e) { }
+    setIsSearchingTarik(false);
+  };
+
+  const eksekusiTarikSantri = async (santriId: string, nama: string) => {
+    const confirm = window.confirm(`Yakin ingin menarik kembali santri ${nama}? Santri akan diaktifkan dan langsung masuk antrean asrama.`);
+    if (!confirm) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/asrama/tarik-santri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ santriId }),
+      });
+      const data = await res.json();
+      setLoading(false);
+      
+      if (res.ok) {
+        swalSuccess("Berhasil!", data.message);
+        setIsTarikModalOpen(false);
+        setTarikSearchKeyword("");
+        setTarikResults([]);
+        await muatData();
+      } else {
+        swalError("Gagal", data.error);
+      }
+    } catch (e) {
+      setLoading(false);
+      swalError("Error Server", "Terjadi kesalahan pada server");
     }
   };
 
@@ -428,11 +478,21 @@ export default function MejaAsramaPage() {
                   <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow-sm ml-1">{antrean.length}</span>
                 )}
               </h2>
-              <button className="text-gray-400 group-hover:text-white transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transform transition-transform duration-300 ${isAntreanOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-3">
+                {canAssignLemari && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsTarikModalOpen(true); }}
+                    className="bg-gold-500 text-black px-2 py-1 rounded text-[10px] font-black hover:bg-gold-400 transition-colors shadow-sm"
+                  >
+                    ➕ TARIK SANTRI
+                  </button>
+                )}
+                <button className="text-gray-400 group-hover:text-white transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transform transition-transform duration-300 ${isAntreanOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 bg-dark-800">
@@ -580,6 +640,80 @@ export default function MejaAsramaPage() {
                 <button onClick={eksekusiAssignModal} disabled={!modalLemariId} className={`px-6 py-2.5 text-black font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)] bg-gold-500 hover:bg-gold-400`}>
                   Simpan Penempatan
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL TARIK SANTRI KEMBALI */}
+        {isTarikModalOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-gold-500/20" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="p-5 bg-dark-900 border-b border-gold-500/10 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2">
+                    Tarik Santri Comeback
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">Cari santri non-aktif untuk dimasukkan langsung ke antrean.</p>
+                </div>
+                <button onClick={() => { setIsTarikModalOpen(false); setTarikSearchKeyword(""); setTarikResults([]); }} className="text-gray-400 hover:text-white transition-colors bg-dark-800 hover:bg-dark-700 p-2 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Ketik minimal 3 huruf nama santri (contoh: ahmad)..."
+                    value={tarikSearchKeyword}
+                    onChange={(e) => cariSantriNonAktif(e.target.value)}
+                    className="w-full p-4 border border-dark-900 rounded-xl outline-none bg-dark-900 text-gray-200 focus:ring-1 focus:ring-gold-500/50 shadow-inner text-sm"
+                    autoFocus
+                  />
+                  {isSearchingTarik && <p className="text-xs text-gold-500 mt-2 ml-1 animate-pulse">Mencari data di database...</p>}
+                </div>
+                
+                <div className="max-h-[50vh] overflow-y-auto space-y-2 mt-4 pr-1">
+                  {tarikResults.length === 0 && tarikSearchKeyword.length >= 3 && !isSearchingTarik ? (
+                    <div className="flex flex-col items-center justify-center py-8 opacity-50">
+                      <IconInbox />
+                      <p className="text-center text-sm text-gray-400 mt-3 font-medium">Santri non-aktif dengan nama tersebut tidak ditemukan.</p>
+                    </div>
+                  ) : (
+                    tarikResults.map((s) => {
+                      const lastRiwayat = s.riwayat && s.riwayat.length > 0 ? s.riwayat[0] : null;
+                      const letakInfo = lastRiwayat?.lemari 
+                        ? `${lastRiwayat.lemari.kamar.sakan.nama} (Kmr.${lastRiwayat.lemari.kamar.nama}-Lmri.${lastRiwayat.lemari.nomor})` 
+                        : 'Belum menetap';
+
+                      return (
+                      <div key={s.id} className="p-4 bg-dark-900/50 border border-gold-500/10 rounded-xl flex justify-between items-center hover:border-gold-500/40 transition-colors shadow-sm gap-4">
+                        <div className="overflow-hidden">
+                          <p className="font-bold text-gray-200 text-sm flex items-center gap-2 truncate">
+                            {s.nama} {s.gender === "BANAT" ? <IconFemale /> : <IconMale />}
+                          </p>
+                          <p className="text-[11px] text-red-400 font-medium mt-1">Status: Non-Aktif • Kategori Terakhir: {s.kategori}</p>
+                          {lastRiwayat && (
+                             <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5 truncate" title={letakInfo}>
+                               <IconLock className="h-2 w-2 opacity-50 flex-shrink-0" /> Terakhir: {lastRiwayat.dufah?.nama} • {letakInfo}
+                             </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => eksekusiTarikSantri(s.id, s.nama)}
+                          disabled={loading}
+                          className="px-4 py-2 bg-gold-500 text-black text-xs font-black rounded-lg shadow-sm hover:bg-gold-400 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all whitespace-nowrap"
+                        >
+                          Tarik ke Antrean
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+                  {tarikResults.length === 0 && tarikSearchKeyword.length < 3 && !isSearchingTarik && (
+                     <p className="text-center text-xs text-gray-500 opacity-60 italic mt-6">Ketik nama untuk mulai mencari. Hanya menampilkan santri non-aktif (boyong/pulang).</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
