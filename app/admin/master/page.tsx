@@ -216,7 +216,7 @@ export default function MasterLokasiPage() {
     const headerColor = sakan.isLocked ? 'bg-dark-900' : isBanat ? 'bg-gradient-to-r from-rose-900 to-rose-800' : 'bg-dark-900 border-b border-gold-500/10';
 
     return (
-      <div className={`rounded-2xl shadow-sm border overflow-hidden transition-all ${sakan.isLocked ? 'bg-dark-900 border-gray-800 opacity-80' : 'bg-dark-800 border-gold-500/20 hover:border-gold-500/50'}`}>
+      <div className={`rounded-2xl shadow-sm border overflow-hidden ${sakan.isLocked ? 'bg-dark-900 border-gray-800 opacity-80' : 'bg-dark-800 border-gold-500/20 hover:border-gold-500/50'}`}>
         <div className={`${headerColor} p-4 flex justify-between items-center text-gray-200`}>
           <div>
             <h3 className={`font-bold text-xl flex items-center gap-2 ${sakan.isLocked ? 'line-through text-gray-500' : 'text-gold-500'}`}>
@@ -239,7 +239,7 @@ export default function MasterLokasiPage() {
           ) : (
             <div className="space-y-4">
               {sakan.kamar.map((kamar: any) => (
-                <div key={kamar.id} className={`p-3 rounded-xl border shadow-sm transition-all ${kamar.isLocked ? 'bg-red-900/10 border-red-900/30' : 'bg-dark-900 border-gold-500/10'}`}>
+                <div key={kamar.id} className={`p-3 rounded-xl border shadow-sm ${kamar.isLocked ? 'bg-red-900/10 border-red-900/30' : 'bg-dark-900 border-gold-500/10'}`}>
                   <div className="flex justify-between items-center border-b border-gold-500/10 pb-2 mb-2">
                     <span className={`font-bold flex items-center gap-1 ${kamar.isLocked ? 'text-red-500 line-through' : 'text-gold-400'}`}>
                       {kamar.isLocked && <IconLock className="h-3.5 w-3.5" />} Kamar {kamar.nama}
@@ -262,7 +262,7 @@ export default function MasterLokasiPage() {
                         const isTerisi = lemari.penghuni && lemari.penghuni.length > 0;
                         
                         return (
-                          <div key={lemari.id} className={`flex flex-col border p-2 rounded relative group transition-all 
+                          <div key={lemari.id} className={`flex flex-col border p-2 rounded relative group 
                             ${lemari.isLocked ? 'bg-dark-900 border-gray-800 opacity-75' 
                             : isBentrok ? 'bg-red-900/20 border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]' 
                             : isTerisi ? 'bg-dark-800 border-gold-500/30' 

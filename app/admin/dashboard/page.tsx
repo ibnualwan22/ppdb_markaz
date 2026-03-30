@@ -247,7 +247,7 @@ export default function DashboardMuasisPage() {
             const sakanGembokStyle = sakan.isLocked ? "grayscale opacity-90" : "";
 
             return (
-              <div key={sakan.id} className={`bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden flex flex-col hover:border-gold-500/40 transition-all ${sakanGembokStyle}`}>
+              <div key={sakan.id} className={`bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden flex flex-col hover:border-gold-500/40 ${sakanGembokStyle}`}>
                 
                 <div className={`${sakan.isLocked ? 'bg-dark-900 border-b border-gray-800' : bgHeader} p-5 text-gray-200 relative`}>
                   {/* TOMBOL KUNCI SAKAN */}
@@ -273,7 +273,7 @@ export default function DashboardMuasisPage() {
                     </div>
                   </div>
                   <div className="w-full bg-dark-900/50 rounded-full h-2.5 border border-gold-500/10">
-                    <div className={`${sakan.isLocked ? 'bg-gray-600' : 'bg-gold-500'} h-2.5 rounded-full transition-all duration-1000`} style={{ width: `${sakan.isLocked ? 0 : persentaseSakan}%` }}></div>
+                    <div className={`${sakan.isLocked ? 'bg-gray-600' : 'bg-gold-500'} h-2.5 rounded-full`} style={{ width: `${sakan.isLocked ? 0 : persentaseSakan}%` }}></div>
                   </div>
                 </div>
 

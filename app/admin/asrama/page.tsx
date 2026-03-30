@@ -54,7 +54,7 @@ export default function MejaAsramaPage() {
   const [loading, setLoading] = useState(false);
   const [filterGender, setFilterGender] = useState("SEMUA");
   const [viewMode, setViewMode] = useState<"DENAH" | "TABEL">("TABEL");
-  const [isAntreanOpen, setIsAntreanOpen] = useState(true);
+  const [isAntreanOpen, setIsAntreanOpen] = useState(false);
   const { hasAccess } = usePermissions();
   const canAssignLemari = hasAccess("assign_lemari");
 
@@ -326,7 +326,7 @@ export default function MejaAsramaPage() {
             const persen = totalLemari === 0 ? 0 : Math.round((terisi / totalLemari) * 100);
 
             return (
-              <div key={sakan.id} className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden hover:border-gold-500/40 transition-all">
+              <div key={sakan.id} className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden hover:border-gold-500/40">
                 <div className={`${bgHeader} p-4 text-gray-200`}>
                   <div className="flex justify-between items-end">
                     <div>
@@ -339,7 +339,7 @@ export default function MejaAsramaPage() {
                     </div>
                   </div>
                   <div className="w-full bg-dark-900/50 rounded-full h-2 mt-3 border border-gold-500/10">
-                    <div className="bg-gold-500 h-2 rounded-full transition-all duration-700" style={{ width: `${persen}%` }}></div>
+                    <div className="bg-gold-500 h-2 rounded-full" style={{ width: `${persen}%` }}></div>
                   </div>
                 </div>
 
@@ -388,7 +388,7 @@ export default function MejaAsramaPage() {
                                   <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-1">
                                       <span className="text-[10px] font-black text-gray-500 bg-white px-1.5 py-0.5 rounded shadow-sm">{lemari.nomor}</span>
-                                      {lemari.isPriority && <IconStar className="h-3 w-3 text-orange-500 animate-pulse" title="Prioritas" />}
+                                      {lemari.isPriority && <IconStar className="h-3 w-3 text-orange-500" title="Prioritas" />}
                                     </div>
                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded text-white ${dataSantriLemari.kategori === 'KSU' ? 'bg-purple-600' : dataSantriLemari.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
                                       {dataSantriLemari.kategori}
@@ -410,7 +410,7 @@ export default function MejaAsramaPage() {
                               >
                                 <div className="flex items-center gap-1 self-start">
                                   <span className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm border ${lemari.isPriority ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' : 'text-gray-400 bg-dark-900 border-gray-800'}`}>{lemari.nomor}</span>
-                                  {lemari.isPriority && <IconStar className="h-3 w-3 text-orange-500 animate-pulse" title="Prioritas Pengisian" />}
+                                  {lemari.isPriority && <IconStar className="h-3 w-3 text-orange-500" title="Prioritas Pengisian" />}
                                 </div>
                                 <div className="text-center w-full">
                                   <p className={`text-xs italic font-medium ${canAssignLemari ? 'group-hover:hidden' : ''} ${lemari.isPriority ? 'text-orange-500/80' : 'text-gray-600'}`}>{lemari.isPriority ? "Prioritas" : "Kosong"}</p>
