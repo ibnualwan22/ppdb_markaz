@@ -53,6 +53,7 @@ export default function MejaAsramaPage() {
   const [antrean, setAntrean] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterGender, setFilterGender] = useState("SEMUA");
+  const [searchKeyword, setSearchKeyword] = useState("");
   const [viewMode, setViewMode] = useState<"DENAH" | "TABEL">("TABEL");
   const [isAntreanOpen, setIsAntreanOpen] = useState(false);
   const { hasAccess } = usePermissions();
@@ -294,12 +295,45 @@ export default function MejaAsramaPage() {
     return a.nama.localeCompare(b.nama);
   };
 
-  const sakanBanin = dataLokasi
-    .filter(s => s.kategori !== "BANAT" && !s.isLocked && (filterGender === "SEMUA" || filterGender === "BANIN"))
+  const getFilteredData = () => {
+    let filtered = dataLokasi.filter(s => !s.isLocked);
+    
+    if (searchKeyword.trim() !== "") {
+      const keywordLower = searchKeyword.toLowerCase();
+      
+      return filtered.map(sakan => {
+        const sakanMatch = sakan.nama.toLowerCase().includes(keywordLower);
+
+        const filteredKamar = sakan.kamar.map((kamar: any) => {
+          const kamarMatch = kamar.nama.toLowerCase().includes(keywordLower);
+
+          const filteredLemari = kamar.lemari.filter((lemari: any) => {
+            if (sakanMatch || kamarMatch) return true;
+
+            const isTerisi = lemari.penghuni && lemari.penghuni.length > 0;
+            const santriNama = isTerisi ? lemari.penghuni[0].santri.nama.toLowerCase() : "";
+            const lemariMatch = lemari.nomor.toLowerCase().includes(keywordLower);
+            return santriNama.includes(keywordLower) || lemariMatch;
+          });
+
+          return { ...kamar, lemari: filteredLemari };
+        }).filter((kamar: any) => sakanMatch || kamar.nama.toLowerCase().includes(keywordLower) || kamar.lemari.length > 0);
+
+        return { ...sakan, kamar: filteredKamar };
+      }).filter(sakan => sakan.kamar.length > 0);
+    }
+    
+    return filtered;
+  };
+
+  const finalData = getFilteredData();
+
+  const sakanBanin = finalData
+    .filter(s => s.kategori !== "BANAT" && (filterGender === "SEMUA" || filterGender === "BANIN"))
     .sort(sortSakan);
 
-  const sakanBanat = dataLokasi
-    .filter(s => s.kategori === "BANAT" && !s.isLocked && (filterGender === "SEMUA" || filterGender === "BANAT"))
+  const sakanBanat = finalData
+    .filter(s => s.kategori === "BANAT" && (filterGender === "SEMUA" || filterGender === "BANAT"))
     .sort(sortSakan);
 
   const RenderDenahBlock = ({ data, judul, warnaTema }: { data: any[], judul: string, warnaTema: 'biru' | 'pink' }) => {
@@ -542,25 +576,41 @@ export default function MejaAsramaPage() {
             <h1 className="text-3xl font-extrabold text-gold-500">Meja Asrama & Penempatan</h1>
             <p className="text-gray-400 mt-1 font-medium">Klik lemari kosong untuk menempatkan santri baru.</p>
           </div>
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex bg-dark-800 p-1 rounded-xl border border-gold-500/20 shadow-inner">
-              <button
-                onClick={() => setViewMode('DENAH')}
-                className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${viewMode === 'DENAH' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
-              >
-                <div className="w-4 h-4 rounded-sm border-2 border-current bg-transparent opacity-80 grid grid-cols-2 gap-[1px] p-[1px]"><div className="bg-current" /><div className="bg-current" /><div className="bg-current" /><div className="bg-current" /></div> Denah
-              </button>
-              <button
-                onClick={() => setViewMode('TABEL')}
-                className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${viewMode === 'TABEL' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg> Tabel Ringan
-              </button>
+          <div className="flex flex-col xl:flex-row gap-3 w-full md:w-auto">
+            <div className="relative w-full xl:w-64">
+              <input
+                type="text"
+                placeholder="Cari Santri / Kamar / Sakan..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="w-full bg-dark-800 text-gray-200 border border-gold-500/20 px-4 py-2 rounded-xl text-sm outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/50 shadow-inner placeholder-gray-500"
+              />
+              {searchKeyword && (
+                <button onClick={() => setSearchKeyword("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              )}
             </div>
-            <div className="flex bg-dark-800 p-1 rounded-xl border border-gold-500/20 shadow-inner">
-              <button onClick={() => setFilterGender('SEMUA')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'SEMUA' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Semua Gender</button>
-              <button onClick={() => setFilterGender('BANIN')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition-all ${filterGender === 'BANIN' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}><IconMale /> Banin</button>
-              <button onClick={() => setFilterGender('BANAT')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition-all ${filterGender === 'BANAT' ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}><IconFemale /> Banat</button>
+            <div className="flex flex-col sm:flex-row gap-3 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar scrollbar-hide">
+              <div className="flex bg-dark-800 p-1 rounded-xl border border-gold-500/20 shadow-inner shrink-0 items-center h-fit">
+                <button
+                  onClick={() => setViewMode('DENAH')}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${viewMode === 'DENAH' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  <div className="w-4 h-4 rounded-sm border-2 border-current bg-transparent opacity-80 grid grid-cols-2 gap-[1px] p-[1px]"><div className="bg-current" /><div className="bg-current" /><div className="bg-current" /><div className="bg-current" /></div> Denah
+                </button>
+                <button
+                  onClick={() => setViewMode('TABEL')}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${viewMode === 'TABEL' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg> Tabel Ringan
+                </button>
+              </div>
+              <div className="flex bg-dark-800 p-1 rounded-xl border border-gold-500/20 shadow-inner shrink-0 items-center h-fit">
+                <button onClick={() => setFilterGender('SEMUA')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterGender === 'SEMUA' ? 'bg-gold-500 text-black shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>Semua Gender</button>
+                <button onClick={() => setFilterGender('BANIN')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition-all ${filterGender === 'BANIN' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}><IconMale /> Banin</button>
+                <button onClick={() => setFilterGender('BANAT')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition-all ${filterGender === 'BANAT' ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}><IconFemale /> Banat</button>
+              </div>
             </div>
           </div>
         </div>
