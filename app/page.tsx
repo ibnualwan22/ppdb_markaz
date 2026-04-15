@@ -19,7 +19,7 @@ export default function Home() {
           <Link href="#" className="hover:text-gold-400 transition-colors">Beranda</Link>
           <Link href="#" className="hover:text-gold-400 transition-colors">Fasilitas</Link>
           <Link href="#" className="hover:text-gold-400 transition-colors">Tata Tertib</Link>
-          <Link href="#" className="hover:text-gold-400 transition-colors">Kontak</Link>
+          <Link href="#" className="hover:text-gold-400 transition-colors">Kontak Admin</Link>
         </nav>
         <div className="flex gap-4">
           <Link 
@@ -66,7 +66,7 @@ export default function Home() {
 
       <footer className="w-full p-8 text-center border-t border-gold-500/10 bg-dark-900/50 backdrop-blur-md relative z-10">
         <p className="text-gray-500 text-sm font-medium">
-          &copy; {new Date().getFullYear()} PPDB Markaz. Didesain dengan nuansa eksklusif.
+          &copy; {new Date().getFullYear()} PPDB Markaz.
         </p>
       </footer>
     </div>
