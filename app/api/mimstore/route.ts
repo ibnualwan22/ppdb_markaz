@@ -14,7 +14,7 @@ export async function GET() {
         bulanKe: 1, // Only santri baru (bulan pertama)
       },
       include: {
-        santri: { select: { id: true, nama: true, gender: true } },
+        santri: { select: { id: true, nama: true, gender: true, nis: true } },
         lemari: { include: { kamar: { include: { sakan: true } } } }
       },
       orderBy: {

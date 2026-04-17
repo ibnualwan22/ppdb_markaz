@@ -17,7 +17,7 @@ export async function GET() {
         santri: { kategori: { not: 'KSU' } } 
       },
       include: { 
-        santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
+        santri: { select: { id: true, nama: true, kategori: true, gender: true, nis: true, batasAktifDufah: true, noWaSantri: true, noWaOrtu: true } }, 
         lemari: { include: { kamar: { include: { sakan: true } } } } 
       },
       orderBy: { santri: { nama: 'asc' } }
@@ -31,7 +31,7 @@ export async function GET() {
         santri: { kategori: { not: 'KSU' } } 
       },
       include: { 
-        santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
+        santri: { select: { id: true, nama: true, kategori: true, gender: true, nis: true, batasAktifDufah: true, noWaSantri: true, noWaOrtu: true } }, 
         lemari: { include: { kamar: { include: { sakan: true } } } } 
       },
       orderBy: { waktuAmbilKartu: 'asc' } // ← yang pertama ambil = No. 1

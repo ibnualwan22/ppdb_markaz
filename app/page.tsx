@@ -33,7 +33,7 @@ export default function Home() {
 
       <main className="flex-1 flex flex-col items-center justify-center text-center px-6 relative z-10 pt-32 pb-20">
         <div className="inline-block mb-6 px-4 py-1.5 rounded-full border border-gold-500/30 bg-gold-500/5 backdrop-blur-sm">
-          <span className="text-xs font-bold text-gold-400 tracking-widest uppercase">Penerimaan Santri Baru Terpadu</span>
+          <span className="text-xs font-bold text-gold-400 tracking-widest uppercase">Penerimaan Peserta Didik Baru</span>
         </div>
 
         <h2 className="text-5xl md:text-7xl font-black mb-6 tracking-tight text-white drop-shadow-2xl">
@@ -59,6 +59,15 @@ export default function Home() {
             className="px-8 py-4 rounded-xl bg-dark-800 border-2 border-dark-800 hover:border-gold-500/50 text-gray-300 font-bold text-lg transition-all flex items-center justify-center gap-2"
           >
             Link Pendaftaran
+          </Link>
+          <Link
+            href="/santri/login"
+            className="px-8 py-4 rounded-xl bg-dark-800 border-2 border-dark-800 hover:border-gold-500/50 text-gold-500 font-bold text-lg transition-all flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+            Portal Santri
           </Link>
         </div>
       </main>

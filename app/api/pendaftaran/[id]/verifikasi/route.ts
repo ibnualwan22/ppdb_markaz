@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import https from "https";
 
 const prisma = new PrismaClient();
 
@@ -11,17 +12,24 @@ async function generateNIS(tx: any, dufahId: number, tanggalLahir: Date) {
   const yy = tanggalLahir.getFullYear().toString().slice(-2);
   const dateStr = `${dd}${mm}${yy}`;
   
-  // Cari nomor urut terakhir di dufah ini
-  const lastSantri = await tx.santri.findFirst({
-    where: { nis: { startsWith: `${dufahPrefix}${dateStr}` } },
-    orderBy: { nis: 'desc' }
+  // Cari semua NIS di dufah ini untuk mendapatkan nomor urut tertinggi
+  const santris = await tx.santri.findMany({
+    where: { nis: { startsWith: dufahPrefix } },
+    select: { nis: true }
   });
 
-  let urut = 1;
-  if (lastSantri && lastSantri.nis) {
-    const lastUrut = parseInt(lastSantri.nis.slice(-3));
-    urut = lastUrut + 1;
+  let maxUrut = 0;
+  for (const s of santris) {
+    if (s.nis && s.nis.length >= 3) {
+      const urutStr = s.nis.slice(-3);
+      const urutVal = parseInt(urutStr, 10);
+      if (!isNaN(urutVal) && urutVal > maxUrut) {
+        maxUrut = urutVal;
+      }
+    }
   }
+
+  const urut = maxUrut + 1;
   
   return `${dufahPrefix}${dateStr}${urut.toString().padStart(3, '0')}`;
 }
@@ -119,7 +127,54 @@ export async function POST(
     });
 
     // TODO: Kirim WhatsApp Gateway di sini menggunakan FONNTE_API_KEY
-    
+    if (process.env.FONNTE_API_KEY) {
+      const targets = [];
+      if (transaksi.santri.noWaOrtu) targets.push(transaksi.santri.noWaOrtu);
+      if (transaksi.santri.noWaSantri) targets.push(transaksi.santri.noWaSantri);
+
+      if (targets.length > 0) {
+        const targetString = targets.join(",");
+        const pesan = `*ADMINISTRASI LUNAS* ✅\n\nAssalamu'alaikum,\nAlhamdulillah, pembayaran pendaftaran telah kami verifikasi *LUNAS*.\n\nBerikut detail data santri:\nNama: *${transaksi.santri.nama}*\nNIS: *${result.nis || "-"}*\nProgram: *${transaksi.program.nama}*\nDurasi: *${transaksi.program.durasiBulan} Bulan*\n\nSaat ini santri telah resmi terdaftar dan masuk ke dalam antrean Asrama/Duf'ah.\n\nJazakumullah khairan.\n_Admin Markaz Arabiyah_`;
+
+        try {
+          const bodyParams = new URLSearchParams();
+          bodyParams.append("target", targetString);
+          bodyParams.append("message", pesan);
+          bodyParams.append("countryCode", "62");
+          
+          const postData = bodyParams.toString();
+          
+          const req = https.request({
+            hostname: 'api.fonnte.com',
+            port: 443,
+            path: '/send',
+            method: 'POST',
+            headers: {
+              'Authorization': process.env.FONNTE_API_KEY || "",
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Content-Length': Buffer.byteLength(postData)
+            }
+          }, (res) => {
+            let data = '';
+            res.on('data', (chunk) => { data += chunk; });
+            res.on('end', () => {
+              console.log("Response Fonnte HTTP:", data);
+            });
+          });
+
+          req.on('error', (e) => {
+            console.error("Fonnte HTTP Error:", e);
+          });
+
+          req.write(postData);
+          req.end();
+
+        } catch (err) {
+          console.error("Fonnte try-catch Error:", err);
+        }
+      }
+    }
+
     return NextResponse.json({
       message: "Verifikasi berhasil. Santri telah masuk antrean asrama.",
       data: result

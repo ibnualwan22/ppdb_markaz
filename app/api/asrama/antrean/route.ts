@@ -25,7 +25,7 @@ export async function GET() {
       },
       include: {
         santri: {
-          select: { id: true, nama: true, kategori: true, gender: true }
+          select: { id: true, nama: true, kategori: true, gender: true, nis: true, kabupaten: true }
         }
       },
       orderBy: {

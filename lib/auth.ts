@@ -12,7 +12,8 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         username: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        loginType: { label: "Login Type", type: "text" }
       },
       async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
@@ -34,6 +35,31 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Terlalu banyak percobaan login yang gagal. Silakan coba lagi dalam 5 menit.")
         }
 
+        // Jika loginType SANTRI, hanya cek tabel Santri
+        if (credentials.loginType === "SANTRI") {
+          const santri = await prisma.santri.findUnique({
+            where: { nis: credentials.username }
+          })
+
+          if (!santri) {
+            throw new Error("NIS tidak ditemukan di database")
+          }
+          if (credentials.password !== santri.nis) {
+            throw new Error("Password tidak cocok dengan NIS")
+          }
+
+          resetRateLimit(ip)
+          
+          return {
+            id: santri.id,
+            name: santri.nama,
+            username: santri.nis,
+            role: "SANTRI",
+            permissions: []
+          } as any
+        }
+
+        // Jika bukan SANTRI (misal Admin/Staff), cek tabel User
         const user = await prisma.user.findUnique({
           where: { username: credentials.username },
           include: {

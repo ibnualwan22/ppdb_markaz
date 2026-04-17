@@ -34,7 +34,7 @@ export default function MejaKeuanganPage() {
 
   const prosesVerifikasi = async (id: string, isKSU: boolean = false) => {
     if (!confirm(`Yakin ingin memverifikasi transaksi ini${isKSU ? ' sebagai KSU GRATIS' : ''}?`)) return;
-    
+
     setLoading(true);
     try {
       const adminId = (session?.user as any)?.id;
@@ -65,9 +65,9 @@ export default function MejaKeuanganPage() {
   };
 
   const activeDufah = allDufah.find(d => d.isActive);
-  
+
   // Transaksi HANYA untuk dufah aktif saat ini
-  const currentDufahTransactions = activeDufah 
+  const currentDufahTransactions = activeDufah
     ? transaksi.filter(t => t.noKwitansi.includes(`-${activeDufah.id}-`) || t.noKwitansi.includes(`RENEW-${activeDufah.id}-`))
     : [];
 
@@ -79,8 +79,8 @@ export default function MejaKeuanganPage() {
     .filter(t => t.statusPembayaran === "PENDING")
     .reduce((acc, t) => acc + t.totalTagihan, 0);
 
-  const filteredData = currentDufahTransactions.filter(t => 
-    t.santri.nama.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredData = currentDufahTransactions.filter(t =>
+    t.santri.nama.toLowerCase().includes(search.toLowerCase()) ||
     t.noKwitansi.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -151,8 +151,8 @@ export default function MejaKeuanganPage() {
               <BarChart data={barData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                 <XAxis dataKey="name" stroke="#888" fontSize={12} />
-                <YAxis stroke="#888" fontSize={12} tickFormatter={(val) => `Rp${val/1000000}M`} />
-                <Tooltip formatter={(value: any) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value) || 0)}`} cursor={{fill: '#2a2a2a'}} />
+                <YAxis stroke="#888" fontSize={12} tickFormatter={(val) => `Rp${val / 1000000}M`} />
+                <Tooltip formatter={(value: any) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value) || 0)}`} cursor={{ fill: '#2a2a2a' }} />
                 <Bar dataKey="Pendapatan" fill="#d4af37" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -187,7 +187,7 @@ export default function MejaKeuanganPage() {
                         <div className="text-[10px] text-gray-500 font-mono mt-1">{t.noKwitansi}</div>
                       </td>
                       <td className="px-6 py-4">{t.program.nama}</td>
-                      <td className="px-6 py-4 text-center text-gold-400 font-bold">{t.program.durasiBulan} Bln</td>
+                      <td className="px-6 py-4 text-center text-gold-400 font-bold">{t.program.durasiBulan} Duf'ah</td>
                       <td className="px-6 py-4 text-right font-mono">
                         {new Intl.NumberFormat('id-ID').format(t.totalTagihan)}
                       </td>
@@ -216,6 +216,14 @@ export default function MejaKeuanganPage() {
                               className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
                             >
                               WA Tagih
+                            </button>
+                            <button
+                              onClick={() => prosesVerifikasi(t.id, true)}
+                              disabled={loading}
+                              title="Bypass tanpa bayar untuk santri Beasiswa/KSU"
+                              className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
+                            >
+                              KSU
                             </button>
                           </div>
                         )}

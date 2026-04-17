@@ -220,7 +220,7 @@ export default function MimStorePage() {
   const exportExcel = () => {
     const rows = dataDitampilkan.map((item, idx) => ({
       "No":             idx + 1,
-      "No. ID Card":    item.nomorIdCard || "-",
+      "NIS":            item.santri.nis || "-",
       "Nama Santri":    item.santri.nama,
       "Gender":         item.santri.gender,
       "Sakan":          item.lemari?.kamar?.sakan?.nama || "-",
@@ -461,7 +461,7 @@ export default function MimStorePage() {
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead className="bg-dark-900 border-b border-gold-500/20 sticky top-0 z-10">
               <tr>
-                <th className="p-4 text-gold-600 font-bold text-center w-24">No. ID Card</th>
+                <th className="p-4 text-gold-600 font-bold text-center w-32">NIS</th>
                 <th className="p-4 text-gold-600 font-bold min-w-[200px]">Nama Lengkap & Lokasi</th>
                 <th className="p-4 text-gold-600 font-bold text-center">Dresscode</th>
                 <th className="p-4 text-gold-600 font-bold text-center">Tote Bag</th>
@@ -485,7 +485,7 @@ export default function MimStorePage() {
                 <tr key={item.id} className="border-b border-gold-500/5 hover:bg-dark-900/50">
                   <td className="p-4 text-center">
                     <span className="bg-dark-900 text-gray-300 border border-gray-700 font-black text-sm px-2.5 py-1 rounded-lg">
-                      {item.nomorIdCard || "-"}
+                      {item.santri.nis || "-"}
                     </span>
                   </td>
                   <td className="p-4">
