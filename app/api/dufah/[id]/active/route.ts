@@ -11,7 +11,7 @@ export async function PATCH(
     const { id } = await params;
     const dufahIdBaru = parseInt(id);
 
-    // 1. Cari Duf'ah Lama (Untuk patokan copy data KSU)
+    // 1. Cari Duf'ah Lama
     const dufahLama = await prisma.dufah.findFirst({ where: { isActive: true } });
 
     // 2. Matikan semua Duf'ah
@@ -23,54 +23,89 @@ export async function PATCH(
       data: { isActive: true }
     });
 
+    const isTahunBaru = dufahAktif.isTahunBaru;
+
     // ==========================================
-    // LOGIKA BARU: AUTO-CO MASSAL (KECUALI KSU)
+    // LOGIKA AUTO-CO & SUBSCRIPTION FASE EKSPANSI
     // ==========================================
+    
+    // 4. Cari santri yang batasAktifnya KURANG dari dufah baru (Masa Langganan Habis)
+    //    Pengecualian: KSU tidak akan pernah habis.
     await prisma.santri.updateMany({
-      where: { 
-        kategori: { not: "KSU" } // Semua santri BARU & LAMA akan dieksekusi
+      where: {
+        batasAktifDufah: { lt: dufahAktif.id },
+        kategori: { not: "KSU" }
       },
-      data: { 
-        isAktif: false,   // Sapu bersih! (Otomatis Check Out sementara)
-        kategori: "LAMA"  // Semua yang tadinya BARU otomatis naik kelas
+      data: {
+        isAktif: false, // Auto-CO
       }
     });
 
-    // 4. AUTO-MIGRASI KSU (Mereka kebal Auto-CO dan kamarnya diperpanjang otomatis)
+    // 5. Ubah kategori BARU menjadi LAMA karena sudah berganti bulan
+    await prisma.santri.updateMany({
+      where: { kategori: "BARU" },
+      data: { kategori: "LAMA" }
+    });
+
+    // 6. Migrasi Otomatis (Auto-Continue) untuk Santri Aktif (Langganan Masih Ada) atau KSU
     if (dufahLama) {
-      const riwayatKsuLama = await prisma.riwayatDufah.findMany({
+      // Ambil Riwayat dari bulan lalu
+      const riwayatLama = await prisma.riwayatDufah.findMany({
         where: {
           dufahId: dufahLama.id,
-          santri: { kategori: "KSU", isAktif: true },
-          lemariId: { not: null }
+          santri: {
+            OR: [
+              { batasAktifDufah: { gte: dufahAktif.id }, isAktif: true },
+              { kategori: "KSU", isAktif: true }
+            ]
+          }
         }
       });
 
-      for (const ksu of riwayatKsuLama) {
+      for (const riwayat of riwayatLama) {
+        // Cek apakah sudah pernah digenerate untuk dufah baru
         const cekDuplikat = await prisma.riwayatDufah.findUnique({
-          where: { santriId_dufahId: { santriId: ksu.santriId, dufahId: dufahAktif.id } }
+          where: { santriId_dufahId: { santriId: riwayat.santriId, dufahId: dufahAktif.id } }
         });
 
         if (!cekDuplikat) {
+          // Logika Siklus 3 Bulan Asrama & Reset Syawal
+          const newBulanKe = isTahunBaru ? 1 : riwayat.bulanKe + 1;
+          
+          // Jika Tahun Baru ATAU sudah 3 bulan, lemari dicabut (null) agar harus mutasi.
+          // Jika tidak, lemari dipertahankan.
+          const isMutasiSakan = isTahunBaru || riwayat.bulanKe >= 3;
+          const newLemariId = isMutasiSakan ? null : riwayat.lemariId;
+          const newStatus = isMutasiSakan ? "PRE_LIST" : "ASSIGNED";
+
           await prisma.riwayatDufah.create({
             data: {
-              santriId: ksu.santriId,
+              santriId: riwayat.santriId,
               dufahId: dufahAktif.id,
-              lemariId: ksu.lemariId,
-              status: "ASSIGNED",
-              isIdCardTaken: true, 
-              bulanKe: ksu.bulanKe + 1
+              lemariId: newLemariId,
+              status: newStatus,
+              isIdCardTaken: riwayat.isIdCardTaken, // ID card tidak perlu bikin ulang
+              bulanKe: newBulanKe
             }
           });
+          
+          // Bebaskan kunci lemari yang lama jika mutasi sakan
+          if (isMutasiSakan && riwayat.lemariId) {
+             await prisma.lemari.update({
+                where: { id: riwayat.lemariId },
+                data: { isLocked: false }
+             });
+          }
         }
       }
     }
 
     return NextResponse.json({ 
-      message: `${dufahAktif.nama} aktif. Santri reguler di-Auto-CO, KSU dimigrasi aman.`,
+      message: `${dufahAktif.nama} aktif. Logika batas aktif dan siklus asrama berhasil diterapkan.`,
       data: dufahAktif 
     });
   } catch (error) {
+    console.error("Gagal aktivasi dufah:", error);
     return NextResponse.json({ error: "Gagal mengaktifkan Duf'ah" }, { status: 500 });
   }
 }

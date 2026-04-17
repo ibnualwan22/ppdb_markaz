@@ -44,19 +44,42 @@ model Lemari {
 // ==========================================
 
 model Santri {
-  id        String   @id @default(uuid())
-  nama      String
-  kategori  String   // "BARU", "LAMA", "KSU"
-  gender    String   @default("BANIN")
-  isAktif   Boolean  @default(true)
-  riwayat   RiwayatDufah[]
-  createdAt DateTime @default(now())
+  id              String   @id @default(uuid())
+  nama            String
+  kategori        String   // "BARU", "LAMA", "KSU"
+  gender          String   @default("BANIN")
+  isAktif         Boolean  @default(true)
+  
+  // Data Pribadi Baru
+  nis             String?  @unique
+  nik             String?  @unique
+  tempatLahir     String?
+  tanggalLahir    DateTime?
+  namaOrtu        String?
+  noWaOrtu        String?
+  noWaSantri      String?
+  
+  // Data Alamat
+  provinsi        String?
+  kabupaten       String?
+  kecamatan       String?
+  desa            String?
+  detailAlamat    String?
+  
+  // Logic Engine Core
+  batasAktifDufah Int      @default(1)
+  
+  riwayat         RiwayatDufah[]
+  transaksi       TransaksiPendaftaran[]
+  
+  createdAt       DateTime @default(now())
 }
 
 model Dufah {
   id           Int      @id @default(autoincrement())
   nama         String   // Contoh: "Duf'ah 87"
   isActive     Boolean  @default(false) // Penanda bulan yang sedang berjalan
+  isTahunBaru  Boolean  @default(false) // Untuk reset Syawal
   
   // Fitur Time-bound untuk link pendaftaran santri lama
   tanggalBuka  DateTime? 
@@ -117,6 +140,8 @@ model User {
   role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  transaksiDiverifikasi TransaksiPendaftaran[]
 }
 
 model Role {
@@ -156,4 +181,38 @@ model ApiKey {
   role        Role     @relation(fields: [roleId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// 5. MASTER DATA PROGRAM & TRANSAKSI
+// ==========================================
+
+model Program {
+  id           String   @id @default(uuid())
+  nama         String   // "Reguler 1 Bulan", "Intensif 3 Bulan"
+  harga        Float
+  durasiBulan  Int      @default(1)
+  isActive     Boolean  @default(true)
+  transaksi    TransaksiPendaftaran[]
+  createdAt    DateTime @default(now())
+}
+
+model TransaksiPendaftaran {
+  id               String   @id @default(uuid())
+  noKwitansi       String   @unique
+  santriId         String
+  programId        String
+  nominalProgram   Float
+  kodeUnik         Int
+  totalTagihan     Float    // nominal + kodeUnik
+  statusPembayaran String   @default("PENDING") // "PENDING", "PAID", "KSU_GRATIS"
+  
+  diverifikasiOleh String?  // Menyimpan ID Admin Keuangan yang memvalidasi
+  admin            User?    @relation(fields: [diverifikasiOleh], references: [id])
+  
+  santri           Santri   @relation(fields: [santriId], references: [id])
+  program          Program  @relation(fields: [programId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  waktuLunas       DateTime?
 }
