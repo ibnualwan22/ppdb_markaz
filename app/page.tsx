@@ -22,8 +22,8 @@ export default function Home() {
           <Link href="#" className="hover:text-gold-400 transition-colors">Kontak Admin</Link>
         </nav>
         <div className="flex gap-4">
-          <Link 
-            href="/admin/dashboard" 
+          <Link
+            href="/admin/dashboard"
             className="px-6 py-2.5 rounded-full bg-dark-800 border border-gold-500/30 text-gold-500 font-bold hover:bg-gold-500/10 transition-all text-sm shadow-sm"
           >
             Login Admin
@@ -35,18 +35,17 @@ export default function Home() {
         <div className="inline-block mb-6 px-4 py-1.5 rounded-full border border-gold-500/30 bg-gold-500/5 backdrop-blur-sm">
           <span className="text-xs font-bold text-gold-400 tracking-widest uppercase">Penerimaan Santri Baru Terpadu</span>
         </div>
-        
+
         <h2 className="text-5xl md:text-7xl font-black mb-6 tracking-tight text-white drop-shadow-2xl">
-          Sistem <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600">Asrama</span>
-          <br /> Eksklusif
+          PPDB <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600">Markaz</span> Arabiyah
         </h2>
-        
+
         <p className="max-w-2xl text-lg text-gray-400 mb-10 leading-relaxed font-medium">
-          Daftarkan putra-putri Anda dan pantau penempatan asrama serta ID Card secara real-time melalui portal premium kami.
+          Daftarkan putra-putri Anda dan pantau penempatan asrama secara real-time melalui portal ini.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4">
-          <Link 
+          <Link
             href="/daftar-ulang"
             className="px-8 py-4 rounded-xl bg-gold-500 text-black font-bold text-lg hover:bg-gold-400 hover:scale-105 transition-all shadow-[0_0_30px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2"
           >
@@ -55,11 +54,11 @@ export default function Home() {
               <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </Link>
-          <Link 
-            href="/status-pendaftaran"
+          <Link
+            href="/pendaftaran"
             className="px-8 py-4 rounded-xl bg-dark-800 border-2 border-dark-800 hover:border-gold-500/50 text-gray-300 font-bold text-lg transition-all flex items-center justify-center gap-2"
           >
-            Cek Status
+            Link Pendaftaran
           </Link>
         </div>
       </main>

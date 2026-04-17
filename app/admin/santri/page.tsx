@@ -77,6 +77,7 @@ export default function MasterSantriPage() {
   const itemsPerPage = 50;
 
   const [riwayatTerpilih, setRiwayatTerpilih] = useState<any | null>(null);
+  const [biodataTerpilih, setBiodataTerpilih] = useState<any | null>(null);
 
   // State Edit Modal
   const [editModal, setEditModal] = useState<any | null>(null);
@@ -488,7 +489,10 @@ export default function MasterSantriPage() {
                         <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-500 line-through' : 'text-gray-200'}`}>
                           {santri.nama} {santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gold-500 font-mono mt-1 font-bold">
+                          NIS: {santri.nis || "Belum ada"}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">
                           Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
                         </p>
                       </td>
@@ -521,6 +525,12 @@ export default function MasterSantriPage() {
                             className="bg-dark-900 text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gold-500/20 flex items-center gap-1"
                           >
                             <IconDocument /> Riwayat
+                          </button>
+                          <button
+                            onClick={() => setBiodataTerpilih(santri)}
+                            className="bg-dark-900 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition text-xs font-bold border border-blue-500/20 flex items-center gap-1"
+                          >
+                            <IconDocument /> Biodata
                           </button>
 
                           {canManageSantri && (
@@ -728,6 +738,60 @@ export default function MasterSantriPage() {
 
               <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
                 <button onClick={() => setRiwayatTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL BIODATA */}
+        {biodataTerpilih && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="bg-dark-900 border-b border-gold-500/10 p-5 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconDocument /> Biodata Lengkap Santri</h2>
+                  <p className="text-gray-400 text-sm mt-1">Pusat Data Kependudukan Markaz</p>
+                </div>
+                <button onClick={() => setBiodataTerpilih(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                <div className="bg-dark-900 border border-gold-500/10 p-5 rounded-xl">
+                  <h3 className="text-gold-500 font-bold mb-3 border-b border-gold-500/10 pb-2">Informasi Pribadi</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500 block">Nama Lengkap</span><strong className="text-gray-200">{biodataTerpilih.nama}</strong></div>
+                    <div><span className="text-gray-500 block">Jenis Kelamin</span><strong className="text-gray-200">{biodataTerpilih.gender}</strong></div>
+                    <div><span className="text-gray-500 block">NIS</span><strong className="text-gold-400 font-mono">{biodataTerpilih.nis || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">NIK</span><strong className="text-gray-200 font-mono">{biodataTerpilih.nik || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">Tempat Lahir</span><strong className="text-gray-200">{biodataTerpilih.tempatLahir || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">Tanggal Lahir</span><strong className="text-gray-200">{biodataTerpilih.tanggalLahir ? new Date(biodataTerpilih.tanggalLahir).toLocaleDateString('id-ID') : "-"}</strong></div>
+                  </div>
+                </div>
+
+                <div className="bg-dark-900 border border-gold-500/10 p-5 rounded-xl">
+                  <h3 className="text-gold-500 font-bold mb-3 border-b border-gold-500/10 pb-2">Kontak & Alamat</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500 block">Nama Orang Tua/Wali</span><strong className="text-gray-200">{biodataTerpilih.namaOrtu || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">No. WA Orang Tua</span><strong className="text-gray-200">{biodataTerpilih.noWaOrtu || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">No. WA Santri</span><strong className="text-gray-200">{biodataTerpilih.noWaSantri || "-"}</strong></div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500 block">Alamat Lengkap</span>
+                      <strong className="text-gray-200 block mt-1">
+                        {biodataTerpilih.detailAlamat ? `${biodataTerpilih.detailAlamat}, ${biodataTerpilih.desa}, Kec. ${biodataTerpilih.kecamatan}, Kab. ${biodataTerpilih.kabupaten}, Prov. ${biodataTerpilih.provinsi}` : "-"}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
+                <button onClick={() => setBiodataTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
                   Tutup
                 </button>
               </div>

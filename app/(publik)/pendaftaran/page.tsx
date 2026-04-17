@@ -76,6 +76,14 @@ export default function PendaftaranPage() {
     setFormData({ ...formData, desaId: id, desaNama: name });
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let v = e.target.value.replace(/\D/g, "");
+    if (v.length > 8) v = v.substring(0, 8);
+    if (v.length >= 5) v = `${v.substring(0, 2)}/${v.substring(2, 4)}/${v.substring(4)}`;
+    else if (v.length >= 3) v = `${v.substring(0, 2)}/${v.substring(2)}`;
+    setFormData({ ...formData, tanggalLahir: v });
+  };
+
   const handleNext = () => {
     // Validasi sederhana
     if (step === 1 && (!formData.nama || !formData.nik || !formData.tanggalLahir || !formData.noWaOrtu)) {
@@ -85,6 +93,11 @@ export default function PendaftaranPage() {
       return swalError("Error", "Mohon lengkapi alamat lengkap.");
     }
     setStep(step + 1);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    swalSuccess("Tersalin!", "Nomor rekening berhasil disalin");
   };
 
   const handleSubmit = async () => {
@@ -107,7 +120,7 @@ export default function PendaftaranPage() {
           gender: formData.gender,
           nik: formData.nik,
           tempatLahir: formData.tempatLahir,
-          tanggalLahir: formData.tanggalLahir,
+          tanggalLahir: formData.tanggalLahir.split('/').reverse().join('-'),
           namaOrtu: formData.namaOrtu,
           noWaOrtu: formatWa(formData.noWaOrtu),
           noWaSantri: formData.noWaSantri ? formatWa(formData.noWaSantri) : "",
@@ -193,7 +206,7 @@ export default function PendaftaranPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-400 mb-1">Tanggal Lahir *</label>
-                    <input type="date" value={formData.tanggalLahir} onChange={e => setFormData({ ...formData, tanggalLahir: e.target.value })} className="w-full bg-dark-900 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-gray-400 focus:text-white shadow-inner style-date" />
+                    <input type="text" inputMode="numeric" value={formData.tanggalLahir} onChange={handleDateChange} className="w-full bg-dark-900 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white shadow-inner" placeholder="DD/MM/YYYY" />
                   </div>
                 </div>
               </div>
@@ -329,6 +342,23 @@ export default function PendaftaranPage() {
                   <p className="text-xs text-gray-500 text-center uppercase tracking-widest font-bold">Total Yang Harus Dibayar</p>
                   <p className="text-green-400 text-3xl font-black text-center mt-1">Rp {new Intl.NumberFormat('id-ID').format(invoice.totalTagihan)}</p>
                 </div>
+
+                <div className="bg-dark-800 p-4 rounded-xl border border-blue-500/20 mt-4 text-center">
+                  <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Transfer ke Rekening</p>
+                  <p className="text-xl font-black text-white font-mono tracking-widest">0555-01-001108-569</p>
+                  <p className="text-sm font-bold text-blue-400 mt-1">BANK BRI a.n Markaz Arabiyah</p>
+                  <button 
+                    onClick={() => copyToClipboard('055501001108569')}
+                    className="mt-3 bg-dark-900 hover:bg-black text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:border-gold-500 transition-colors flex items-center justify-center gap-2 w-full"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                    Salin No. Rekening
+                  </button>
+                </div>
+                
+                <p className="text-xs text-gray-500 text-center mt-4 italic">
+                  *Pastikan transfer tepat hingga 3 digit terakhir (+{invoice.kodeUnik}) agar otomatis terbaca oleh Admin.
+                </p>
               </div>
 
               <div className="mt-10">

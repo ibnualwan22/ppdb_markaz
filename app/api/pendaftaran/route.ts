@@ -102,7 +102,15 @@ export async function GET() {
         admin: { select: { nama: true } }
       }
     });
-    return NextResponse.json(transaksi);
+
+    const allDufah = await prisma.dufah.findMany({
+      orderBy: { id: 'asc' }
+    });
+
+    return NextResponse.json({
+      transaksi,
+      allDufah
+    });
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data transaksi" }, { status: 500 });
   }
