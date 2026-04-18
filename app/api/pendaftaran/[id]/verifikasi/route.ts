@@ -5,8 +5,13 @@ import https from "https";
 const prisma = new PrismaClient();
 
 // Fungsi bantuan untuk menghasilkan NIS: Duf'ah + DDMMYY + Urut
-async function generateNIS(tx: any, dufahId: number, tanggalLahir: Date) {
-  const dufahPrefix = dufahId.toString().padStart(2, '0');
+async function generateNIS(tx: any, dufah: any, tanggalLahir: Date) {
+  const dufahNumberMatch = dufah.nama.match(/\d+/);
+  const rawPrefix = dufahNumberMatch ? dufahNumberMatch[0] : dufah.id.toString();
+  // Pad dengan '0' jika kurang dari 2 digit (misal '9' jadi '09'). 
+  // Jika 3 digit ('100'), maka padStart tidak akan memotong nilainya, tetap '100'.
+  const dufahPrefix = rawPrefix.padStart(2, '0');
+  
   const dd = tanggalLahir.getDate().toString().padStart(2, '0');
   const mm = (tanggalLahir.getMonth() + 1).toString().padStart(2, '0');
   const yy = tanggalLahir.getFullYear().toString().slice(-2);
@@ -77,7 +82,7 @@ export async function POST(
       // 2. Generate NIS jika belum punya
       let nis = transaksi.santri.nis;
       if (!nis && transaksi.santri.tanggalLahir) {
-        nis = await generateNIS(tx, dufahAktif.id, new Date(transaksi.santri.tanggalLahir));
+        nis = await generateNIS(tx, dufahAktif, new Date(transaksi.santri.tanggalLahir));
       }
 
       // 3. Kalkulasi Batas Aktif Duf'ah

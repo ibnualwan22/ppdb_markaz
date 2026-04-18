@@ -10,15 +10,28 @@ function generateInvoiceNumber(dufahId: number) {
   return `INV-${dufahId}-${dateString}-${randomStr}`;
 }
 
+function toTitleCase<T extends string | undefined | null>(str: T): T {
+  if (!str) return str;
+  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') as T;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
-      nama, gender, nik, tempatLahir, tanggalLahir,
-      namaOrtu, noWaOrtu, noWaSantri,
-      provinsi, kabupaten, kecamatan, desa, detailAlamat,
+      gender, nik, tanggalLahir,
+      noWaOrtu, noWaSantri,
       programId
     } = body;
+
+    const nama = toTitleCase(body.nama);
+    const tempatLahir = toTitleCase(body.tempatLahir);
+    const namaOrtu = toTitleCase(body.namaOrtu);
+    const provinsi = toTitleCase(body.provinsi);
+    const kabupaten = toTitleCase(body.kabupaten);
+    const kecamatan = toTitleCase(body.kecamatan);
+    const desa = toTitleCase(body.desa);
+    const detailAlamat = toTitleCase(body.detailAlamat);
 
     // 1. Validasi Program
     const program = await prisma.program.findUnique({ where: { id: programId } });

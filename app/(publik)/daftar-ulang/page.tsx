@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { swalSuccess, swalError } from "@/app/lib/swal";
+import { generateRegistrationPdf } from "@/app/lib/generateRegistrationPdf";
 
 export default function DaftarUlangPage() {
   const [step, setStep] = useState(1);
@@ -31,6 +32,15 @@ export default function DaftarUlangPage() {
     e.preventDefault();
     if (!identifier || !dob) return swalError("Gagal", "Lengkapi NIK/NIS dan Tanggal Lahir");
     if (dob.length !== 10) return swalError("Format Salah", "Format tanggal lahir harus DD/MM/YYYY lengkap.");
+
+    const dateParts = dob.split("/");
+    if (dateParts.length !== 3) return swalError("Format Salah", "Format tanggal lahir harus DD/MM/YYYY lengkap.");
+    const day = parseInt(dateParts[0], 10);
+    const month = parseInt(dateParts[1], 10);
+    const year = parseInt(dateParts[2], 10);
+    if (day < 1 || day > 31) return swalError("Tidak Valid", "Tanggal lahir maksimal 31.");
+    if (month < 1 || month > 12) return swalError("Tidak Valid", "Bulan lahir maksimal 12.");
+    if (year < 1900 || year > new Date().getFullYear()) return swalError("Tidak Valid", "Tahun lahir tidak valid.");
 
     setLoading(true);
     try {
@@ -67,6 +77,16 @@ export default function DaftarUlangPage() {
       if (res.ok) {
         setInvoice(data.data.transaksi);
         setStep(3);
+        try {
+          generateRegistrationPdf({
+            santri: santriData,
+            transaksi: data.data.transaksi,
+            program: data.data.program,
+            isRenew: true
+          });
+        } catch(e) {
+          console.error("Gagal cetak PDF", e);
+        }
       } else {
         swalError("Gagal", data.error || "Terjadi kesalahan");
       }

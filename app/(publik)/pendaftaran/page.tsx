@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { swalSuccess, swalError } from "@/app/lib/swal";
+import { generateRegistrationPdf } from "@/app/lib/generateRegistrationPdf";
 
 // Emsifa API URLs
 const API_PROV = "https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json";
@@ -86,9 +87,20 @@ export default function PendaftaranPage() {
 
   const handleNext = () => {
     // Validasi sederhana
-    if (step === 1 && (!formData.nama || !formData.nik || !formData.tanggalLahir || !formData.noWaOrtu)) {
-      return swalError("Error", "Mohon lengkapi data diri utama.");
+    if (step === 1) {
+      if (!formData.nama || !formData.nik || !formData.tanggalLahir || !formData.noWaOrtu) {
+        return swalError("Error", "Mohon lengkapi data diri utama.");
+      }
+      const dateParts = formData.tanggalLahir.split("/");
+      if (dateParts.length !== 3) return swalError("Format Salah", "Format tanggal lahir harus DD/MM/YYYY lengkap.");
+      const day = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10);
+      const year = parseInt(dateParts[2], 10);
+      if (day < 1 || day > 31) return swalError("Tidak Valid", "Tanggal lahir maksimal 31.");
+      if (month < 1 || month > 12) return swalError("Tidak Valid", "Bulan lahir maksimal 12.");
+      if (year < 1900 || year > new Date().getFullYear()) return swalError("Tidak Valid", "Tahun lahir tidak valid.");
     }
+    
     if (step === 2 && (!formData.desaId || !formData.detailAlamat)) {
       return swalError("Error", "Mohon lengkapi alamat lengkap.");
     }
@@ -139,6 +151,16 @@ export default function PendaftaranPage() {
       if (res.ok) {
         setInvoice(data.data.transaksi);
         setStep(4); // Pindah ke layar Invoice
+        try {
+          generateRegistrationPdf({
+            santri: data.data.santri,
+            transaksi: data.data.transaksi,
+            program: data.data.program,
+            isRenew: false
+          });
+        } catch(e) {
+          console.error("Gagal cetak PDF", e);
+        }
       } else {
         swalError("Gagal", data.error || data.details || "Terjadi kesalahan.");
       }
