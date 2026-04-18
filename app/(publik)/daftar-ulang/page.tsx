@@ -24,7 +24,19 @@ export default function DaftarUlangPage() {
   // Hasil Akhir
   const [invoice, setInvoice] = useState<any>(null);
 
+  // Captcha
+  const [captchaA, setCaptchaA] = useState(0);
+  const [captchaB, setCaptchaB] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
+  const refreshCaptcha = () => {
+    setCaptchaA(Math.floor(Math.random() * 10) + 1);
+    setCaptchaB(Math.floor(Math.random() * 10) + 1);
+    setCaptchaAnswer("");
+  };
+
   useEffect(() => {
+    refreshCaptcha();
     fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => {});
   }, []);
 
@@ -63,6 +75,12 @@ export default function DaftarUlangPage() {
 
   const handleRenew = async () => {
     if (!programId) return swalError("Pilih Program", "Anda harus memilih program untuk melanjutkan.");
+
+    // Validasi Captcha
+    if (parseInt(captchaAnswer, 10) !== captchaA + captchaB) {
+      refreshCaptcha();
+      return swalError("Verifikasi Gagal", "Jawaban matematika salah.");
+    }
 
     setLoading(true);
     try {
@@ -183,6 +201,23 @@ export default function DaftarUlangPage() {
                     <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(p.harga)}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* CAPTCHA SECTION */}
+              <div className="mt-8 bg-dark-900 border border-gold-500/20 p-5 rounded-2xl">
+                <label className="block text-sm font-bold text-gray-400 mb-2">Verifikasi Keamanan *</label>
+                <div className="flex items-center gap-4">
+                  <div className="bg-dark-800 text-white font-mono text-xl font-bold py-3 px-6 rounded-xl border border-dark-700">
+                    {captchaA} + {captchaB} = ?
+                  </div>
+                  <input 
+                    type="number" 
+                    value={captchaAnswer} 
+                    onChange={(e) => setCaptchaAnswer(e.target.value)} 
+                    placeholder="Jawaban" 
+                    className="w-full max-w-[120px] bg-dark-800 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white font-bold text-center"
+                  />
+                </div>
               </div>
 
               <button onClick={handleRenew} disabled={loading} className="w-full mt-8 bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-black font-extrabold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50">

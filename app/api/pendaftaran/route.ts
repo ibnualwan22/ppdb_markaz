@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { checkRateLimit } from "@/app/lib/rateLimit";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,13 @@ function toTitleCase<T extends string | undefined | null>(str: T): T {
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+    const rateLimit = checkRateLimit(ip);
+
+    if (!rateLimit.success) {
+      return NextResponse.json({ error: "Terlalu banyak permintaan. Silakan coba lagi setelah 5 menit." }, { status: 429 });
+    }
+
     const body = await request.json();
     const {
       gender, nik, tanggalLahir,

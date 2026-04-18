@@ -46,11 +46,49 @@ export default function PendaftaranPage() {
   // Invoice Result
   const [invoice, setInvoice] = useState<any>(null);
 
+  // Captcha
+  const [captchaA, setCaptchaA] = useState(0);
+  const [captchaB, setCaptchaB] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
+  const refreshCaptcha = () => {
+    setCaptchaA(Math.floor(Math.random() * 10) + 1);
+    setCaptchaB(Math.floor(Math.random() * 10) + 1);
+    setCaptchaAnswer("");
+  };
+
   // Fetch Provinces & Programs on Mount
   useEffect(() => {
+    refreshCaptcha();
     fetch(API_PROV).then(res => res.json()).then(data => setProvinces(data)).catch(() => { });
     fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => { });
+
+    // Load Cache
+    const cachedData = localStorage.getItem("ppdb_pendaftaran_data");
+    const cachedStep = localStorage.getItem("ppdb_pendaftaran_step");
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        setFormData(parsed);
+        if (parsed.provinsiId) fetch(API_KAB(parsed.provinsiId)).then(res => res.json()).then(data => setRegencies(data)).catch(() => { });
+        if (parsed.kabupatenId) fetch(API_KEC(parsed.kabupatenId)).then(res => res.json()).then(data => setDistricts(data)).catch(() => { });
+        if (parsed.kecamatanId) fetch(API_DESA(parsed.kecamatanId)).then(res => res.json()).then(data => setVillages(data)).catch(() => { });
+      } catch(e) {}
+    }
+    if (cachedStep) {
+      const s = parseInt(cachedStep, 10);
+      if (!isNaN(s) && s >= 1 && s <= 3) setStep(s);
+    }
   }, []);
+
+  // Save Cache
+  useEffect(() => {
+    localStorage.setItem("ppdb_pendaftaran_data", JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    localStorage.setItem("ppdb_pendaftaran_step", step.toString());
+  }, [step]);
 
   // Handlers Wilayah
   const handleProvChange = async (e: any) => {
@@ -114,6 +152,12 @@ export default function PendaftaranPage() {
 
   const handleSubmit = async () => {
     if (!formData.programId) return swalError("Error", "Silakan pilih program.");
+    
+    // Validasi Captcha
+    if (parseInt(captchaAnswer, 10) !== captchaA + captchaB) {
+      refreshCaptcha();
+      return swalError("Verifikasi Gagal", "Jawaban matematika salah.");
+    }
 
     // Format WA (08 -> 628)
     const formatWa = (wa: string) => {
@@ -151,6 +195,8 @@ export default function PendaftaranPage() {
       if (res.ok) {
         setInvoice(data.data.transaksi);
         setStep(4); // Pindah ke layar Invoice
+        localStorage.removeItem("ppdb_pendaftaran_data");
+        localStorage.removeItem("ppdb_pendaftaran_step");
         try {
           generateRegistrationPdf({
             santri: data.data.santri,
@@ -330,6 +376,23 @@ export default function PendaftaranPage() {
                   ))}
                 </div>
               )}
+
+              {/* CAPTCHA SECTION */}
+              <div className="mt-8 bg-dark-900 border border-gold-500/20 p-5 rounded-2xl">
+                <label className="block text-sm font-bold text-gray-400 mb-2">Verifikasi Keamanan *</label>
+                <div className="flex items-center gap-4">
+                  <div className="bg-dark-800 text-white font-mono text-xl font-bold py-3 px-6 rounded-xl border border-dark-700">
+                    {captchaA} + {captchaB} = ?
+                  </div>
+                  <input 
+                    type="number" 
+                    value={captchaAnswer} 
+                    onChange={(e) => setCaptchaAnswer(e.target.value)} 
+                    placeholder="Jawaban" 
+                    className="w-full max-w-[120px] bg-dark-800 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white font-bold text-center"
+                  />
+                </div>
+              </div>
 
               <button onClick={handleSubmit} disabled={loading} className="w-full mt-8 bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-black font-extrabold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50">
                 {loading ? "Memproses..." : "Selesaikan Pendaftaran"}
