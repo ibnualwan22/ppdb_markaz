@@ -52,12 +52,16 @@ model Santri {
 
   // Data Pribadi Baru
   nis          String?   @unique
-  nik          String?   @unique
   tempatLahir  String?
   tanggalLahir DateTime?
   namaOrtu     String?
   noWaOrtu     String?
   noWaSantri   String?
+
+  // Status Cuti
+  saldoDufah     Int     @default(0)
+  expiredDufahId Int?
+  isCuti         Boolean @default(false)
 
   // Data Alamat
   provinsi     String?
@@ -85,7 +89,8 @@ model Dufah {
   tanggalBuka  DateTime?
   tanggalTutup DateTime?
 
-  riwayat RiwayatDufah[]
+  riwayat              RiwayatDufah[]
+  transaksiPendaftaran TransaksiPendaftaran[]
 }
 
 // ==========================================
@@ -188,13 +193,15 @@ model ApiKey {
 // ==========================================
 
 model Program {
-  id          String                 @id @default(uuid())
-  nama        String // "Reguler 1 Bulan", "Intensif 3 Bulan"
-  harga       Float
-  durasiBulan Int                    @default(1)
-  isActive    Boolean                @default(true)
-  transaksi   TransaksiPendaftaran[]
-  createdAt   DateTime               @default(now())
+  id                  String                 @id @default(uuid())
+  nama                String // "Reguler 1 Bulan", "Intensif 3 Bulan"
+  harga               Float
+  durasiBulan         Int                    @default(1)
+  isActive            Boolean                @default(true)
+  tanggalMulaiDefault String? // "10"
+  tanggalTutupDefault String? // "06"
+  transaksi           TransaksiPendaftaran[]
+  createdAt           DateTime               @default(now())
 }
 
 model TransaksiPendaftaran {
@@ -209,6 +216,9 @@ model TransaksiPendaftaran {
 
   diverifikasiOleh String? // Menyimpan ID Admin Keuangan yang memvalidasi
   admin            User?   @relation(fields: [diverifikasiOleh], references: [id])
+
+  dufahTujuanId Int?
+  dufahTujuan   Dufah? @relation(fields: [dufahTujuanId], references: [id])
 
   santri  Santri  @relation(fields: [santriId], references: [id])
   program Program @relation(fields: [programId], references: [id])

@@ -110,22 +110,68 @@ export async function POST(
         }
       });
 
-      // 5. Buat Riwayat Duf'ah untuk bulan berjalan jika belum ada
+      // 5. Buat Riwayat Duf'ah untuk dufah tujuan jika belum ada
+      const targetDufahId = transaksi.dufahTujuanId || dufahAktif.id;
+      const isBeliAtribut = transaksi.nominalProgram >= transaksi.program.harga;
+
       const cekRiwayat = await tx.riwayatDufah.findUnique({
         where: {
-          santriId_dufahId: { santriId: transaksi.santriId, dufahId: dufahAktif.id }
+          santriId_dufahId: { santriId: transaksi.santriId, dufahId: targetDufahId }
         }
       });
 
       if (!cekRiwayat) {
+        // Logika Bulan Ke: Cek apakah riwayat sebelumnya nyambung
+        // 1. Cari Duf'ah tepat sebelum targetDufahId
+        const previousDufah = await tx.dufah.findFirst({
+          where: { id: { lt: targetDufahId } },
+          orderBy: { id: 'desc' }
+        });
+
+        let newBulanKe = 1;
+
+        if (previousDufah) {
+          // 2. Cari apakah santri ini punya riwayat di Duf'ah sebelumnya
+          const lastRiwayat = await tx.riwayatDufah.findFirst({
+            where: { santriId: transaksi.santriId, dufahId: previousDufah.id }
+          });
+
+          if (lastRiwayat) {
+            // Nyambung tanpa bolong
+            newBulanKe = (lastRiwayat.bulanKe || 1) + 1;
+          }
+        }
+
         await tx.riwayatDufah.create({
           data: {
             santriId: transaksi.santriId,
-            dufahId: dufahAktif.id,
+            dufahId: targetDufahId,
             status: "PRE_LIST", // Masuk ke antrean Asrama
-            bulanKe: 1
+            bulanKe: newBulanKe,
+            // Jika TIDAK beli atribut, berarti sudah punya. Kita set true agar tidak muncul di tagihan Mims Store.
+            isDresscodeTaken: !isBeliAtribut,
+            isToteBagTaken: !isBeliAtribut,
+            isPinTaken: !isBeliAtribut,
+            isSongkokKhimarTaken: !isBeliAtribut,
+            isMalzamahTaken: !isBeliAtribut,
+            isTabirotTaken: !isBeliAtribut
           }
         });
+      } else {
+        // Jika riwayat sudah ada, dan dia beli atribut, reset statusnya jadi false agar ditagih lagi.
+        if (isBeliAtribut) {
+           await tx.riwayatDufah.update({
+             where: { id: cekRiwayat.id },
+             data: {
+               isDresscodeTaken: false,
+               isToteBagTaken: false,
+               isPinTaken: false,
+               isSongkokKhimarTaken: false,
+               isMalzamahTaken: false,
+               isTabirotTaken: false
+             }
+           });
+        }
       }
 
       return santriUpdate;

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const {
-      gender, nik, tanggalLahir,
+      gender, tanggalLahir,
       noWaOrtu, noWaSantri,
       programId
     } = body;
@@ -47,11 +47,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Program tidak ditemukan" }, { status: 404 });
     }
 
-    // 2. Ambil Dufah Aktif
-    const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
-    if (!dufahAktif) {
-      return NextResponse.json({ error: "Belum ada Duf'ah yang aktif untuk pendaftaran" }, { status: 400 });
+    // 2. Tentukan Dufah Tujuan berdasarkan waktu saat ini
+    const allDufahs = await prisma.dufah.findMany({ orderBy: { id: 'asc' } });
+    const now = new Date();
+    
+    // Cari Dufah yang rentang pendaftarannya mencakup waktu saat ini
+    const targetDufah = allDufahs.find(df => {
+      if (!df.tanggalBuka || !df.tanggalTutup) return false;
+      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+    });
+
+    if (!targetDufah) {
+      return NextResponse.json({ error: "Pendaftaran saat ini sedang ditutup. Tidak ada periode Duf'ah yang buka." }, { status: 400 });
     }
+
+    const dufahTujuanId = targetDufah.id;
 
     // 3. Hitung Kode Unik & Total
     const kodeUnik = Math.floor(Math.random() * 900) + 100; // 100-999
@@ -59,15 +69,21 @@ export async function POST(request: Request) {
 
     // 4. Proses Simpan Transaksi (Prisma Transaction)
     const result = await prisma.$transaction(async (tx) => {
-      // Cek apakah santri dengan NIK ini sudah ada
-      let santri = await tx.santri.findUnique({ where: { nik } });
+      // Cek berdasarkan Nama & Tanggal Lahir (karena NIK dihapus)
+      const parsedTanggalLahir = new Date(tanggalLahir);
+      let santri = await tx.santri.findFirst({ 
+        where: { 
+          nama, 
+          tanggalLahir: parsedTanggalLahir 
+        } 
+      });
       
       if (!santri) {
         // Buat Santri Baru
         santri = await tx.santri.create({
           data: {
-            nama, gender, nik, tempatLahir,
-            tanggalLahir: new Date(tanggalLahir),
+            nama, gender, tempatLahir,
+            tanggalLahir: parsedTanggalLahir,
             namaOrtu, noWaOrtu, noWaSantri,
             provinsi, kabupaten, kecamatan, desa, detailAlamat,
             kategori: "BARU", // Pendaftar umum defaultnya BARU
@@ -85,12 +101,13 @@ export async function POST(request: Request) {
       }
 
       // Buat Transaksi
-      const noKwitansi = generateInvoiceNumber(dufahAktif.id);
+      const noKwitansi = generateInvoiceNumber(dufahTujuanId);
       const transaksi = await tx.transaksiPendaftaran.create({
         data: {
           noKwitansi,
           santriId: santri.id,
           programId: program.id,
+          dufahTujuanId,
           nominalProgram: program.harga,
           kodeUnik,
           totalTagihan,

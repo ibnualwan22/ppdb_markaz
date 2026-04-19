@@ -10,7 +10,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { nama, harga, durasiBulan, isActive } = body;
+    const { nama, harga, durasiBulan, isActive, tanggalMulaiDefault, tanggalTutupDefault } = body;
 
     const program = await prisma.program.update({
       where: { id },
@@ -20,6 +20,8 @@ export async function PATCH(
         durasiBulan:
           durasiBulan !== undefined ? parseInt(durasiBulan) : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
+        tanggalMulaiDefault,
+        tanggalTutupDefault
       },
     });
 

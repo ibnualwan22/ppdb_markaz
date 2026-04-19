@@ -47,10 +47,12 @@ export default function MejaIdCardPage() {
   const [dataGabungan, setDataGabungan] = useState<any[]>([]);
   const [sudahAmbilMurni, setSudahAmbilMurni] = useState<any[]>([]);
   const [dufahNama, setDufahNama] = useState("");
+  const [daftarDufah, setDaftarDufah] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [keyword, setKeyword] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
+  const [filterDufah, setFilterDufah] = useState("BULAN_INI"); // default = santri bulan ini
   const { hasAccess } = usePermissions();
   const canManageIdCard = hasAccess("manage_idcard");
 
@@ -72,14 +74,16 @@ export default function MejaIdCardPage() {
     setTimeout(() => setNotif({ show: false, pesan: "", namaTarget: "" }), 5000);
   };
 
-  const muatData = async (isBackground = false) => {
+  const muatData = async (isBackground = false, dufahFilter?: string) => {
     if (!isBackground) setLoading(true);
     try {
-      const res = await fetch("/api/id-card");
+      const param = dufahFilter || filterDufah;
+      const res = await fetch(`/api/id-card?dufahId=${param}`);
       if (res.ok) {
         const data = await res.json();
         setDufahNama(data.dufahNama);
         setSudahAmbilMurni(data.sudah);
+        if (data.daftarDufah) setDaftarDufah(data.daftarDufah);
 
         if (prevAntreanRef.current !== null && data.belum.length > prevAntreanRef.current) {
           const selisih = data.belum.length - prevAntreanRef.current;
@@ -94,8 +98,8 @@ export default function MejaIdCardPage() {
   };
 
   useEffect(() => {
-    muatData();
-  }, []);
+    muatData(false, filterDufah);
+  }, [filterDufah]);
 
   // Pusher listeners
   useEffect(() => {
@@ -297,7 +301,21 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
               <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Ketik nama yang datang..." className="w-full pl-10 p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner" />
             </div>
           </div>
-          <div className="md:w-64">
+          <div className="md:w-56">
+            <label className="block text-sm font-bold text-gray-300 mb-2">Filter Duf'ah</label>
+            <select
+              value={filterDufah}
+              onChange={(e) => { setFilterDufah(e.target.value); setFilterStatus("Semua"); }}
+              className="w-full p-3 border border-dark-900 rounded-xl outline-none font-bold text-gold-500 shadow-inner focus:ring-1 focus:ring-gold-500/50 bg-dark-900"
+            >
+              <option value="BULAN_INI">📅 Bulan Ini (Default)</option>
+              <option value="ALL">🌐 Semua Duf'ah</option>
+              {daftarDufah.map(df => (
+                <option key={df.id} value={String(df.id)}>{df.nama}</option>
+              ))}
+            </select>
+          </div>
+          <div className="md:w-52">
             <label className="block text-sm font-bold text-gray-300 mb-2">Filter Status</label>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none font-bold text-gold-500 shadow-inner focus:ring-1 focus:ring-gold-500/50 bg-dark-900">
               <option value="Semua">Tampilkan Semua</option>
@@ -343,7 +361,10 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                           <p className="font-bold text-gray-200 text-lg">
                             {item.santri.nama}
                           </p>
-                          <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded text-white shadow-sm ${item.santri.kategori === 'LAMA' ? 'bg-orange-600' : item.santri.kategori === 'KSU' ? 'bg-purple-700' : 'bg-blue-600'}`}>{item.santri.kategori}</span>
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded text-white shadow-sm ${item.santri.kategori === 'LAMA' ? 'bg-orange-600' : item.santri.kategori === 'KSU' ? 'bg-purple-700' : 'bg-blue-600'}`}>{item.santri.kategori}</span>
+                            {item.dufah && <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-gold-500/20 text-gold-400 border border-gold-500/30">{item.dufah.nama}</span>}
+                          </div>
                         </td>
                         <td className="p-4">
                           <p className="font-bold text-gold-400">{item.lemari.kamar.sakan.nama}</p>

@@ -114,6 +114,19 @@ export default function MasterSantriPage() {
     muatDataSantri();
   }, [filterDufah, filterGender, filterKategori, filterBulanKe, keyword]);
 
+  const hitungSisaDurasi = (santri: any) => {
+    if (santri.kategori === "KSU") return "Tak Terbatas";
+    if (santri.isCuti) return `${santri.saldoDufah || 0} Bulan (Cuti)`;
+    if (!santri.isAktif) return "0 Bulan";
+    
+    const dufahAktif = daftarDufah.find(d => d.isActive);
+    const currentId = dufahAktif ? dufahAktif.id : 0;
+    
+    if (currentId === 0) return "-";
+    const sisa = Math.max(0, (santri.batasAktifDufah || 0) - currentId + 1);
+    return `${sisa} Bulan`;
+  };
+
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
     const aksi = statusSaatIni ? "MENGELUARKAN (Check Out)" : "MENGAKTIFKAN KEMBALI";
     
@@ -134,6 +147,32 @@ export default function MasterSantriPage() {
       muatDataSantri();
     } else {
       swalError("Gagal merubah status santri");
+    }
+  };
+
+  const toggleCuti = async (id: string, nama: string, statusCutiSaatIni: boolean) => {
+    const aksi = statusCutiSaatIni ? "MENGAKHIRI CUTI & MENGAKTIFKAN" : "MENGAJUKAN CUTI";
+    
+    const result = await swalConfirm(
+      `Yakin ingin ${aksi}?`,
+      statusCutiSaatIni 
+        ? `Cuti ${nama} akan dicabut dan sisa masa aktif akan ditambahkan kembali.` 
+        : `Sisa masa aktif ${nama} akan disimpan sebagai saldo (maksimal 6 bulan).`
+    );
+    if (!result.isConfirmed) return;
+
+    const res = await fetch(`/api/santri/cuti`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ santriId: id, isCuti: !statusCutiSaatIni })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      swalSuccess("Berhasil", data.message || `Status cuti ${nama} berhasil diubah.`);
+      muatDataSantri();
+    } else {
+      swalError(data.error || "Gagal merubah status cuti");
     }
   };
 
@@ -279,7 +318,7 @@ export default function MasterSantriPage() {
       Nama: santri.nama,
       Sakan: santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
       Lemari: santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
-      "No. ID Card": santri.kategori === "KSU" ? "-" : (santri.riwayat?.[0]?.nomorIdCard || "-"),
+      "Sisa Durasi": hitungSisaDurasi(santri),
       "Bulan Ke": santri.riwayat?.[0]?.bulanKe || "-",
       Kategori: santri.kategori,
       Status: santri.isAktif ? "Aktif" : "Keluar"
@@ -303,7 +342,7 @@ export default function MasterSantriPage() {
       santri.nama,
       santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
       santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
-      santri.kategori === "KSU" ? "-" : (santri.riwayat?.[0]?.nomorIdCard || "-"),
+      hitungSisaDurasi(santri),
       santri.riwayat?.[0]?.bulanKe || "-",
       santri.kategori,
       santri.isAktif ? "Aktif" : "Keluar",
@@ -312,7 +351,7 @@ export default function MasterSantriPage() {
 
     autoTable(doc, {
       startY: 50,
-      head: [["No", "Nama", "Sakan", "Lemari", "ID Card", "Bln", "Kategori", "Status"]],
+      head: [["No", "Nama", "Sakan", "Lemari", "Sisa Durasi", "Bln", "Kategori", "Status"]],
       body: tableData.map(row => row.slice(0, 8)), // Extract the actual table fields
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 3 },
@@ -451,7 +490,7 @@ export default function MasterSantriPage() {
                 <tr>
                   <th className="p-4 text-gold-600 font-bold text-center w-12">No</th>
                   <th className="p-4 text-gold-600 font-bold">Nama Lengkap</th>
-                  <th className="p-4 text-gold-600 font-bold text-center">No. ID Card</th>
+                  <th className="p-4 text-gold-600 font-bold text-center">Sisa Durasi</th>
                   <th className="p-4 text-gold-600 font-bold text-center">Bulan Ke-</th>
                   <th className="p-4 text-gold-600 font-bold">Kategori</th>
                   <th className="p-4 text-gold-600 font-bold">Status</th>
@@ -497,7 +536,7 @@ export default function MasterSantriPage() {
                         </p>
                       </td>
                       <td className="p-4 text-center font-bold text-gold-400">
-                        {santri.kategori === 'KSU' ? '-' : santri.riwayat?.[0]?.nomorIdCard || '-'}
+                        {hitungSisaDurasi(santri)}
                       </td>
                       <td className="p-4 text-center font-bold text-gold-400">
                         {santri.riwayat?.[0]?.bulanKe || '-'}
@@ -508,7 +547,11 @@ export default function MasterSantriPage() {
                         </span>
                       </td>
                       <td className="p-4">
-                        {santri.isAktif ? (
+                        {santri.isCuti ? (
+                          <span className="px-3 py-1 bg-gray-900/20 text-gray-400 border border-gray-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                            <IconDocument /> Cuti
+                          </span>
+                        ) : santri.isAktif ? (
                           <span className="px-3 py-1 bg-green-900/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
                             <IconCheck /> Aktif
                           </span>
@@ -543,12 +586,27 @@ export default function MasterSantriPage() {
                           )}
 
                           {canManageSantri && (
-                            <button
-                              onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
-                              className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
-                            >
-                              {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
-                            </button>
+                            <>
+                            {/* Hanya tampilkan tombol Check Out/Aktifkan jika TIDAK SEDANG CUTI */}
+                            {!santri.isCuti && (
+                              <button
+                                onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
+                                className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
+                              >
+                                {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
+                              </button>
+                            )}
+
+                            {/* Hanya tampilkan tombol Cuti jika Aktif atau sedang Cuti (Bukan Check Out) */}
+                            {(santri.isAktif || santri.isCuti) && (
+                              <button
+                                onClick={() => toggleCuti(santri.id, santri.nama, santri.isCuti)}
+                                className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isCuti ? 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20' : 'bg-dark-900 text-gray-400 border-gray-700 hover:bg-gray-800'}`}
+                              >
+                                {santri.isCuti ? <><IconCheck /> Selesai Cuti</> : <><IconDocument /> Cuti</>}
+                              </button>
+                            )}
+                            </>
                           )}
 
                           {canManageSantri && (

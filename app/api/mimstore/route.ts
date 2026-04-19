@@ -8,9 +8,23 @@ export async function GET() {
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
     if (!dufahAktif) return NextResponse.json({ data: [], dufahNama: "Tidak ada Duf'ah Aktif" });
 
+    // Cari juga Duf'ah yang sedang buka pendaftaran (berdasarkan tanggal)
+    const now = new Date();
+    const allDufahs = await prisma.dufah.findMany();
+    const dufahTarget = allDufahs.find(df => {
+      if (!df.tanggalBuka || !df.tanggalTutup) return false;
+      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+    });
+
+    // Kumpulkan ID dufah yang relevan
+    const relevantDufahIds = [dufahAktif.id];
+    if (dufahTarget && dufahTarget.id !== dufahAktif.id) {
+      relevantDufahIds.push(dufahTarget.id);
+    }
+
     const data = await prisma.riwayatDufah.findMany({
       where: {
-        dufahId: dufahAktif.id,
+        dufahId: { in: relevantDufahIds },
         bulanKe: 1, // Only santri baru (bulan pertama)
       },
       include: {
@@ -22,7 +36,11 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({ data, dufahNama: dufahAktif.nama });
+    const dufahLabel = dufahTarget && dufahTarget.id !== dufahAktif.id
+      ? `${dufahAktif.nama} + ${dufahTarget.nama}`
+      : dufahAktif.nama;
+
+    return NextResponse.json({ data, dufahNama: dufahLabel });
   } catch (error) {
     console.error("Error GET /api/mimstore:", error);
     return NextResponse.json({ error: "Gagal memuat data" }, { status: 500 });

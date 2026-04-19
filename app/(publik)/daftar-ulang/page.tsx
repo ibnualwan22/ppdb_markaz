@@ -20,6 +20,7 @@ export default function DaftarUlangPage() {
   
   // Pilihan
   const [programId, setProgramId] = useState("");
+  const [isBeliAtribut, setIsBeliAtribut] = useState(false);
 
   // Hasil Akhir
   const [invoice, setInvoice] = useState<any>(null);
@@ -87,7 +88,7 @@ export default function DaftarUlangPage() {
       const res = await fetch("/api/pendaftaran/renew", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ santriId: santriData.id, programId })
+        body: JSON.stringify({ santriId: santriData.id, programId, isBeliAtribut })
       });
       const data = await res.json();
       setLoading(false);
@@ -188,7 +189,9 @@ export default function DaftarUlangPage() {
 
               <h2 className="text-xl font-bold text-white border-b border-gold-500/10 pb-3 mt-6">Pilih Program Perpanjangan</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {programs.map(p => (
+                {programs.map(p => {
+                  const hargaTampil = isBeliAtribut ? p.harga : p.harga - 100000;
+                  return (
                   <div 
                     key={p.id} 
                     onClick={() => setProgramId(p.id)}
@@ -198,9 +201,26 @@ export default function DaftarUlangPage() {
                       <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
                       <span className="bg-dark-800 text-gold-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{p.durasiBulan} Bulan</span>
                     </div>
-                    <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(p.harga)}</p>
+                    <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(hargaTampil)}</p>
+                    {!isBeliAtribut && (
+                      <p className="text-xs text-green-500 font-bold mt-1">Diskon Atribut Santri Lama (-100k)</p>
+                    )}
                   </div>
-                ))}
+                )})}
+              </div>
+
+              <div className="mt-6 bg-dark-900 border border-gold-500/30 p-4 rounded-xl flex items-start gap-3">
+                <input 
+                  type="checkbox" 
+                  id="beliAtribut" 
+                  checked={isBeliAtribut} 
+                  onChange={(e) => setIsBeliAtribut(e.target.checked)}
+                  className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer"
+                />
+                <label htmlFor="beliAtribut" className="cursor-pointer text-gray-300">
+                  <span className="block font-bold text-white">Beli Atribut Baru (+ Rp 100.000)</span>
+                  <span className="text-sm text-gray-400">Centang ini jika Anda ingin membeli ulang perlengkapan (Buku, Seragam, dll) karena rusak atau hilang. Harga akan kembali normal.</span>
+                </label>
               </div>
 
               {/* CAPTCHA SECTION */}

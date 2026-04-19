@@ -95,11 +95,20 @@ export default function ManajemenDufahPage() {
     setLoading(false);
   };
 
+  const formatDateForInput = (dateString: string | null) => {
+    if (!dateString) return "";
+    const d = new Date(dateString);
+    // Format to YYYY-MM-DDThh:mm using local timezone (WIB)
+    // We adjust by adding 7 hours to UTC and then taking ISO string
+    const dWib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+    return dWib.toISOString().slice(0, 16);
+  };
+
   const bukaModalEdit = (dufah: any) => {
     setEditId(dufah.id);
     setEditNama(dufah.nama);
-    setEditTanggalBuka(dufah.tanggalBuka ? new Date(dufah.tanggalBuka).toISOString().slice(0, 16) : "");
-    setEditTanggalTutup(dufah.tanggalTutup ? new Date(dufah.tanggalTutup).toISOString().slice(0, 16) : "");
+    setEditTanggalBuka(formatDateForInput(dufah.tanggalBuka));
+    setEditTanggalTutup(formatDateForInput(dufah.tanggalTutup));
     setIsModalOpen(true);
   };
 

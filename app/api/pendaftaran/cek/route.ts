@@ -17,10 +17,7 @@ export async function GET(request: Request) {
 
     const santri = await prisma.santri.findFirst({
       where: {
-        OR: [
-          { nik: identifier },
-          { nis: identifier }
-        ]
+        nis: identifier
       }
     });
 

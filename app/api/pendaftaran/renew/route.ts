@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { santriId, programId } = body;
+    const { santriId, programId, isBeliAtribut } = body;
 
     if (!santriId || !programId) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
@@ -32,20 +32,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Program tidak ditemukan" }, { status: 404 });
     }
 
-    const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
-    if (!dufahAktif) {
-      return NextResponse.json({ error: "Duf'ah pendaftaran sedang ditutup" }, { status: 400 });
+    const allDufahs = await prisma.dufah.findMany({ orderBy: { id: 'asc' } });
+    const now = new Date();
+    
+    // Cari Dufah yang rentang pendaftarannya mencakup waktu saat ini
+    const targetDufah = allDufahs.find(df => {
+      if (!df.tanggalBuka || !df.tanggalTutup) return false;
+      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+    });
+
+    if (!targetDufah) {
+      return NextResponse.json({ error: "Pendaftaran saat ini sedang ditutup. Tidak ada periode Duf'ah yang buka." }, { status: 400 });
     }
 
+    const dufahTujuanId = targetDufah.id;
+
     const kodeUnik = Math.floor(Math.random() * 900) + 100;
-    const totalTagihan = program.harga + kodeUnik;
+    
+    // Potong 100rb jika tidak beli atribut
+    const nominalProgram = isBeliAtribut ? program.harga : Math.max(0, program.harga - 100000);
+    const totalTagihan = nominalProgram + kodeUnik;
 
     const transaksi = await prisma.transaksiPendaftaran.create({
       data: {
-        noKwitansi: generateInvoiceNumber(dufahAktif.id),
+        noKwitansi: generateInvoiceNumber(dufahTujuanId),
         santriId,
         programId,
-        nominalProgram: program.harga,
+        dufahTujuanId,
+        nominalProgram,
         kodeUnik,
         totalTagihan,
         statusPembayaran: "PENDING"

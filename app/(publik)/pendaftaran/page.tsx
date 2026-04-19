@@ -29,7 +29,6 @@ export default function PendaftaranPage() {
   const [formData, setFormData] = useState({
     nama: "",
     gender: "BANIN",
-    nik: "",
     tempatLahir: "",
     tanggalLahir: "",
     namaOrtu: "",
@@ -42,6 +41,9 @@ export default function PendaftaranPage() {
     detailAlamat: "",
     programId: ""
   });
+
+  const [allDufah, setAllDufah] = useState<any[]>([]);
+  const [targetDufah, setTargetDufah] = useState<any>(null);
 
   // Invoice Result
   const [invoice, setInvoice] = useState<any>(null);
@@ -62,6 +64,25 @@ export default function PendaftaranPage() {
     refreshCaptcha();
     fetch(API_PROV).then(res => res.json()).then(data => setProvinces(data)).catch(() => { });
     fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => { });
+    fetch("/api/dufah").then(res => res.json()).then(data => {
+      setAllDufah(data);
+      const now = new Date();
+      const target = data.find((df: any) => {
+        if (!df.tanggalBuka || !df.tanggalTutup) return false;
+        return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+      });
+      
+      if (target) {
+        const d = now.getDate();
+        let targetDate = new Date();
+        if (d >= 14) {
+          targetDate.setMonth(now.getMonth() + 1);
+        }
+        const namaBulan = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(targetDate);
+        target.namaPeriodeLengkap = `${target.nama} (${namaBulan})`;
+      }
+      setTargetDufah(target || null);
+    }).catch(() => { });
 
     // Load Cache
     const cachedData = localStorage.getItem("ppdb_pendaftaran_data");
@@ -126,7 +147,7 @@ export default function PendaftaranPage() {
   const handleNext = () => {
     // Validasi sederhana
     if (step === 1) {
-      if (!formData.nama || !formData.nik || !formData.tanggalLahir || !formData.noWaOrtu) {
+      if (!formData.nama || !formData.tanggalLahir || !formData.noWaOrtu) {
         return swalError("Error", "Mohon lengkapi data diri utama.");
       }
       const dateParts = formData.tanggalLahir.split("/");
@@ -174,7 +195,6 @@ export default function PendaftaranPage() {
         body: JSON.stringify({
           nama: formData.nama,
           gender: formData.gender,
-          nik: formData.nik,
           tempatLahir: formData.tempatLahir,
           tanggalLahir: formData.tanggalLahir.split('/').reverse().join('-'),
           namaOrtu: formData.namaOrtu,
@@ -250,16 +270,9 @@ export default function PendaftaranPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1">Nama Lengkap Sesuai KTP/KK *</label>
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Nama Lengkap Sesuai KK *</label>
                   <input type="text" value={formData.nama} onChange={e => setFormData({ ...formData, nama: e.target.value })} className="w-full bg-dark-900 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white shadow-inner" placeholder="Cth: Muhammad Fatih" />
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1">NIK (Nomor Induk Kependudukan) *</label>
-                  <input type="number" value={formData.nik} onChange={e => setFormData({ ...formData, nik: e.target.value })} className="w-full bg-dark-900 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white shadow-inner" placeholder="16 digit NIK" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-bold text-gray-400 mb-1">Jenis Kelamin *</label>
                   <select value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} className="w-full bg-dark-900 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white font-bold shadow-inner">
@@ -267,6 +280,9 @@ export default function PendaftaranPage() {
                     <option value="BANAT">Perempuan (BANAT)</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-bold text-gray-400 mb-1">Tempat Lahir</label>
@@ -361,7 +377,11 @@ export default function PendaftaranPage() {
                 <div className="text-center text-gray-500 p-10 bg-dark-900 rounded-xl">Sedang memuat daftar program...</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {programs.map(p => (
+                  {programs.map(p => {
+                    const tgMulai = p.tanggalMulaiDefault || "10";
+                    const tgTutup = p.tanggalTutupDefault || "06";
+
+                    return (
                     <div
                       key={p.id}
                       onClick={() => setFormData({ ...formData, programId: p.id })}
@@ -371,9 +391,15 @@ export default function PendaftaranPage() {
                         <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
                         <span className="bg-dark-800 text-gold-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{p.durasiBulan} Bulan</span>
                       </div>
-                      <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(p.harga)}</p>
+                      <div className="mb-2">
+                        <span className={`text-xs font-bold px-2 py-1 rounded-md ${targetDufah ? 'bg-dark-800 text-gray-400' : 'bg-red-900/50 text-red-400'}`}>
+                          {targetDufah ? `Periode ${targetDufah.namaPeriodeLengkap || targetDufah.nama}` : "Pendaftaran Sedang Ditutup"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-3">Tgl Program: <strong className="text-gray-300">{tgMulai} - {tgTutup}</strong></p>
+                      <p className="text-2xl font-black text-gold-500 mt-2">Rp {new Intl.NumberFormat('id-ID').format(p.harga)}</p>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
 
@@ -394,9 +420,31 @@ export default function PendaftaranPage() {
                 </div>
               </div>
 
-              <button onClick={handleSubmit} disabled={loading} className="w-full mt-8 bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-black font-extrabold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50">
-                {loading ? "Memproses..." : "Selesaikan Pendaftaran"}
-              </button>
+                  <div className="flex justify-between items-center w-full mt-8">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-gray-400 hover:text-white transition text-sm font-bold flex items-center gap-2"
+                    >
+                      <span>&larr;</span> Kembali
+                    </button>
+                    {targetDufah ? (
+                      <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="bg-gold-500 hover:bg-gold-400 text-black font-extrabold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Memproses...' : 'Selesaikan Pendaftaran \u2192'}
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="bg-red-900/50 text-red-200 border border-red-500/30 font-extrabold py-3 px-8 rounded-xl opacity-80 cursor-not-allowed"
+                      >
+                        Pendaftaran Ditutup
+                      </button>
+                    )}
+                  </div>
             </div>
           )}
 

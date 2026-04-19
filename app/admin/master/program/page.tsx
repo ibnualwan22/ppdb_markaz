@@ -15,6 +15,8 @@ export default function MasterProgramPage() {
   const [harga, setHarga] = useState("");
   const [durasiBulan, setDurasiBulan] = useState("1");
   const [isActive, setIsActive] = useState(true);
+  const [tanggalMulaiDefault, setTanggalMulaiDefault] = useState("10");
+  const [tanggalTutupDefault, setTanggalTutupDefault] = useState("06");
 
   const muatData = async () => {
     try {
@@ -35,6 +37,8 @@ export default function MasterProgramPage() {
     setHarga("");
     setDurasiBulan("1");
     setIsActive(true);
+    setTanggalMulaiDefault("10");
+    setTanggalTutupDefault("06");
   };
 
   const bukaModalEdit = (p: any) => {
@@ -43,6 +47,8 @@ export default function MasterProgramPage() {
     setHarga(p.harga.toString());
     setDurasiBulan(p.durasiBulan.toString());
     setIsActive(p.isActive);
+    setTanggalMulaiDefault(p.tanggalMulaiDefault || "10");
+    setTanggalTutupDefault(p.tanggalTutupDefault || "06");
     setIsModalOpen(true);
   };
 
@@ -56,7 +62,7 @@ export default function MasterProgramPage() {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama, harga, durasiBulan, isActive }),
+      body: JSON.stringify({ nama, harga, durasiBulan, isActive, tanggalMulaiDefault, tanggalTutupDefault }),
     });
 
     setLoading(false);
@@ -147,6 +153,16 @@ export default function MasterProgramPage() {
                 <div>
                   <label className="block text-sm font-bold text-gray-300 mb-1">Durasi (Bulan)</label>
                   <input type="number" value={durasiBulan} onChange={(e) => setDurasiBulan(e.target.value)} required min="1" className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Tgl Mulai Pendaftaran</label>
+                    <input type="text" value={tanggalMulaiDefault} onChange={(e) => setTanggalMulaiDefault(e.target.value)} required className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" placeholder="Cth: 10" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-300 mb-1">Tgl Tutup Pendaftaran</label>
+                    <input type="text" value={tanggalTutupDefault} onChange={(e) => setTanggalTutupDefault(e.target.value)} required className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" placeholder="Cth: 06" />
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4 accent-gold-500" />
