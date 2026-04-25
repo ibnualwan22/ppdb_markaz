@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { emitDataUpdate, emitNotification } from "@/app/lib/pusherServer";
+import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -113,7 +115,26 @@ export async function PATCH(request: Request) {
     });
 
     emitDataUpdate("id-card");
-    emitNotification("idcard", `💳 [No. ${updated.nomorIdCard}] ${updated.santri.nama} telah menerima ID Card`, { nama: updated.santri.nama });
+    
+    await sendGlobalNotification(
+      "ID Card Diserahkan 💳",
+      `[No. ${updated.nomorIdCard}] ID Card santri a.n ${updated.santri.nama} telah dicetak dan diserahkan.`,
+      "receive_notif_idcard",
+      "/admin/id-card"
+    );
+
+    const session = await getServerSession(authOptions);
+    const u = session?.user as any;
+    const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
+
+    await logActivity({
+      aksi: "UPDATE",
+      modul: "ID Card",
+      deskripsi: `Menyerahkan ID Card No. ${updated.nomorIdCard} kepada santri a.n ${updated.santri.nama}`,
+      namaUser: pelaku,
+      userId: u?.id,
+      targetId: updated.santriId,
+    });
 
     return NextResponse.json({ message: "ID Card berhasil diserahkan", data: updated });
   } catch (error) {

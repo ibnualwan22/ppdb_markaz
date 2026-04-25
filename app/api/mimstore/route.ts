@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { emitDataUpdate, logActivity } from "@/app/lib/pusherServer";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -71,6 +74,21 @@ export async function PATCH(request: Request) {
     const updated = await prisma.riwayatDufah.update({
       where: { id },
       data: { [field]: value }
+    });
+
+    emitDataUpdate("mimstore");
+
+    const session = await getServerSession(authOptions);
+    const u = session?.user as any;
+    const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
+
+    await logActivity({
+      aksi: "UPDATE",
+      modul: "Mimstore",
+      deskripsi: `Memperbarui atribut "${field}" menjadi "${value}" untuk santri ID: ${id}`,
+      namaUser: pelaku,
+      userId: u?.id,
+      targetId: id,
     });
 
     return NextResponse.json({ message: "Berhasil diupdate", data: updated });

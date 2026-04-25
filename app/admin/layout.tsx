@@ -6,6 +6,7 @@ import { ReactNode, useState } from "react";
 import { usePathname } from "next/navigation";
 import { PusherProvider } from "../providers/PusherProvider";
 import { signOut, useSession } from "next-auth/react";
+import GlobalNotification from "../components/GlobalNotification";
 
 // SVG Icon Components
 const IconChart = () => (
@@ -83,7 +84,7 @@ const IconCreditCard = () => (
 const menuItems = [
   { href: "/admin/", label: "Halaman Utama", icon: <IconChart />, permission: "view_dashboard" },
   { href: "/admin/dashboard", label: "Dashboard Muasis", icon: <IconHome />, permission: "view_dashboard" },
-  { href: "/admin/pendaftaran", label: "Meja Keuangan", icon: <IconCreditCard />, permission: null },
+  { href: "/admin/pendaftaran", label: "Meja Keuangan", icon: <IconCreditCard />, permission: "view_keuangan" },
   { href: "/admin/asrama", label: "Meja Asrama", icon: <IconBed />, permission: "view_asrama" },
   { href: "/admin/id-card", label: "Meja ID Card", icon: <IconIdCard />, permission: "view_idcard" },
   { href: "/admin/mimstore", label: "Mims Store", icon: <IconStore />, permission: "view_mimstore" },
@@ -91,7 +92,7 @@ const menuItems = [
 
 const masterItems = [
   { href: "/admin/master", label: "Master Lokasi", icon: <IconCog />, permission: "manage_asrama" },
-  { href: "/admin/master/program", label: "Master Program", icon: <IconGradCap />, permission: null },
+  { href: "/admin/master/program", label: "Master Program", icon: <IconGradCap />, permission: "manage_program" },
   { href: "/admin/dufah", label: "Manajemen Duf'ah", icon: <IconCalendar />, permission: "manage_dufah" },
   { href: "/admin/santri", label: "Master Santri", icon: <IconGradCap />, permission: "view_santri" },
 ];
@@ -99,6 +100,7 @@ const masterItems = [
 const authItems = [
   { href: "/admin/akun", label: "Manajemen Akun", icon: <IconUser />, permission: "manage_users" },
   { href: "/admin/role", label: "Manajemen Role", icon: <IconShield />, permission: "manage_roles" },
+  { href: "/admin/activity-log", label: "Log Aktivitas", icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>, permission: "view_activity_log" },
   { href: "/admin/profil", label: "Profil Saya", icon: <IconUserCircle />, permission: null }, // Semua user punya akses profil
 ];
 
@@ -255,18 +257,25 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Top Bar (Mobile) */}
-          <header className="md:hidden bg-dark-800 border-b border-gold-500/10 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-xl hover:bg-white/5 transition text-gold-500"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <h1 className="text-sm font-bold text-gold-500">PPDB Markaz</h1>
-            <div className="w-8" />
+          {/* Top Bar (Mobile & Desktop Header) */}
+          <header className="bg-dark-800 border-b border-gold-500/10 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden p-2 rounded-xl hover:bg-white/5 transition text-gold-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <h1 className="text-sm font-bold text-gold-500 md:hidden">PPDB Markaz</h1>
+              <h1 className="text-sm font-bold text-gray-400 hidden md:block uppercase tracking-wider">Dashboard</h1>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <GlobalNotification />
+              <div className="w-8 md:hidden" />
+            </div>
           </header>
 
           <main className="flex-1 overflow-y-auto">

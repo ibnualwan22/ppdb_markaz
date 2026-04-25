@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { checkRateLimit } from "@/app/lib/rateLimit";
+import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
 
 const prisma = new PrismaClient();
 
@@ -115,7 +116,25 @@ export async function POST(request: Request) {
         }
       });
 
-      return { santri, transaksi, program };
+      return { santri, transaksi, program, noKwitansi };
+    });
+
+    emitDataUpdate("pendaftaran-baru");
+
+    // Kirim notifikasi global ke Admin Keuangan
+    await sendGlobalNotification(
+      "Pendaftaran Baru 📝",
+      `Santri a.n ${result.santri.nama} telah mendaftar. Menunggu pembayaran sebesar Rp ${new Intl.NumberFormat('id-ID').format(result.transaksi.totalTagihan)}.`,
+      "view_keuangan", // Notifikasi ini dikirim ke siapa saja yang punya akses view_keuangan
+      "/admin/pendaftaran"
+    );
+
+    await logActivity({
+      aksi: "CREATE",
+      modul: "Pendaftaran",
+      deskripsi: `Pendaftaran baru a.n ${result.santri.nama} — Program: ${result.program.nama} — Total: Rp ${new Intl.NumberFormat('id-ID').format(result.transaksi.totalTagihan)}`,
+      namaUser: "Sistem (Form Publik)",
+      targetId: result.santri.id,
     });
 
     return NextResponse.json({

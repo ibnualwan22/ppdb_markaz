@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { emitDataUpdate, emitNotification } from "@/app/lib/pusherServer";
+import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -62,7 +64,26 @@ export async function PATCH(
 
     const namaSakan = updatePenempatan.lemari?.kamar.sakan.nama;
     emitDataUpdate("assign");
-    emitNotification("asrama", `🔄 ${updatePenempatan.santri.nama} dipindahkan ke ${namaSakan}`, { nama: updatePenempatan.santri.nama });
+    
+    await sendGlobalNotification(
+      "Kamar Telah Diplot 🛏️",
+      `Santri a.n ${updatePenempatan.santri.nama} telah ditempatkan di ${namaSakan}. ID Card siap dicetak.`,
+      "receive_notif_plot_asrama",
+      "/admin/id-card"
+    );
+
+    const session = await getServerSession(authOptions);
+    const u = session?.user as any;
+    const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
+
+    await logActivity({
+      aksi: "UPDATE",
+      modul: "Asrama",
+      deskripsi: `Menempatkan santri a.n ${updatePenempatan.santri.nama} ke ${namaSakan} — Kamar ${updatePenempatan.lemari?.kamar.nama} — Lemari ${updatePenempatan.lemari?.nomor}`,
+      namaUser: pelaku,
+      userId: u?.id,
+      targetId: updatePenempatan.santriId,
+    });
 
     return NextResponse.json({ 
       message: `Berhasil! ${updatePenempatan.santri.nama} menempati sakan baru di ${namaSakan}.`,

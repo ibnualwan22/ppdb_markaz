@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -31,6 +34,26 @@ export async function POST(request: Request) {
           expiredDufahId,
           isAktif: false // otomatis non-aktif, batasAktifDufah tidak dirubah agar bisa di-undo
         }
+      });
+      
+      await sendGlobalNotification(
+        "Santri Mengambil Cuti ✈️",
+        `Santri a.n ${santri.nama} telah mengajukan cuti. Saldo durasi tersimpan.`,
+        "receive_notif_status_santri",
+        "/admin/santri"
+      );
+
+      const session = await getServerSession(authOptions);
+      const u = session?.user as any;
+      const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
+
+      await logActivity({
+        aksi: "UPDATE",
+        modul: "Santri",
+        deskripsi: `Mengajukan cuti untuk santri a.n ${santri.nama} — Saldo: ${saldoDufah} bulan`,
+        namaUser: pelaku,
+        userId: u?.id,
+        targetId: santriId,
       });
       
       return NextResponse.json({ message: "Santri berhasil dicutikan." });
@@ -81,6 +104,26 @@ export async function POST(request: Request) {
           isAktif: true,
           batasAktifDufah: newBatasAktif
         }
+      });
+
+      await sendGlobalNotification(
+        "Santri Kembali Aktif ✅",
+        `Santri a.n ${santri.nama} telah kembali dari cuti.`,
+        "receive_notif_status_santri",
+        "/admin/santri"
+      );
+
+      const session2 = await getServerSession(authOptions);
+      const u2 = session2?.user as any;
+      const pelaku2 = u2 ? `${u2.name} (@${u2.username})` : "Admin";
+
+      await logActivity({
+        aksi: "UPDATE",
+        modul: "Santri",
+        deskripsi: `Mengaktifkan kembali santri a.n ${santri.nama} dari cuti — Saldo digunakan: ${santri.saldoDufah} bulan`,
+        namaUser: pelaku2,
+        userId: u2?.id,
+        targetId: santriId,
       });
 
       return NextResponse.json({ message: "Cuti berhasil dicabut dan Santri kembali Aktif." });

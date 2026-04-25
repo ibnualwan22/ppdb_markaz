@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import https from "https";
+import { sendGlobalNotification, emitDataUpdate, logActivity } from "@/app/lib/pusherServer";
 
 const prisma = new PrismaClient();
 
@@ -175,6 +176,30 @@ export async function POST(
       }
 
       return santriUpdate;
+    });
+
+    // KIRIM UPDATE DATA KE FRONTEND
+    emitDataUpdate("pendaftaran-verified");
+
+    // KIRIM NOTIFIKASI GLOBAL KE ASRAMA & ID CARD
+    await sendGlobalNotification(
+      "Pembayaran Lunas 💰",
+      `Santri a.n ${result.nama} (NIS: ${result.nis || "-"}) telah diverifikasi lunas. Siap untuk plot asrama.`,
+      "receive_notif_plot_asrama",
+      "/admin/asrama"
+    );
+
+    // Ambil nama admin yang memverifikasi
+    const adminUser = await prisma.user.findUnique({ where: { id: adminId }, select: { nama: true, username: true } });
+    const pelaku = adminUser ? `${adminUser.nama} (@${adminUser.username})` : "Admin";
+
+    await logActivity({
+      aksi: "VERIFY",
+      modul: "Keuangan",
+      deskripsi: `Memverifikasi pembayaran santri a.n ${result.nama} (NIS: ${result.nis || "-"}) — No. Kwitansi: ${transaksi.noKwitansi}`,
+      namaUser: pelaku,
+      userId: adminId,
+      targetId: transaksi.santriId,
     });
 
     // TODO: Kirim WhatsApp Gateway di sini menggunakan FONNTE_API_KEY

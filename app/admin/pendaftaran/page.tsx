@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Protect } from "@/components/Protect";
 import { swalSuccess, swalError } from "@/app/lib/swal";
+import { usePusher } from "@/app/providers/PusherProvider";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 const COLORS = ['#22c55e', '#ef4444']; // Green for PAID, Red for PENDING
@@ -15,6 +16,8 @@ export default function MejaKeuanganPage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filterScope, setFilterScope] = useState("AKTIF"); // "AKTIF" atau "GLOBAL"
+
+  const pusher = usePusher();
 
   const muatData = async () => {
     try {
@@ -32,6 +35,18 @@ export default function MejaKeuanganPage() {
   useEffect(() => {
     muatData();
   }, []);
+
+  useEffect(() => {
+    if (!pusher) return;
+    const channel = pusher.subscribe("ppdb-channel");
+    const onUpdate = () => muatData();
+    channel.bind("data:update", onUpdate);
+
+    return () => {
+      channel.unbind("data:update", onUpdate);
+      pusher.unsubscribe("ppdb-channel");
+    };
+  }, [pusher]);
 
   const prosesVerifikasi = async (id: string, isKSU: boolean = false) => {
     if (!confirm(`Yakin ingin memverifikasi transaksi ini${isKSU ? ' sebagai KSU GRATIS' : ''}?`)) return;
@@ -110,7 +125,7 @@ export default function MejaKeuanganPage() {
   });
 
   return (
-    <Protect permission="">
+    <Protect permission="view_keuangan">
       <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
         {/* Header & Filter */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gold-500/10 pb-4 gap-4">
@@ -250,27 +265,31 @@ export default function MejaKeuanganPage() {
                       <td className="px-4 py-4 text-center">
                         {t.statusPembayaran === "PENDING" && (
                           <div className="flex gap-2 justify-center">
-                            <button
-                              onClick={() => prosesVerifikasi(t.id, false)}
-                              disabled={loading}
-                              className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
-                            >
-                              ✓ Acc
-                            </button>
+                            {((session?.user as any)?.permissions?.includes("verify_pendaftaran") || (session?.user as any)?.permissions?.includes("all_access")) && (
+                              <button
+                                onClick={() => prosesVerifikasi(t.id, false)}
+                                disabled={loading}
+                                className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                              >
+                                ✓ Acc
+                              </button>
+                            )}
                             <button
                               onClick={() => handleTagihWa(t.santri.noWaOrtu, t.santri.nama, t.totalTagihan)}
                               className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
                             >
                               WA
                             </button>
-                            <button
-                              onClick={() => prosesVerifikasi(t.id, true)}
-                              disabled={loading}
-                              title="Bypass tanpa bayar untuk santri Beasiswa/KSU"
-                              className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
-                            >
-                              KSU
-                            </button>
+                            {((session?.user as any)?.permissions?.includes("bypass_ksu") || (session?.user as any)?.permissions?.includes("all_access")) && (
+                              <button
+                                onClick={() => prosesVerifikasi(t.id, true)}
+                                disabled={loading}
+                                title="Bypass tanpa bayar untuk santri Beasiswa/KSU"
+                                className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
+                              >
+                                KSU
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>

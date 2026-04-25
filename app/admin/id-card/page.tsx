@@ -56,23 +56,8 @@ export default function MejaIdCardPage() {
   const { hasAccess } = usePermissions();
   const canManageIdCard = hasAccess("manage_idcard");
 
-  // STATE NOTIFIKASI & TRACKING REAL-TIME
-  const [notif, setNotif] = useState({ show: false, pesan: "", namaTarget: "" });
   const prevAntreanRef = useRef<number | null>(null);
   const pusher = usePusher();
-
-  const putarSuara = () => {
-    try {
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3");
-      audio.play().catch(() => console.log("Browser memblokir autoplay suara"));
-    } catch (e) { }
-  };
-
-  const tampilkanNotif = (pesan: string, namaTarget?: string) => {
-    putarSuara();
-    setNotif({ show: true, pesan, namaTarget: namaTarget || "" });
-    setTimeout(() => setNotif({ show: false, pesan: "", namaTarget: "" }), 5000);
-  };
 
   const muatData = async (isBackground = false, dufahFilter?: string) => {
     if (!isBackground) setLoading(true);
@@ -86,8 +71,7 @@ export default function MejaIdCardPage() {
         if (data.daftarDufah) setDaftarDufah(data.daftarDufah);
 
         if (prevAntreanRef.current !== null && data.belum.length > prevAntreanRef.current) {
-          const selisih = data.belum.length - prevAntreanRef.current;
-          tampilkanNotif(`Ada ${selisih} santri baru masuk ke antrean ID Card!`);
+          // A global notification could be added server-side if needed, but not handled locally anymore
         }
         prevAntreanRef.current = data.belum.length;
 
@@ -106,17 +90,12 @@ export default function MejaIdCardPage() {
     if (!pusher) return;
 
     const onDataUpdate = () => muatData(true);
-    const onAsramaNotif = (payload: any) => {
-      tampilkanNotif(payload.message, payload.data?.nama);
-    };
 
     const channel = pusher.subscribe("ppdb-channel");
     channel.bind("data:update", onDataUpdate);
-    channel.bind("notif:asrama", onAsramaNotif);
 
     return () => {
       channel.unbind("data:update", onDataUpdate);
-      channel.unbind("notif:asrama", onAsramaNotif);
       pusher.unsubscribe("ppdb-channel");
     };
   }, [pusher]);
@@ -267,16 +246,7 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
     <Protect permission="view_idcard" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat antrean ID Card.</div>}>
       <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen relative overflow-hidden">
 
-        {/* POP-UP NOTIFIKASI */}
-        <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
-          <div className="bg-dark-800 border-l-4 border-gold-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px] border-y border-r border-gold-500/20">
-            <div className="bg-dark-900 border border-gold-500/30 p-2 rounded-full animate-bounce text-gold-500"><IconBell /></div>
-            <div>
-              <h4 className="font-bold text-gold-400 text-sm">Informasi Baru</h4>
-              <p className="text-gray-300 text-xs font-medium">{notif.pesan}</p>
-            </div>
-          </div>
-        </div>
+
 
         <div className="mb-8 border-b border-gold-500/10 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -338,7 +308,7 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                 </tr>
               </thead>
               <tbody>
-                {loading && !notif.show && dataGabungan.length === 0 ? (
+                {loading && dataGabungan.length === 0 ? (
                   <tr><td colSpan={5} className="p-10 text-center text-gray-500 font-medium">
                     <div className="flex items-center justify-center gap-3">
                       <div className="w-6 h-6 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin"></div>

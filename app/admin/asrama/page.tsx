@@ -61,23 +61,6 @@ export default function MejaAsramaPage() {
 
   const pusher = usePusher();
 
-  // Notifikasi Real-time
-  const [notif, setNotif] = useState({ show: false, pesan: "", namaTarget: "" });
-  const prevSudahRef = useRef<number | null>(null);
-
-  const putarSuara = () => {
-    try {
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3");
-      audio.play().catch(() => { });
-    } catch (e) { }
-  };
-
-  const tampilkanNotif = (pesan: string, namaTarget?: string) => {
-    putarSuara();
-    setNotif({ show: true, pesan, namaTarget: namaTarget || "" });
-    setTimeout(() => setNotif({ show: false, pesan: "", namaTarget: "" }), 6000);
-  };
-
   const muatData = async (isBackground = false) => {
     try {
       const resLokasi = await fetch("/api/sakan");
@@ -86,16 +69,6 @@ export default function MejaAsramaPage() {
       if (resAntrean.ok) setAntrean(await resAntrean.json());
 
       const resIdCard = await fetch("/api/id-card");
-      if (resIdCard.ok) {
-        const dataIdCard = await resIdCard.json();
-        const totalSudah = dataIdCard.sudah.length;
-
-        if (prevSudahRef.current !== null && totalSudah > prevSudahRef.current) {
-          const anakTerakhir = dataIdCard.sudah[totalSudah - 1];
-          tampilkanNotif(`${anakTerakhir.santri.nama} telah menerima ID Card (No. ${totalSudah})`);
-        }
-        prevSudahRef.current = totalSudah;
-      }
     } catch (error) { }
   };
 
@@ -108,17 +81,12 @@ export default function MejaAsramaPage() {
     if (!pusher) return;
 
     const onDataUpdate = () => muatData(true);
-    const onIdCardNotif = (payload: any) => {
-      tampilkanNotif(payload.message, payload.data?.nama);
-    };
 
     const channel = pusher.subscribe("ppdb-channel");
     channel.bind("data:update", onDataUpdate);
-    channel.bind("notif:idcard", onIdCardNotif);
 
     return () => {
       channel.unbind("data:update", onDataUpdate);
-      channel.unbind("notif:idcard", onIdCardNotif);
       pusher.unsubscribe("ppdb-channel");
     };
   }, [pusher]);
@@ -360,17 +328,6 @@ export default function MejaAsramaPage() {
     <Protect permission="view_asrama" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak</div>}>
       <div className="p-4 md:p-8 max-w-[1200px] mx-auto min-h-screen">
         
-        {/* Notifikasi Real-time */}
-        <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
-          <div className="bg-white border-l-4 border-blue-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px]">
-            <div className="bg-blue-100 p-2 rounded-full animate-pulse"><IconCreditCard /></div>
-            <div>
-              <h4 className="font-bold text-blue-800 text-sm">Update ID Card</h4>
-              <p className="text-gray-600 text-xs font-medium">{notif.pesan}</p>
-            </div>
-          </div>
-        </div>
-
         <div className="mb-8 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-gold-500/10">
           <div>
             <h1 className="text-3xl font-extrabold text-gold-500">Penempatan Asrama</h1>

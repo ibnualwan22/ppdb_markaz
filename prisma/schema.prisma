@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // Tetap gunakan PostgreSQL (Supabase)
-  url      = env("DATABASE_URL")
+  provider  = "postgresql" // Tetap gunakan PostgreSQL (Supabase/Neon)
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ==========================================
@@ -225,4 +226,33 @@ model TransaksiPendaftaran {
 
   createdAt  DateTime  @default(now())
   waktuLunas DateTime?
+}
+
+// ==========================================
+// 6. GLOBAL NOTIFICATIONS
+// ==========================================
+
+model Notification {
+  id                 String   @id @default(uuid())
+  title              String
+  message            String
+  link               String?  // Link rute opsional jika notif diklik
+  permissionRequired String   // Kunci siapa yang boleh melihat notif ini (misal: "receive_notif_keuangan")
+  createdAt          DateTime @default(now())
+}
+
+// ==========================================
+// 7. ACTIVITY LOG (Audit Trail)
+// ==========================================
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  aksi      String   // "CREATE", "UPDATE", "DELETE", "VERIFY"
+  modul     String   // "Pendaftaran", "Asrama", "ID Card", "Mimstore", "Santri", dll
+  deskripsi String   // Pesan detail: "Admin X memverifikasi pembayaran santri Y"
+  userId    String?  // ID User yang melakukan aksi (null jika dari form publik)
+  namaUser  String   // Nama lengkap pelaku, "Sistem" jika otomatis
+  targetId  String?  // ID objek yang terkena dampak (santriId, transaksiId, dll)
+  metadata  String?  // JSON string untuk data tambahan
+  createdAt DateTime @default(now())
 }
