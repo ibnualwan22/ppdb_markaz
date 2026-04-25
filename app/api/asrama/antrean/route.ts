@@ -20,11 +20,8 @@ export async function GET() {
       return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
     });
 
-    // Kumpulkan ID dufah yang relevan (aktif + target pendaftaran)
+    // Kumpulkan ID dufah yang relevan (hanya yang AKTIF)
     const relevantDufahIds = [dufahAktif.id];
-    if (dufahTarget && dufahTarget.id !== dufahAktif.id) {
-      relevantDufahIds.push(dufahTarget.id);
-    }
 
     const dufahLama = await prisma.dufah.findFirst({
       where: { id: { lt: dufahAktif.id } },

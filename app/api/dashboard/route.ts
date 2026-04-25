@@ -76,8 +76,7 @@ export async function GET() {
         where: { 
           dufahId: dufahAktif.id, 
           lemariId: { not: null }, 
-          isIdCardTaken: false,
-          santri: { kategori: { not: 'KSU' } } // KSU Dikecualikan
+          isIdCardTaken: false
         },
         include: {
           santri: { select: { nama: true, kategori: true, gender: true } },

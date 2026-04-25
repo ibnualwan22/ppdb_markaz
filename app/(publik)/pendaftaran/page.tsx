@@ -71,7 +71,7 @@ export default function PendaftaranPage() {
         if (!df.tanggalBuka || !df.tanggalTutup) return false;
         return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
       });
-      
+
       if (target) {
         const d = now.getDate();
         let targetDate = new Date();
@@ -94,7 +94,7 @@ export default function PendaftaranPage() {
         if (parsed.provinsiId) fetch(API_KAB(parsed.provinsiId)).then(res => res.json()).then(data => setRegencies(data)).catch(() => { });
         if (parsed.kabupatenId) fetch(API_KEC(parsed.kabupatenId)).then(res => res.json()).then(data => setDistricts(data)).catch(() => { });
         if (parsed.kecamatanId) fetch(API_DESA(parsed.kecamatanId)).then(res => res.json()).then(data => setVillages(data)).catch(() => { });
-      } catch(e) {}
+      } catch (e) { }
     }
     if (cachedStep) {
       const s = parseInt(cachedStep, 10);
@@ -159,7 +159,7 @@ export default function PendaftaranPage() {
       if (month < 1 || month > 12) return swalError("Tidak Valid", "Bulan lahir maksimal 12.");
       if (year < 1900 || year > new Date().getFullYear()) return swalError("Tidak Valid", "Tahun lahir tidak valid.");
     }
-    
+
     if (step === 2 && (!formData.desaId || !formData.detailAlamat)) {
       return swalError("Error", "Mohon lengkapi alamat lengkap.");
     }
@@ -173,7 +173,7 @@ export default function PendaftaranPage() {
 
   const handleSubmit = async () => {
     if (!formData.programId) return swalError("Error", "Silakan pilih program.");
-    
+
     // Validasi Captcha
     if (parseInt(captchaAnswer, 10) !== captchaA + captchaB) {
       refreshCaptcha();
@@ -224,7 +224,7 @@ export default function PendaftaranPage() {
             program: data.data.program,
             isRenew: false
           });
-        } catch(e) {
+        } catch (e) {
           console.error("Gagal cetak PDF", e);
         }
       } else {
@@ -382,24 +382,25 @@ export default function PendaftaranPage() {
                     const tgTutup = p.tanggalTutupDefault || "06";
 
                     return (
-                    <div
-                      key={p.id}
-                      onClick={() => setFormData({ ...formData, programId: p.id })}
-                      className={`cursor-pointer border-2 rounded-2xl p-5 transition-all duration-300 ${formData.programId === p.id ? 'border-gold-500 bg-gold-500/5 shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-dark-900 bg-dark-900 hover:border-gold-500/30'}`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
-                        <span className="bg-dark-800 text-gold-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{p.durasiBulan} Bulan</span>
+                      <div
+                        key={p.id}
+                        onClick={() => setFormData({ ...formData, programId: p.id })}
+                        className={`cursor-pointer border-2 rounded-2xl p-5 transition-all duration-300 ${formData.programId === p.id ? 'border-gold-500 bg-gold-500/5 shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-dark-900 bg-dark-900 hover:border-gold-500/30'}`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
+                          <span className="bg-dark-800 text-gold-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{p.durasiBulan} Bulan</span>
+                        </div>
+                        <div className="mb-2">
+                          <span className={`text-xs font-bold px-2 py-1 rounded-md ${targetDufah ? 'bg-dark-800 text-gray-400' : 'bg-red-900/50 text-red-400'}`}>
+                            {targetDufah ? `Periode ${targetDufah.namaPeriodeLengkap || targetDufah.nama}` : "Pendaftaran Sedang Ditutup"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-3">Tgl Program: <strong className="text-gray-300">{tgMulai} - {tgTutup}</strong></p>
+                        <p className="text-2xl font-black text-gold-500 mt-2">Rp {new Intl.NumberFormat('id-ID').format(p.harga)}</p>
                       </div>
-                      <div className="mb-2">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-md ${targetDufah ? 'bg-dark-800 text-gray-400' : 'bg-red-900/50 text-red-400'}`}>
-                          {targetDufah ? `Periode ${targetDufah.namaPeriodeLengkap || targetDufah.nama}` : "Pendaftaran Sedang Ditutup"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mb-3">Tgl Program: <strong className="text-gray-300">{tgMulai} - {tgTutup}</strong></p>
-                      <p className="text-2xl font-black text-gold-500 mt-2">Rp {new Intl.NumberFormat('id-ID').format(p.harga)}</p>
-                    </div>
-                  )})}
+                    )
+                  })}
                 </div>
               )}
 
@@ -410,41 +411,41 @@ export default function PendaftaranPage() {
                   <div className="bg-dark-800 text-white font-mono text-xl font-bold py-3 px-6 rounded-xl border border-dark-700">
                     {captchaA} + {captchaB} = ?
                   </div>
-                  <input 
-                    type="number" 
-                    value={captchaAnswer} 
-                    onChange={(e) => setCaptchaAnswer(e.target.value)} 
-                    placeholder="Jawaban" 
+                  <input
+                    type="number"
+                    value={captchaAnswer}
+                    onChange={(e) => setCaptchaAnswer(e.target.value)}
+                    placeholder="Jawaban"
                     className="w-full max-w-[120px] bg-dark-800 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white font-bold text-center"
                   />
                 </div>
               </div>
 
-                  <div className="flex justify-between items-center w-full mt-8">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="text-gray-400 hover:text-white transition text-sm font-bold flex items-center gap-2"
-                    >
-                      <span>&larr;</span> Kembali
-                    </button>
-                    {targetDufah ? (
-                      <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="bg-gold-500 hover:bg-gold-400 text-black font-extrabold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? 'Memproses...' : 'Selesaikan Pendaftaran \u2192'}
-                      </button>
-                    ) : (
-                      <button
-                        disabled
-                        className="bg-red-900/50 text-red-200 border border-red-500/30 font-extrabold py-3 px-8 rounded-xl opacity-80 cursor-not-allowed"
-                      >
-                        Pendaftaran Ditutup
-                      </button>
-                    )}
-                  </div>
+              <div className="flex justify-between items-center w-full mt-8">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-gray-400 hover:text-white transition text-sm font-bold flex items-center gap-2"
+                >
+                  <span>&larr;</span> Kembali
+                </button>
+                {targetDufah ? (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="bg-gold-500 hover:bg-gold-400 text-black font-extrabold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Memproses...' : 'Selesaikan Pendaftaran \u2192'}
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="bg-red-900/50 text-red-200 border border-red-500/30 font-extrabold py-3 px-8 rounded-xl opacity-80 cursor-not-allowed"
+                  >
+                    Pendaftaran Ditutup
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -480,7 +481,7 @@ export default function PendaftaranPage() {
                   <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Transfer ke Rekening</p>
                   <p className="text-xl font-black text-white font-mono tracking-widest">0555-01-001108-569</p>
                   <p className="text-sm font-bold text-blue-400 mt-1">BANK BRI a.n Markaz Arabiyah</p>
-                  <button 
+                  <button
                     onClick={() => copyToClipboard('055501001108569')}
                     className="mt-3 bg-dark-900 hover:bg-black text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:border-gold-500 transition-colors flex items-center justify-center gap-2 w-full"
                   >
@@ -488,7 +489,7 @@ export default function PendaftaranPage() {
                     Salin No. Rekening
                   </button>
                 </div>
-                
+
                 <p className="text-xs text-gray-500 text-center mt-4 italic">
                   *Pastikan transfer tepat hingga 3 digit terakhir (+{invoice.kodeUnik}) agar otomatis terbaca oleh Admin.
                 </p>

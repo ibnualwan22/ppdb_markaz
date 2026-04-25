@@ -20,10 +20,8 @@ export async function GET() {
     });
 
     // Kumpulkan ID dufah yang relevan
+    // PRIORITAS: Hanya tampilkan yang aktif sekarang agar tidak tercampur dengan calon santri bulan depan.
     const relevantDufahIds = [dufahAktif.id];
-    if (dufahTarget && dufahTarget.id !== dufahAktif.id) {
-      relevantDufahIds.push(dufahTarget.id);
-    }
 
     const data = await prisma.riwayatDufah.findMany({
       where: {
@@ -39,9 +37,7 @@ export async function GET() {
       }
     });
 
-    const dufahLabel = dufahTarget && dufahTarget.id !== dufahAktif.id
-      ? `${dufahAktif.nama} + ${dufahTarget.nama}`
-      : dufahAktif.nama;
+    const dufahLabel = dufahAktif.nama;
 
     return NextResponse.json({ data, dufahNama: dufahLabel });
   } catch (error) {

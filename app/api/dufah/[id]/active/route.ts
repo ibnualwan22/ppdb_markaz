@@ -42,10 +42,18 @@ export async function PATCH(
     });
 
     // 5. Ubah kategori BARU menjadi LAMA karena sudah berganti bulan
-    await prisma.santri.updateMany({
-      where: { kategori: "BARU" },
-      data: { kategori: "LAMA" }
-    });
+    // Hanya untuk yang sudah memiliki riwayat di Dufah sebelumnya
+    if (dufahLama) {
+      await prisma.santri.updateMany({
+        where: { 
+          kategori: "BARU",
+          riwayat: {
+            some: { dufahId: dufahLama.id }
+          }
+        },
+        data: { kategori: "LAMA" }
+      });
+    }
 
     // 6. Migrasi Otomatis (Auto-Continue) untuk Santri Aktif (Langganan Masih Ada) atau KSU
     if (dufahLama) {
@@ -59,6 +67,9 @@ export async function PATCH(
               { kategori: "KSU", isAktif: true }
             ]
           }
+        },
+        include: {
+          santri: true
         }
       });
 
@@ -72,9 +83,10 @@ export async function PATCH(
           // Logika Siklus 3 Bulan Asrama & Reset Syawal
           const newBulanKe = isTahunBaru ? 1 : riwayat.bulanKe + 1;
           
-          // Jika Tahun Baru ATAU sudah 3 bulan, lemari dicabut (null) agar harus mutasi.
-          // Jika tidak, lemari dipertahankan.
-          const isMutasiSakan = isTahunBaru || riwayat.bulanKe >= 3;
+          // Jika BUKAN KSU: Tahun Baru ATAU sudah 3 bulan, lemari dicabut (null) agar mutasi.
+          // Khusus KSU: lemari SELALU dipertahankan, meskipun Reset Syawal.
+          const isKSU = riwayat.santri.kategori === "KSU";
+          const isMutasiSakan = isKSU ? false : (isTahunBaru || riwayat.bulanKe >= 3);
           const newLemariId = isMutasiSakan ? null : riwayat.lemariId;
           const newStatus = isMutasiSakan ? "PRE_LIST" : "ASSIGNED";
 

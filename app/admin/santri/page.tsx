@@ -123,6 +123,21 @@ export default function MasterSantriPage() {
     const currentId = dufahAktif ? dufahAktif.id : 0;
     
     if (currentId === 0) return "-";
+
+    // Cek apakah santri punya riwayat di bulan aktif saat ini
+    const riwayatAktif = santri.riwayat?.find((r: any) => r.dufahId === currentId);
+    
+    // Jika tidak aktif bulan ini tapi punya batas durasi di masa depan
+    if (!riwayatAktif && santri.batasAktifDufah > currentId) {
+      // Cari riwayat pendaftaran terdekat di masa depan
+      const riwayatDepan = santri.riwayat?.find((r: any) => r.dufahId > currentId);
+      if (riwayatDepan) {
+        const startId = riwayatDepan.dufahId;
+        const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
+        return `${durasi} Bulan (Mulai Aktif ${riwayatDepan.dufah.nama})`;
+      }
+    }
+
     const sisa = Math.max(0, (santri.batasAktifDufah || 0) - currentId + 1);
     return `${sisa} Bulan`;
   };

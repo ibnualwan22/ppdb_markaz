@@ -56,8 +56,7 @@ export async function GET(request: Request) {
     const allRiwayat = await prisma.riwayatDufah.findMany({
       where: {
         ...(whereDufah && { dufahId: whereDufah }),
-        lemariId: { not: null },
-        santri: { kategori: { not: 'KSU' } }
+        lemariId: { not: null }
       },
       include: {
         santri: { select: { id: true, nama: true, kategori: true, gender: true, nis: true, batasAktifDufah: true, noWaSantri: true, noWaOrtu: true } },

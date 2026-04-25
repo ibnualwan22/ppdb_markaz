@@ -94,7 +94,7 @@ export default function MejaKeuanganPage() {
     : transaksi;
 
   const totalLunas = filteredByScope
-    .filter(t => t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS")
+    .filter(t => t.statusPembayaran === "PAID")
     .reduce((acc, t) => acc + t.totalTagihan, 0);
 
   const totalPending = filteredByScope
@@ -243,12 +243,24 @@ export default function MejaKeuanganPage() {
                         <div className="text-[10px] text-gray-500 font-mono mt-1">{t.noKwitansi}</div>
                       </td>
                       <td className="px-4 py-4">
-                        {t.program.nama}
-                        <div className="text-xs text-gold-500 mt-0.5">{t.program.durasiBulan} Bulan</div>
+                        {t.statusPembayaran === "KSU_GRATIS" ? (
+                          <span className="font-bold text-purple-400 bg-purple-500/10 px-2 py-1 rounded border border-purple-500/20">Beasiswa KSU</span>
+                        ) : (
+                          <>
+                            {t.program.nama}
+                            <div className="text-xs text-gold-500 mt-0.5">{t.program.durasiBulan} Bulan</div>
+                          </>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-right font-mono text-sm">
-                        {new Intl.NumberFormat('id-ID').format(t.totalTagihan)}
-                        <div className="text-[10px] text-gray-500 mt-0.5">Kode: +{t.kodeUnik}</div>
+                        {t.statusPembayaran === "KSU_GRATIS" ? (
+                          <span className="text-purple-400 font-bold">GRATIS</span>
+                        ) : (
+                          <>
+                            {new Intl.NumberFormat('id-ID').format(t.totalTagihan)}
+                            <div className="text-[10px] text-gray-500 mt-0.5">Kode: +{t.kodeUnik}</div>
+                          </>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-center text-xs font-bold text-blue-400">
                         {t.admin?.nama || "-"}

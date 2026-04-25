@@ -53,6 +53,12 @@ export async function POST(
       return NextResponse.json({ error: "Admin ID wajib diisi" }, { status: 400 });
     }
 
+    // Pastikan admin masih ada di database (mencegah error session usang jika database direset)
+    const adminExists = await prisma.user.findUnique({ where: { id: adminId } });
+    if (!adminExists) {
+      return NextResponse.json({ error: "Sesi tidak valid (User Admin tidak ditemukan). Silakan logout lalu login kembali." }, { status: 401 });
+    }
+
     const transaksi = await prisma.transaksiPendaftaran.findUnique({
       where: { id },
       include: { santri: true, program: true }
@@ -80,27 +86,33 @@ export async function POST(
         }
       });
 
-      // 2. Generate NIS jika belum punya
+      // 2. Tentukan Dufah Target (Bisa hari ini atau masa depan)
+      const targetDufahId = transaksi.dufahTujuanId || dufahAktif.id;
+      const targetDufahObj = await tx.dufah.findUnique({ where: { id: targetDufahId } }) || dufahAktif;
+
+      // 3. Generate NIS jika belum punya
       let nis = transaksi.santri.nis;
       if (!nis && transaksi.santri.tanggalLahir) {
-        nis = await generateNIS(tx, dufahAktif, new Date(transaksi.santri.tanggalLahir));
+        // Gunakan targetDufahObj (Duf'ah Tujuan) untuk NIS, bukan dufahAktif saat ini
+        nis = await generateNIS(tx, targetDufahObj, new Date(transaksi.santri.tanggalLahir));
       }
 
-      // 3. Kalkulasi Batas Aktif Duf'ah
+      // 4. Kalkulasi Batas Aktif Duf'ah
       const santriDb = await tx.santri.findUnique({ where: { id: transaksi.santriId } });
       const currentBatas = santriDb?.batasAktifDufah || 0;
       
       let newBatasAktif = currentBatas;
       if (isKSU) {
-        newBatasAktif = dufahAktif.id + 12; // KSU diberi batas +12 bulan dari sekarang (Bisa diperpanjang admin nanti)
+        // KSU diberi batas +12 bulan dari target pendaftarannya
+        newBatasAktif = targetDufahId + 12; 
       } else {
-        // Jika santri mati (batasAktif < dufahAktif), mulai dari dufah aktif. 
+        // Jika santri mati (batasAktif < targetDufahId), mulai dari target dufah tersebut.
         // Jika masih aktif, tambahkan ke batas aktif lama.
-        const startDufah = currentBatas < dufahAktif.id ? dufahAktif.id : currentBatas + 1;
+        const startDufah = currentBatas < targetDufahId ? targetDufahId : currentBatas + 1;
         newBatasAktif = startDufah + transaksi.program.durasiBulan - 1;
       }
 
-      // 4. Update Santri
+      // 5. Update Santri
       const santriUpdate = await tx.santri.update({
         where: { id: transaksi.santriId },
         data: {
@@ -111,8 +123,7 @@ export async function POST(
         }
       });
 
-      // 5. Buat Riwayat Duf'ah untuk dufah tujuan jika belum ada
-      const targetDufahId = transaksi.dufahTujuanId || dufahAktif.id;
+      // 6. Buat Riwayat Duf'ah untuk dufah tujuan jika belum ada
       const isBeliAtribut = transaksi.nominalProgram >= transaksi.program.harga;
 
       const cekRiwayat = await tx.riwayatDufah.findUnique({
@@ -122,24 +133,27 @@ export async function POST(
       });
 
       if (!cekRiwayat) {
-        // Logika Bulan Ke: Cek apakah riwayat sebelumnya nyambung
-        // 1. Cari Duf'ah tepat sebelum targetDufahId
-        const previousDufah = await tx.dufah.findFirst({
-          where: { id: { lt: targetDufahId } },
-          orderBy: { id: 'desc' }
+        // Logika Kontinuitas: Cek riwayat terakhir untuk bulanKe dan Kamar
+        const lastRiwayatEver = await tx.riwayatDufah.findFirst({
+          where: { santriId: transaksi.santriId },
+          orderBy: { dufahId: 'desc' }
         });
 
         let newBulanKe = 1;
+        let previousLemariId = null;
 
-        if (previousDufah) {
-          // 2. Cari apakah santri ini punya riwayat di Duf'ah sebelumnya
-          const lastRiwayat = await tx.riwayatDufah.findFirst({
-            where: { santriId: transaksi.santriId, dufahId: previousDufah.id }
+        if (lastRiwayatEver) {
+          // Lanjut bulanKe tidak mengulang dari 0 (biarpun ada jeda)
+          newBulanKe = (lastRiwayatEver.bulanKe || 1) + 1;
+
+          // Kontinuitas Kamar: Hanya jika bersambung langsung dari Dufah sebelumnya
+          const previousDufah = await tx.dufah.findFirst({
+            where: { id: { lt: targetDufahId } },
+            orderBy: { id: 'desc' }
           });
 
-          if (lastRiwayat) {
-            // Nyambung tanpa bolong
-            newBulanKe = (lastRiwayat.bulanKe || 1) + 1;
+          if (previousDufah && lastRiwayatEver.dufahId === previousDufah.id) {
+            previousLemariId = lastRiwayatEver.lemariId;
           }
         }
 
@@ -147,7 +161,8 @@ export async function POST(
           data: {
             santriId: transaksi.santriId,
             dufahId: targetDufahId,
-            status: "PRE_LIST", // Masuk ke antrean Asrama
+            lemariId: previousLemariId,
+            status: previousLemariId ? "ASSIGNED" : "PRE_LIST", // Langsung ASSIGNED jika kamar lanjut
             bulanKe: newBulanKe,
             // Jika TIDAK beli atribut, berarti sudah punya. Kita set true agar tidak muncul di tagihan Mims Store.
             isDresscodeTaken: !isBeliAtribut,
