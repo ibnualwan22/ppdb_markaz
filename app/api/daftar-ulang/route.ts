@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     if (riwayatBulanLalu && riwayatBulanLalu.lemariId) {
       // TIDAK TERPUTUS
       const durasiBerjalan = riwayatBulanLalu.bulanKe;
-      if (durasiBerjalan < batasMaksimal) {
+      if (durasiBerjalan % batasMaksimal !== 0) {
         lemariBaru = riwayatBulanLalu.lemariId;
         statusBaru = "ASSIGNED";
         bulanKeBaru = durasiBerjalan + 1;

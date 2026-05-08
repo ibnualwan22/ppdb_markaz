@@ -16,12 +16,35 @@ export async function POST(request: Request) {
     if (!dataSantri) return NextResponse.json({ error: "Santri tidak ditemukan" }, { status: 404 });
     if (dataSantri.isAktif) return NextResponse.json({ error: "Santri tersebut berstatus aktif!" }, { status: 400 });
 
-    // 1. Activate student and reset their category to BARU because they are returning
+    const dufahLama = await prisma.dufah.findFirst({
+      where: { id: { lt: dufahAktif.id } },
+      orderBy: { id: 'desc' }
+    });
+
+    let riwayatBulanLalu = null;
+    if (dufahLama) {
+      riwayatBulanLalu = await prisma.riwayatDufah.findUnique({
+        where: { santriId_dufahId: { santriId: santriId, dufahId: dufahLama.id } }
+      });
+    }
+
+    let bulanKeBaru = 1;
+    let kategoriBaru = dataSantri.kategori;
+
+    if (riwayatBulanLalu) {
+      bulanKeBaru = riwayatBulanLalu.bulanKe + 1;
+      kategoriBaru = "LAMA";
+    } else {
+      bulanKeBaru = 1;
+      kategoriBaru = "BARU";
+    }
+
+    // 1. Activate student and update their category based on history
     await prisma.santri.update({
       where: { id: santriId },
       data: {
         isAktif: true,
-        kategori: "BARU", 
+        kategori: kategoriBaru, 
       }
     });
 
@@ -38,7 +61,7 @@ export async function POST(request: Request) {
           lemariId: null, // explicitly needed for PRE_LIST in Meja Asrama
           status: "PRE_LIST",
           isIdCardTaken: false,
-          bulanKe: 1,
+          bulanKe: bulanKeBaru,
         }
       });
     } else {
@@ -48,7 +71,7 @@ export async function POST(request: Request) {
           data: {
              lemariId: null,
              status: "PRE_LIST",
-             bulanKe: 1
+             bulanKe: bulanKeBaru
           }
        })
     }

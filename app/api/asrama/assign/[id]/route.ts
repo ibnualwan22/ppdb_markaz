@@ -40,9 +40,11 @@ export async function PATCH(
 
     // 3. Jika panitia memilih lemari yang SAMA PERSIS dengan bulan lalu
     if (riwayatBulanLalu && riwayatBulanLalu.lemariId === lemariId) {
-      return NextResponse.json({ 
-        error: `SISTEM MENOLAK: ${dataBulanIni.santri.nama} baru saja menempati lemari ini dan wajib pindah sakan/kamar. Silakan pilih lokasi lain.` 
-      }, { status: 403 }); // 403 = Forbidden
+      if (riwayatBulanLalu.bulanKe % 3 === 0) {
+        return NextResponse.json({ 
+          error: `SISTEM MENOLAK: ${dataBulanIni.santri.nama} sudah menempati lemari ini selama 3 bulan (atau kelipatannya) dan wajib pindah sakan/kamar. Silakan pilih lokasi lain.` 
+        }, { status: 403 });
+      }
     }
 
     // ==========================================
