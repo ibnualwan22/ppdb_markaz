@@ -15,6 +15,11 @@ const IconUnlock = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
     <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" />
   </svg>
 );
+const IconPencil = ({ className = "h-3 w-3" }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+  </svg>
+);
 const IconSearch = ({ className = "h-5 w-5" }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -35,13 +40,13 @@ const IconStar = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
   </svg>
 );
-const IconMale = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+const IconMale = ({ className = "h-4 w-4 inline text-blue-500" }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
   </svg>
 );
-const IconFemale = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline text-pink-500" viewBox="0 0 24 24" fill="currentColor">
+const IconFemale = ({ className = "h-4 w-4 inline text-pink-500" }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
   </svg>
 );
@@ -51,6 +56,7 @@ export default function DashboardMuasisPage() {
   const [loading, setLoading] = useState(true);
   const [searchSakan, setSearchSakan] = useState("");
   const [searchSantri, setSearchSantri] = useState("");
+  const [activeSakanId, setActiveSakanId] = useState<string>("all");
   const mainRef = useRef<HTMLDivElement>(null);
   const pusher = usePusher();
   const { hasAccess } = usePermissions();
@@ -146,6 +152,53 @@ export default function DashboardMuasisPage() {
     });
   };
 
+  const editKeterangan = async (kamarId: string, currentKeterangan: string) => {
+    const newVal = window.prompt("Masukkan catatan/keterangan kamar ini:", currentKeterangan || "");
+    if (newVal === null) return; // cancelled
+
+    // Optimistic Update
+    setDataSakan(prevData => prevData.map(s => ({
+      ...s,
+      kamar: s.kamar.map((k: any) => k.id === kamarId ? { ...k, keterangan: newVal } : k)
+    })));
+
+    try {
+      await fetch(`/api/kamar/${kamarId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keterangan: newVal }),
+      });
+    } catch (error) {
+      console.error(error);
+      muatData(true);
+    }
+  };
+
+  const editKeteranganLemari = async (kamarId: string, lemariId: string, currentKeterangan: string) => {
+    const newVal = window.prompt("Masukkan catatan/keterangan lemari ini:", currentKeterangan || "");
+    if (newVal === null) return; // cancelled
+
+    // Optimistic Update
+    setDataSakan(prevData => prevData.map(s => ({
+      ...s,
+      kamar: s.kamar.map((k: any) => k.id === kamarId ? {
+        ...k,
+        lemari: k.lemari.map((l: any) => l.id === lemariId ? { ...l, keterangan: newVal } : l)
+      } : k)
+    })));
+
+    try {
+      await fetch(`/api/lemari/${lemariId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keterangan: newVal }),
+      });
+    } catch (error) {
+      console.error(error);
+      muatData(true);
+    }
+  };
+
   const togglePriority = async (id: string, currentPriority: boolean) => {
     const scrollContainer = mainRef.current?.parentElement;
     const scrollTop = scrollContainer?.scrollTop || 0;
@@ -201,8 +254,9 @@ export default function DashboardMuasisPage() {
       lemari.penghuni[0].santri.nama.toLowerCase().includes(searchSantri.toLowerCase());
   };
 
-  const sakanBanin = filterSakan(dataSakan.filter(s => s.kategori !== "BANAT"));
-  const sakanBanat = filterSakan(dataSakan.filter(s => s.kategori === "BANAT"));
+  const filteredDataSakan = activeSakanId === "all" ? dataSakan : dataSakan.filter(s => s.id === activeSakanId);
+  const sakanBanin = filterSakan(filteredDataSakan.filter(s => s.kategori !== "BANAT"));
+  const sakanBanat = filterSakan(filteredDataSakan.filter(s => s.kategori === "BANAT"));
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
@@ -290,11 +344,29 @@ export default function DashboardMuasisPage() {
 
                       return (
                         <div key={kamar.id} className={`p-4 rounded-xl border shadow-sm transition-all ${isKamarLocked ? 'bg-dark-900 border-gray-800' : 'bg-dark-900/50 border-gold-500/10'}`}>
-                          <div className="flex justify-between items-center border-b border-gold-500/10 pb-2 mb-3">
-                            <h4 className={`font-bold text-lg flex items-center gap-2 ${isKamarLocked ? 'text-gray-600 line-through' : 'text-gold-400'}`}>
-                              {isKamarLocked && <IconLock className="h-4 w-4" />} Kamar {kamar.nama}
-                            </h4>
-                            <div className="flex items-center gap-2">
+                          <div className="flex justify-between items-start border-b border-gold-500/10 pb-2 mb-3">
+                            <div>
+                              <h4 className={`font-bold text-lg flex items-center gap-2 ${isKamarLocked ? 'text-gray-600 line-through' : 'text-gold-400'}`}>
+                                {isKamarLocked && <IconLock className="h-4 w-4" />} Kamar {kamar.nama}
+                              </h4>
+                              {kamar.keterangan && (
+                                <p className="text-xs text-gray-400 mt-1 max-w-[200px] md:max-w-[300px] leading-tight">
+                                  {kamar.keterangan}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {/* TOMBOL EDIT KETERANGAN */}
+                              {!isKamarLocked && canLockKamar && (
+                                <button 
+                                  onClick={() => editKeterangan(kamar.id, kamar.keterangan || "")} 
+                                  className="text-[10px] font-bold px-2 py-1 rounded-lg border transition-all bg-dark-800 hover:bg-dark-900 text-gray-400 hover:text-gold-500 border-gray-700 flex items-center gap-1"
+                                  title="Edit Catatan Kamar"
+                                >
+                                  <IconPencil />
+                                </button>
+                              )}
+                              
                               {/* TOMBOL KUNCI KAMAR - always visible */}
                               {canLockKamar && (
                               <button 
@@ -376,6 +448,15 @@ export default function DashboardMuasisPage() {
                                           <IconStar className="h-2.5 w-2.5" />
                                         </button>
                                       )}
+                                      {canLockKamar && (
+                                        <button 
+                                          onClick={() => editKeteranganLemari(kamar.id, lemari.id, lemari.keterangan || "")}
+                                          className="text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold transition-opacity bg-dark-800 border border-gold-500/20 hover:bg-gold-500/10 text-gold-500 md:opacity-0 md:group-hover:opacity-100"
+                                          title="Edit Catatan Lemari"
+                                        >
+                                          <IconPencil className="h-2.5 w-2.5" />
+                                        </button>
+                                      )}
                                       {/* TOMBOL KUNCI LEMARI - visible on mobile, hover on desktop */}
                                       {canLockKamar && (
                                       <button 
@@ -396,6 +477,11 @@ export default function DashboardMuasisPage() {
                                       </p>
                                     ) : (
                                       <p className="text-xs text-gray-600 italic font-medium text-center group-hover:hidden">Kosong</p>
+                                    )}
+                                    {lemari.keterangan && (
+                                      <p className="text-[9px] text-gray-500 italic mt-1 leading-tight border-t border-gray-800 pt-1" title={lemari.keterangan}>
+                                        {lemari.keterangan.length > 25 ? lemari.keterangan.substring(0, 25) + '...' : lemari.keterangan}
+                                      </p>
                                     )}
                                   </div>
                                 </div>
@@ -452,6 +538,41 @@ export default function DashboardMuasisPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* SAKAN TABS BARS FOR MOBILE-FRIENDLY NAV */}
+      <div className="flex overflow-x-auto gap-3 pb-4 mb-6 snap-x [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <button
+          onClick={() => setActiveSakanId("all")}
+          className={`snap-center shrink-0 whitespace-nowrap px-5 py-2.5 rounded-xl font-bold transition-all border ${
+            activeSakanId === "all"
+              ? "bg-gold-500 text-dark-900 border-gold-500 shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+              : "bg-dark-800 text-gray-400 border-dark-900 hover:text-gold-500 hover:border-gold-500/30"
+          }`}
+        >
+          Semua Sakan
+        </button>
+        {dataSakan.map((sakan) => {
+          const isActive = activeSakanId === sakan.id;
+          return (
+            <button
+              key={sakan.id}
+              onClick={() => setActiveSakanId(sakan.id)}
+              className={`snap-center shrink-0 whitespace-nowrap px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 border ${
+                isActive
+                  ? "bg-gold-500 text-dark-900 border-gold-500 shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+                  : "bg-dark-800 text-gray-400 border-dark-900 hover:text-gold-500 hover:border-gold-500/30"
+              }`}
+            >
+              {sakan.kategori === "BANIN" ? (
+                <IconMale className={`h-4 w-4 inline ${isActive ? 'text-dark-900' : 'text-blue-500'}`} />
+              ) : (
+                <IconFemale className={`h-4 w-4 inline ${isActive ? 'text-dark-900' : 'text-pink-500'}`} />
+              )}
+              {sakan.nama}
+            </button>
+          );
+        })}
       </div>
 
       {sakanBanin.length > 0 && <RenderSakanBlock data={sakanBanin} judul="Area Asrama Banin (Putra)" warnaTema="biru" />}

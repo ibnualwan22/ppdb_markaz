@@ -41,6 +41,11 @@ const IconPlus = () => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
   </svg>
 );
+const IconPencil = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+  </svg>
+);
 const IconStar = ({ className = "h-4 w-4", title }: { className?: string, title?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
     {title && <title>{title}</title>}
@@ -231,6 +236,53 @@ export default function MejaAsramaPage() {
     }
   };
 
+  const editKeterangan = async (kamarId: string, currentKeterangan: string) => {
+    const newVal = window.prompt("Masukkan catatan/keterangan kamar ini:", currentKeterangan || "");
+    if (newVal === null) return; // cancelled
+
+    // Optimistic Update
+    setDataLokasi(prevData => prevData.map(s => ({
+      ...s,
+      kamar: s.kamar.map((k: any) => k.id === kamarId ? { ...k, keterangan: newVal } : k)
+    })));
+
+    try {
+      await fetch(`/api/kamar/${kamarId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keterangan: newVal }),
+      });
+    } catch (error) {
+      console.error(error);
+      muatData(true);
+    }
+  };
+
+  const editKeteranganLemari = async (kamarId: string, lemariId: string, currentKeterangan: string) => {
+    const newVal = window.prompt("Masukkan catatan/keterangan lemari ini:", currentKeterangan || "");
+    if (newVal === null) return; // cancelled
+
+    // Optimistic Update
+    setDataLokasi(prevData => prevData.map(s => ({
+      ...s,
+      kamar: s.kamar.map((k: any) => k.id === kamarId ? {
+        ...k,
+        lemari: k.lemari.map((l: any) => l.id === lemariId ? { ...l, keterangan: newVal } : l)
+      } : k)
+    })));
+
+    try {
+      await fetch(`/api/lemari/${lemariId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keterangan: newVal }),
+      });
+    } catch (error) {
+      console.error(error);
+      muatData(true);
+    }
+  };
+
   // Handler Tarik Santri Comeback
   const cariSantriNonAktif = async (keyword: string) => {
     setTarikSearchKeyword(keyword);
@@ -403,11 +455,27 @@ export default function MejaAsramaPage() {
 
                     return (
                       <div key={kamar.id} className="p-3 rounded-xl border border-gold-500/10 bg-dark-900/50">
-                        <div className="flex justify-between items-center mb-2 pb-2 border-b border-gold-500/10">
-                          <h4 className="font-bold text-gold-400 flex items-center gap-2">
-                            Kamar {kamar.nama}
-                          </h4>
-                          <span className="text-xs font-bold text-gold-500 bg-dark-800 px-2 py-0.5 rounded-lg border border-gold-500/20">
+                        <div className="flex justify-between items-start mb-2 pb-2 border-b border-gold-500/10">
+                          <div>
+                            <h4 className="font-bold text-gold-400 flex items-center gap-2">
+                              Kamar {kamar.nama}
+                              {canAssignLemari && (
+                                <button 
+                                  onClick={() => editKeterangan(kamar.id, kamar.keterangan || "")} 
+                                  className="text-[10px] font-bold px-1.5 py-1 rounded border transition-all bg-dark-800 hover:bg-dark-900 text-gray-400 hover:text-gold-500 border-gray-700 flex items-center gap-1"
+                                  title="Edit Catatan Kamar"
+                                >
+                                  <IconPencil className="h-3 w-3" />
+                                </button>
+                              )}
+                            </h4>
+                            {kamar.keterangan && (
+                              <p className="text-xs text-gray-400 mt-1 max-w-[200px] leading-tight">
+                                {kamar.keterangan}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-gold-500 bg-dark-800 px-2 py-0.5 rounded-lg border border-gold-500/20 shrink-0">
                             Kosong: {kosong}/{totalK}
                           </span>
                         </div>
@@ -418,19 +486,35 @@ export default function MejaAsramaPage() {
 
                             if (isTerisi) {
                               return (
-                                <div key={lemari.id} className={`p-2 rounded-lg border ${bgLemariTerisi} min-h-[65px] flex flex-col justify-between`}>
+                                <div key={lemari.id} className={`p-2 rounded-lg border ${bgLemariTerisi} min-h-[65px] flex flex-col justify-between group`}>
                                   <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-1">
                                       <span className="text-[10px] font-black text-gray-500 bg-white px-1.5 py-0.5 rounded shadow-sm">{lemari.nomor}</span>
                                       {lemari.isPriority && <IconStar className="h-3 w-3 text-orange-500" title="Prioritas" />}
+                                      {canAssignLemari && (
+                                        <button 
+                                          onClick={() => editKeteranganLemari(kamar.id, lemari.id, lemari.keterangan || "")}
+                                          className="text-[10px] px-1 py-0.5 rounded transition-opacity bg-dark-800 text-gold-500 md:opacity-0 md:group-hover:opacity-100"
+                                          title="Edit Catatan Lemari"
+                                        >
+                                          <IconPencil className="h-2.5 w-2.5" />
+                                        </button>
+                                      )}
                                     </div>
                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded text-white ${dataSantriLemari.kategori === 'KSU' ? 'bg-purple-600' : dataSantriLemari.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
                                       {dataSantriLemari.kategori}
                                     </span>
                                   </div>
-                                  <p className={`font-bold text-xs leading-tight truncate mt-1 ${textWarna}`} title={dataSantriLemari.nama}>
-                                    {dataSantriLemari.nama}
-                                  </p>
+                                  <div className="mt-1">
+                                    <p className={`font-bold text-xs leading-tight truncate ${textWarna}`} title={dataSantriLemari.nama}>
+                                      {dataSantriLemari.nama}
+                                    </p>
+                                    {lemari.keterangan && (
+                                      <p className="text-[9px] text-gray-400 italic mt-0.5 leading-tight truncate" title={lemari.keterangan}>
+                                        {lemari.keterangan}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               );
                             }
@@ -445,10 +529,24 @@ export default function MejaAsramaPage() {
                                 <div className="flex items-center gap-1 self-start">
                                   <span className={`text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm border ${lemari.isPriority ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' : 'text-gray-400 bg-dark-900 border-gray-800'}`}>{lemari.nomor}</span>
                                   {lemari.isPriority && <IconStar className="h-3 w-3 text-orange-500" title="Prioritas Pengisian" />}
+                                  {canAssignLemari && (
+                                    <span 
+                                      onClick={(e) => { e.stopPropagation(); editKeteranganLemari(kamar.id, lemari.id, lemari.keterangan || ""); }}
+                                      className="text-[10px] px-1 py-0.5 rounded transition-opacity bg-dark-800 text-gold-500 md:opacity-0 md:group-hover:opacity-100 hover:bg-dark-700"
+                                      title="Edit Catatan Lemari"
+                                    >
+                                      <IconPencil className="h-2.5 w-2.5" />
+                                    </span>
+                                  )}
                                 </div>
-                                <div className="text-center w-full">
+                                <div className="text-center w-full mt-1">
                                   <p className={`text-xs italic font-medium ${canAssignLemari ? 'group-hover:hidden' : ''} ${lemari.isPriority ? 'text-orange-500/80' : 'text-gray-600'}`}>{lemari.isPriority ? "Prioritas" : "Kosong"}</p>
                                   {canAssignLemari && <p className="text-xs text-gold-500 font-bold hidden group-hover:flex items-center justify-center gap-1"><IconPlus /> Isi Santri</p>}
+                                  {lemari.keterangan && (
+                                    <p className={`text-[9px] italic mt-0.5 leading-tight truncate ${canAssignLemari ? 'group-hover:hidden' : ''} text-gray-500`} title={lemari.keterangan}>
+                                      {lemari.keterangan}
+                                    </p>
+                                  )}
                                 </div>
                               </button>
                             );

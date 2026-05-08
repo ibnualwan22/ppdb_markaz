@@ -25,6 +25,7 @@ model Kamar {
   nama      String
   sakanId   String
   isLocked  Boolean  @default(false) // <--- TAMBAHKAN BARIS INI
+  keterangan String?
   sakan     Sakan    @relation(fields: [sakanId], references: [id], onDelete: Cascade)
   lemari    Lemari[]
 }
@@ -35,6 +36,7 @@ model Lemari {
   kamarId   String   // Kunci tamu ke tabel Kamar
   isLocked  Boolean  @default(false)
   isPriority Boolean @default(false) // Penanda prioritas isi lemari dari Muasis
+  keterangan String?
   kamar     Kamar    @relation(fields: [kamarId], references: [id], onDelete: Cascade)
   penghuni  RiwayatDufah[] // Relasi ke riwayat santri yang menempati
 }
