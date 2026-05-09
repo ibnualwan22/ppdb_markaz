@@ -20,7 +20,7 @@ export async function GET() {
         santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
         lemari: { include: { kamar: { include: { sakan: true } } } } 
       },
-      orderBy: { santri: { nama: 'asc' } }
+      orderBy: { updatedAt: 'desc' }
     });
 
     const sudah = await prisma.riwayatDufah.findMany({

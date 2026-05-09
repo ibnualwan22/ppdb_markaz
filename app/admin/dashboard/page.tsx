@@ -541,7 +541,7 @@ export default function DashboardMuasisPage() {
       </div>
 
       {/* SAKAN TABS BARS FOR MOBILE-FRIENDLY NAV */}
-      <div className="flex overflow-x-auto gap-3 pb-4 mb-6 snap-x [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="sticky top-0 z-30 flex overflow-x-auto gap-3 py-4 mb-6 snap-x [&::-webkit-scrollbar]:hidden bg-dark-900/95 backdrop-blur-md -mx-4 px-4 md:-mx-8 md:px-8 border-b border-gold-500/10 shadow-sm" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <button
           onClick={() => setActiveSakanId("all")}
           className={`snap-center shrink-0 whitespace-nowrap px-5 py-2.5 rounded-xl font-bold transition-all border ${
