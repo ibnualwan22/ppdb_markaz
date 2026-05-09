@@ -125,6 +125,13 @@ export async function POST(request: Request) {
       }
     });
 
+    if (lemariBaru) {
+      await prisma.lemari.update({
+        where: { id: lemariBaru },
+        data: { isPriority: false }
+      });
+    }
+
     const pesan = statusBaru === "ASSIGNED" 
       ? `Sakan diperpanjang. (Bulan ke-${bulanKeBaru})` 
       : "Silakan menuju Meja Asrama untuk antrean Sakan baru.";

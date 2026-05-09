@@ -20,6 +20,11 @@ export async function PATCH(
       data: { lemariId: lemariIdBaru, status: "ASSIGNED" }
     });
 
+    await prisma.lemari.update({
+      where: { id: lemariIdBaru },
+      data: { isPriority: false }
+    });
+
     emitDataUpdate("pindah-kamar");
     return NextResponse.json({ message: "Santri berhasil dipindahkan!", data: update });
   } catch (error) {

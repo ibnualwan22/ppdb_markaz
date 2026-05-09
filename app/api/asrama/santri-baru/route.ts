@@ -47,6 +47,11 @@ export async function POST(request: Request) {
       include: { riwayat: true }
     });
 
+    await prisma.lemari.update({
+      where: { id: lemariId },
+      data: { isPriority: false }
+    });
+
     emitDataUpdate("santri-baru");
     emitNotification("asrama", `🛏️ ${nama} telah ditempatkan ke kamar baru`, { nama, kategori });
 

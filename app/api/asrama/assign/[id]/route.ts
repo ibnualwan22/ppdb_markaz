@@ -62,6 +62,11 @@ export async function PATCH(
       }
     });
 
+    await prisma.lemari.update({
+      where: { id: lemariId },
+      data: { isPriority: false }
+    });
+
     const namaSakan = updatePenempatan.lemari?.kamar.sakan.nama;
     emitDataUpdate("assign");
     emitNotification("asrama", `🔄 ${updatePenempatan.santri.nama} dipindahkan ke ${namaSakan}`, { nama: updatePenempatan.santri.nama });
