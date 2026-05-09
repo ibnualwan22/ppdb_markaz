@@ -34,7 +34,7 @@ export async function GET() {
         santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
         lemari: { include: { kamar: { include: { sakan: true } } } } 
       },
-      orderBy: { waktuAmbilKartu: 'asc' } // ← yang pertama ambil = No. 1
+      orderBy: { nomorIdCard: 'desc' }
     });
 
     return NextResponse.json({ belum, sudah, dufahNama: dufahAktif.nama });
