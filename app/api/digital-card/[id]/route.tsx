@@ -1,9 +1,8 @@
+import prisma from "@/lib/prisma";
 import { ImageResponse } from 'next/og';
-import { PrismaClient } from '@prisma/client';
 import { readFileSync } from 'fs';
 import path from 'path';
 
-const prisma = new PrismaClient();
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {

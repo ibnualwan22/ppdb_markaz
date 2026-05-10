@@ -1,11 +1,9 @@
+import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { PrismaClient } from "@prisma/client"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import LogoutButton from "./LogoutButton"
-
-const prisma = new PrismaClient()
 
 export default async function SantriDashboardPage() {
   const session: any = await getServerSession(authOptions)

@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import Pusher from "pusher";
 
 export const pusherServer = new Pusher({
@@ -24,8 +25,6 @@ export const emitNotification = async (tipe: "asrama" | "idcard", message: strin
   }
 };
 
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
 
 export const sendGlobalNotification = async (
   title: string, 

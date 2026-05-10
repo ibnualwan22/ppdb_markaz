@@ -1,9 +1,8 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import https from "https";
 import { sendGlobalNotification, emitDataUpdate, logActivity } from "@/app/lib/pusherServer";
 
-const prisma = new PrismaClient();
 
 // Fungsi bantuan untuk menghasilkan NIS: Duf'ah + DDMMYY + Urut
 async function generateNIS(tx: any, dufah: any, tanggalLahir: Date) {

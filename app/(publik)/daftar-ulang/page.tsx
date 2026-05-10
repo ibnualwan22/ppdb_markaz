@@ -30,6 +30,9 @@ export default function DaftarUlangPage() {
   const [captchaB, setCaptchaB] = useState(0);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
 
+  // Agreement
+  const [isAgreed, setIsAgreed] = useState(false);
+
   const refreshCaptcha = () => {
     setCaptchaA(Math.floor(Math.random() * 10) + 1);
     setCaptchaB(Math.floor(Math.random() * 10) + 1);
@@ -223,6 +226,21 @@ export default function DaftarUlangPage() {
                 </label>
               </div>
 
+              {/* AGREEMENT SECTION */}
+              <div className="mt-6 bg-dark-900 border border-gold-500/20 p-4 rounded-xl flex items-start gap-3">
+                <input 
+                  type="checkbox" 
+                  id="agreement" 
+                  checked={isAgreed} 
+                  onChange={(e) => setIsAgreed(e.target.checked)}
+                  className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer shrink-0"
+                />
+                <label htmlFor="agreement" className="cursor-pointer text-gray-300">
+                  <span className="block font-bold text-white">Syarat dan Ketentuan</span>
+                  <span className="text-sm text-gray-400">Saya setuju untuk tidak merefund atau mengalihkan pembayaran ke orang lain dengan keadaan sadar</span>
+                </label>
+              </div>
+
               {/* CAPTCHA SECTION */}
               <div className="mt-8 bg-dark-900 border border-gold-500/20 p-5 rounded-2xl">
                 <label className="block text-sm font-bold text-gray-400 mb-2">Verifikasi Keamanan *</label>
@@ -240,7 +258,7 @@ export default function DaftarUlangPage() {
                 </div>
               </div>
 
-              <button onClick={handleRenew} disabled={loading} className="w-full mt-8 bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-black font-extrabold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50">
+              <button onClick={handleRenew} disabled={loading || !isAgreed} className="w-full mt-8 bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-black font-extrabold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50">
                 {loading ? "Memproses..." : "Selesaikan Perpanjangan"}
               </button>
             </div>

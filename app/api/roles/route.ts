@@ -1,8 +1,7 @@
+import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { checkPermission } from "@/lib/checkPermission";
 
-const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
   const auth = await checkPermission(req, "manage_roles");

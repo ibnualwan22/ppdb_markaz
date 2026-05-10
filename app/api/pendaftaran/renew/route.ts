@@ -1,8 +1,7 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { checkRateLimit } from "@/app/lib/rateLimit";
 
-const prisma = new PrismaClient();
 
 function generateInvoiceNumber(dufahId: number) {
   const date = new Date();
