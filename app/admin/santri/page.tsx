@@ -89,6 +89,12 @@ export default function MasterSantriPage() {
   const [editRiwayatId, setEditRiwayatId] = useState("");
   const [editLoading, setEditLoading] = useState(false);
 
+  // State Lengkapi Data (Transisi NIS)
+  const [lengkapiModal, setLengkapiModal] = useState<any | null>(null);
+  const [lengkapiTglLahir, setLengkapiTglLahir] = useState("");
+  const [lengkapiDurasi, setLengkapiDurasi] = useState("0");
+  const [lengkapiLoading, setLengkapiLoading] = useState(false);
+
   const muatDaftarDufah = async () => {
     const res = await fetch("/api/dufah");
     if (res.ok) setDaftarDufah(await res.json());
@@ -239,6 +245,27 @@ export default function MasterSantriPage() {
       muatDataSantri();
     } else {
       swalError("Gagal menghapus santri");
+    }
+  };
+
+  const simpanLengkapiData = async () => {
+    if (!lengkapiModal || !lengkapiTglLahir) return swalError("Tanggal lahir wajib diisi!");
+    setLengkapiLoading(true);
+    const res = await fetch(`/api/santri/${lengkapiModal.id}/lengkapi-data`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        tanggalLahir: lengkapiTglLahir,
+        tambahanDurasi: parseInt(lengkapiDurasi, 10)
+      })
+    });
+    setLengkapiLoading(false);
+    if (res.ok) {
+      swalSuccess("Data santri berhasil dilengkapi dan NIS telah dibuat!");
+      setLengkapiModal(null);
+      muatDataSantri();
+    } else {
+      swalError("Gagal melengkapi data santri");
     }
   };
 
@@ -591,6 +618,19 @@ export default function MasterSantriPage() {
                             <IconDocument /> Biodata
                           </button>
 
+                          {canManageSantri && !santri.nis && (
+                            <button
+                              onClick={() => {
+                                setLengkapiModal(santri);
+                                setLengkapiTglLahir("");
+                                setLengkapiDurasi("0");
+                              }}
+                              className="bg-dark-900 text-gold-500 hover:text-black px-3 py-1.5 rounded-lg hover:bg-gold-500 transition text-xs font-bold border border-gold-500 flex items-center gap-1 shadow-[0_0_10px_rgba(212,175,55,0.2)]"
+                            >
+                              <IconEdit /> Lengkapi Data & NIS
+                            </button>
+                          )}
+
                           {canManageSantri && (
                             <button
                               onClick={() => bukaEditModal(santri)}
@@ -866,6 +906,48 @@ export default function MasterSantriPage() {
               <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
                 <button onClick={() => setBiodataTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
                   Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL LENGKAPI DATA & NIS */}
+        {lengkapiModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="bg-dark-900 border-b border-gold-500/10 p-5">
+                <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconEdit /> Lengkapi Data & Buat NIS</h2>
+                <p className="text-gray-400 text-sm mt-1">Santri: <strong className="text-gray-200">{lengkapiModal.nama}</strong></p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-xl mb-2">
+                  <p className="text-xs text-blue-300">
+                    Masukkan Tanggal Lahir santri untuk men-generate NIS secara otomatis (Berdasarkan Duf'ah pertama mendaftar). Anda juga dapat menentukan sisa masa aktif langganan.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Tanggal Lahir *</label>
+                  <input type="date" value={lengkapiTglLahir} onChange={(e) => setLengkapiTglLahir(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Sisa Durasi Aktif</label>
+                  <select value={lengkapiDurasi} onChange={(e) => setLengkapiDurasi(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
+                    <option value="0">0 Bulan (Hanya aktif di Duf'ah saat ini)</option>
+                    <option value="1">1 Bulan (Aktif sampai bulan depan)</option>
+                    <option value="2">2 Bulan</option>
+                    <option value="3">3 Bulan</option>
+                    <option value="6">6 Bulan</option>
+                    <option value="12">12 Bulan (1 Tahun)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+                <button onClick={() => setLengkapiModal(null)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                <button onClick={simpanLengkapiData} disabled={lengkapiLoading} className="px-6 py-2.5 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                  {lengkapiLoading ? "Menyimpan..." : "Simpan & Generate"}
                 </button>
               </div>
             </div>
