@@ -95,6 +95,11 @@ export default function MasterSantriPage() {
   const [lengkapiDurasi, setLengkapiDurasi] = useState("0");
   const [lengkapiLoading, setLengkapiLoading] = useState(false);
 
+  // State Biodata Edit
+  const [isEditBiodata, setIsEditBiodata] = useState(false);
+  const [editBioData, setEditBioData] = useState<any>({});
+  const [bioLoading, setBioLoading] = useState(false);
+
   const muatDaftarDufah = async () => {
     const res = await fetch("/api/dufah");
     if (res.ok) setDaftarDufah(await res.json());
@@ -250,12 +255,17 @@ export default function MasterSantriPage() {
 
   const simpanLengkapiData = async () => {
     if (!lengkapiModal || !lengkapiTglLahir) return swalError("Tanggal lahir wajib diisi!");
+    
+    const parts = lengkapiTglLahir.split('/');
+    if (parts.length !== 3) return swalError("Format tanggal salah! Gunakan format DD/MM/YYYY");
+    const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
     setLengkapiLoading(true);
     const res = await fetch(`/api/santri/${lengkapiModal.id}/lengkapi-data`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        tanggalLahir: lengkapiTglLahir,
+        tanggalLahir: formattedDate,
         tambahanDurasi: parseInt(lengkapiDurasi, 10)
       })
     });
@@ -266,6 +276,61 @@ export default function MasterSantriPage() {
       muatDataSantri();
     } else {
       swalError("Gagal melengkapi data santri");
+    }
+  };
+
+  const bukaBiodataModal = (santri: any) => {
+    setBiodataTerpilih(santri);
+    setIsEditBiodata(false);
+    
+    let tglLahirVal = "";
+    if (santri.tanggalLahir) {
+      const d = new Date(santri.tanggalLahir);
+      tglLahirVal = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
+    setEditBioData({
+      tempatLahir: santri.tempatLahir || "",
+      tanggalLahir: tglLahirVal,
+      namaOrtu: santri.namaOrtu || "",
+      noWaOrtu: santri.noWaOrtu || "",
+      noWaSantri: santri.noWaSantri || "",
+      detailAlamat: santri.detailAlamat || "",
+      desa: santri.desa || "",
+      kecamatan: santri.kecamatan || "",
+      kabupaten: santri.kabupaten || "",
+      provinsi: santri.provinsi || "",
+    });
+  };
+
+  const simpanBiodata = async () => {
+    setBioLoading(true);
+    let finalTglLahir = null;
+    if (editBioData.tanggalLahir) {
+      const parts = editBioData.tanggalLahir.split('/');
+      if (parts.length === 3) {
+        finalTglLahir = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      } else {
+        setBioLoading(false);
+        return swalError("Format tanggal salah! Gunakan DD/MM/YYYY");
+      }
+    }
+
+    const res = await fetch(`/api/santri/${biodataTerpilih.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        ...editBioData,
+        tanggalLahir: finalTglLahir
+      })
+    });
+    setBioLoading(false);
+    if (res.ok) {
+      swalSuccess("Biodata berhasil diperbarui!");
+      setBiodataTerpilih(null);
+      muatDataSantri();
+    } else {
+      swalError("Gagal memperbarui biodata");
     }
   };
 
@@ -612,7 +677,7 @@ export default function MasterSantriPage() {
                             <IconDocument /> Riwayat
                           </button>
                           <button
-                            onClick={() => setBiodataTerpilih(santri)}
+                            onClick={() => bukaBiodataModal(santri)}
                             className="bg-dark-900 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition text-xs font-bold border border-blue-500/20 flex items-center gap-1"
                           >
                             <IconDocument /> Biodata
@@ -867,46 +932,119 @@ export default function MasterSantriPage() {
                   <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconDocument /> Biodata Lengkap Santri</h2>
                   <p className="text-gray-400 text-sm mt-1">Pusat Data Kependudukan Markaz</p>
                 </div>
-                <button onClick={() => setBiodataTerpilih(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl transition">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-3">
+                  {canManageSantri && !isEditBiodata && (
+                    <button onClick={() => setIsEditBiodata(true)} className="px-4 py-1.5 bg-dark-900 border border-gold-500/20 text-gold-500 rounded-lg hover:bg-gold-500/10 font-bold text-sm transition">
+                      Mode Edit
+                    </button>
+                  )}
+                  <button onClick={() => setBiodataTerpilih(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div className="p-6 overflow-y-auto flex-1 space-y-6">
                 <div className="bg-dark-900 border border-gold-500/10 p-5 rounded-xl">
                   <h3 className="text-gold-500 font-bold mb-3 border-b border-gold-500/10 pb-2">Informasi Pribadi</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><span className="text-gray-500 block">Nama Lengkap</span><strong className="text-gray-200">{biodataTerpilih.nama}</strong></div>
-                    <div><span className="text-gray-500 block">Jenis Kelamin</span><strong className="text-gray-200">{biodataTerpilih.gender}</strong></div>
-                    <div><span className="text-gray-500 block">NIS</span><strong className="text-gold-400 font-mono">{biodataTerpilih.nis || "-"}</strong></div>
-                    <div><span className="text-gray-500 block">NIK</span><strong className="text-gray-200 font-mono">{biodataTerpilih.nik || "-"}</strong></div>
-                    <div><span className="text-gray-500 block">Tempat Lahir</span><strong className="text-gray-200">{biodataTerpilih.tempatLahir || "-"}</strong></div>
-                    <div><span className="text-gray-500 block">Tanggal Lahir</span><strong className="text-gray-200">{biodataTerpilih.tanggalLahir ? new Date(biodataTerpilih.tanggalLahir).toLocaleDateString('id-ID') : "-"}</strong></div>
+                    <div><span className="text-gray-500 block mb-1">Nama Lengkap</span><strong className="text-gray-200">{biodataTerpilih.nama}</strong></div>
+                    <div><span className="text-gray-500 block mb-1">Jenis Kelamin</span><strong className="text-gray-200">{biodataTerpilih.gender}</strong></div>
+                    <div><span className="text-gray-500 block mb-1">NIS</span><strong className="text-gold-400 font-mono">{biodataTerpilih.nis || "-"}</strong></div>
+                    <div><span className="text-gray-500 block mb-1">NIK</span><strong className="text-gray-200 font-mono">{biodataTerpilih.nik || "-"}</strong></div>
+                    
+                    {isEditBiodata ? (
+                      <>
+                        <div>
+                          <span className="text-gray-500 block mb-1">Tempat Lahir</span>
+                          <input type="text" value={editBioData.tempatLahir} onChange={e => setEditBioData({...editBioData, tempatLahir: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block mb-1">Tanggal Lahir</span>
+                          <input type="text" placeholder="DD/MM/YYYY" value={editBioData.tanggalLahir} onChange={e => setEditBioData({...editBioData, tanggalLahir: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div><span className="text-gray-500 block">Tempat Lahir</span><strong className="text-gray-200">{biodataTerpilih.tempatLahir || "-"}</strong></div>
+                        <div><span className="text-gray-500 block">Tanggal Lahir</span><strong className="text-gray-200">{biodataTerpilih.tanggalLahir ? new Date(biodataTerpilih.tanggalLahir).toLocaleDateString('id-ID') : "-"}</strong></div>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="bg-dark-900 border border-gold-500/10 p-5 rounded-xl">
                   <h3 className="text-gold-500 font-bold mb-3 border-b border-gold-500/10 pb-2">Kontak & Alamat</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><span className="text-gray-500 block">Nama Orang Tua/Wali</span><strong className="text-gray-200">{biodataTerpilih.namaOrtu || "-"}</strong></div>
-                    <div><span className="text-gray-500 block">No. WA Orang Tua</span><strong className="text-gray-200">{biodataTerpilih.noWaOrtu || "-"}</strong></div>
-                    <div><span className="text-gray-500 block">No. WA Santri</span><strong className="text-gray-200">{biodataTerpilih.noWaSantri || "-"}</strong></div>
-                    <div className="col-span-2">
-                      <span className="text-gray-500 block">Alamat Lengkap</span>
-                      <strong className="text-gray-200 block mt-1">
-                        {biodataTerpilih.detailAlamat ? `${biodataTerpilih.detailAlamat}, ${biodataTerpilih.desa}, Kec. ${biodataTerpilih.kecamatan}, Kab. ${biodataTerpilih.kabupaten}, Prov. ${biodataTerpilih.provinsi}` : "-"}
-                      </strong>
-                    </div>
+                    {isEditBiodata ? (
+                      <>
+                        <div>
+                          <span className="text-gray-500 block mb-1">Nama Orang Tua/Wali</span>
+                          <input type="text" value={editBioData.namaOrtu} onChange={e => setEditBioData({...editBioData, namaOrtu: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block mb-1">No. WA Orang Tua</span>
+                          <input type="text" value={editBioData.noWaOrtu} onChange={e => setEditBioData({...editBioData, noWaOrtu: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block mb-1">No. WA Santri</span>
+                          <input type="text" value={editBioData.noWaSantri} onChange={e => setEditBioData({...editBioData, noWaSantri: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                        </div>
+                        <div className="col-span-2 grid grid-cols-2 gap-4 mt-2 border-t border-dark-700 pt-3">
+                          <div>
+                            <span className="text-gray-500 block mb-1">Provinsi</span>
+                            <input type="text" value={editBioData.provinsi} onChange={e => setEditBioData({...editBioData, provinsi: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          </div>
+                          <div>
+                            <span className="text-gray-500 block mb-1">Kabupaten</span>
+                            <input type="text" value={editBioData.kabupaten} onChange={e => setEditBioData({...editBioData, kabupaten: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          </div>
+                          <div>
+                            <span className="text-gray-500 block mb-1">Kecamatan</span>
+                            <input type="text" value={editBioData.kecamatan} onChange={e => setEditBioData({...editBioData, kecamatan: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          </div>
+                          <div>
+                            <span className="text-gray-500 block mb-1">Desa</span>
+                            <input type="text" value={editBioData.desa} onChange={e => setEditBioData({...editBioData, desa: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-gray-500 block mb-1">Alamat Lengkap</span>
+                            <textarea value={editBioData.detailAlamat} onChange={e => setEditBioData({...editBioData, detailAlamat: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" rows={2}></textarea>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div><span className="text-gray-500 block">Nama Orang Tua/Wali</span><strong className="text-gray-200">{biodataTerpilih.namaOrtu || "-"}</strong></div>
+                        <div><span className="text-gray-500 block">No. WA Orang Tua</span><strong className="text-gray-200">{biodataTerpilih.noWaOrtu || "-"}</strong></div>
+                        <div><span className="text-gray-500 block">No. WA Santri</span><strong className="text-gray-200">{biodataTerpilih.noWaSantri || "-"}</strong></div>
+                        <div className="col-span-2">
+                          <span className="text-gray-500 block">Alamat Lengkap</span>
+                          <strong className="text-gray-200 block mt-1">
+                            {biodataTerpilih.detailAlamat ? `${biodataTerpilih.detailAlamat}, ${biodataTerpilih.desa}, Kec. ${biodataTerpilih.kecamatan}, Kab. ${biodataTerpilih.kabupaten}, Prov. ${biodataTerpilih.provinsi}` : "-"}
+                          </strong>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
-                <button onClick={() => setBiodataTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
-                  Tutup
-                </button>
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+                {isEditBiodata ? (
+                  <>
+                    <button onClick={() => setIsEditBiodata(false)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                    <button onClick={simpanBiodata} disabled={bioLoading} className="px-6 py-2.5 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                      {bioLoading ? "Menyimpan..." : "Simpan Perubahan"}
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => setBiodataTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
+                    Tutup
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -929,7 +1067,7 @@ export default function MasterSantriPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-300 mb-1">Tanggal Lahir *</label>
-                  <input type="date" value={lengkapiTglLahir} onChange={(e) => setLengkapiTglLahir(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" />
+                  <input type="text" placeholder="DD/MM/YYYY" value={lengkapiTglLahir} onChange={(e) => setLengkapiTglLahir(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-300 mb-1">Sisa Durasi Aktif</label>

@@ -51,6 +51,28 @@ export default async function SantriDashboardPage() {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(angka)
   }
 
+  let aktifSampaiStr = `Duf'ah ${santri.batasAktifDufah}`;
+  if (santri.batasAktifDufah) {
+    const targetDufah = await prisma.dufah.findUnique({
+      where: { id: santri.batasAktifDufah }
+    });
+    
+    if (targetDufah) {
+      aktifSampaiStr = targetDufah.nama;
+    } else {
+      // Jika dufah masa depan belum dibuat di database, hitung secara matematis
+      const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
+      if (dufahAktif) {
+        const offset = santri.batasAktifDufah - dufahAktif.id;
+        const match = dufahAktif.nama.match(/\d+/);
+        if (match) {
+          const currentNum = parseInt(match[0], 10);
+          aktifSampaiStr = `Duf'ah ${currentNum + offset}`;
+        }
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-dark-950 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -134,7 +156,7 @@ export default async function SantriDashboardPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Aktif Sampai</p>
-                  <p className="text-gray-300 font-bold">Duf'ah {santri.batasAktifDufah}</p>
+                  <p className="text-gray-300 font-bold">{aktifSampaiStr}</p>
                 </div>
               </div>
             </div>

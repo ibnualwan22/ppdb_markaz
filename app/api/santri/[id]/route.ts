@@ -78,7 +78,7 @@ export async function PATCH(
   }
 }
 
-// PUT: Update data santri (nama, kategori, gender)
+// PUT: Update data santri (nama, kategori, gender, biodata)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -86,14 +86,28 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { nama, kategori, gender, riwayatId, bulanKe, nomorIdCard } = body;
+    const { 
+      nama, kategori, gender, riwayatId, bulanKe, nomorIdCard,
+      tempatLahir, tanggalLahir, detailAlamat, desa, kecamatan, kabupaten, provinsi,
+      namaOrtu, noWaOrtu, noWaSantri 
+    } = body;
 
     const santriUpdate = await prisma.santri.update({
       where: { id },
       data: { 
-        ...(nama && { nama }),
-        ...(kategori && { kategori }),
-        ...(gender && { gender }),
+        ...(nama !== undefined && { nama }),
+        ...(kategori !== undefined && { kategori }),
+        ...(gender !== undefined && { gender }),
+        ...(tempatLahir !== undefined && { tempatLahir }),
+        ...(tanggalLahir !== undefined && { tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null }),
+        ...(detailAlamat !== undefined && { detailAlamat }),
+        ...(desa !== undefined && { desa }),
+        ...(kecamatan !== undefined && { kecamatan }),
+        ...(kabupaten !== undefined && { kabupaten }),
+        ...(provinsi !== undefined && { provinsi }),
+        ...(namaOrtu !== undefined && { namaOrtu }),
+        ...(noWaOrtu !== undefined && { noWaOrtu }),
+        ...(noWaSantri !== undefined && { noWaSantri }),
       }
     });
 
