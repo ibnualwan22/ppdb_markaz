@@ -76,13 +76,7 @@ export default function PendaftaranPage() {
       });
 
       if (target) {
-        const d = now.getDate();
-        let targetDate = new Date();
-        if (d >= 14) {
-          targetDate.setMonth(now.getMonth() + 1);
-        }
-        const namaBulan = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(targetDate);
-        target.namaPeriodeLengkap = `${target.nama} (${namaBulan})`;
+        target.namaPeriodeLengkap = target.nama;
       }
       setTargetDufah(target || null);
     }).catch(() => { });

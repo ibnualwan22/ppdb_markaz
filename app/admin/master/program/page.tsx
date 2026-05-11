@@ -15,8 +15,8 @@ export default function MasterProgramPage() {
   const [harga, setHarga] = useState("");
   const [durasiBulan, setDurasiBulan] = useState("1");
   const [isActive, setIsActive] = useState(true);
-  const [tanggalMulaiDefault, setTanggalMulaiDefault] = useState("10");
-  const [tanggalTutupDefault, setTanggalTutupDefault] = useState("06");
+  const [tanggalMulaiDefault, setTanggalMulaiDefault] = useState("10 Juni");
+  const [tanggalTutupDefault, setTanggalTutupDefault] = useState("06 Juli");
 
   const muatData = async () => {
     try {
@@ -37,8 +37,8 @@ export default function MasterProgramPage() {
     setHarga("");
     setDurasiBulan("1");
     setIsActive(true);
-    setTanggalMulaiDefault("10");
-    setTanggalTutupDefault("06");
+    setTanggalMulaiDefault("10 Juni");
+    setTanggalTutupDefault("06 Juli");
   };
 
   const bukaModalEdit = (p: any) => {
@@ -47,8 +47,8 @@ export default function MasterProgramPage() {
     setHarga(p.harga.toString());
     setDurasiBulan(p.durasiBulan.toString());
     setIsActive(p.isActive);
-    setTanggalMulaiDefault(p.tanggalMulaiDefault || "10");
-    setTanggalTutupDefault(p.tanggalTutupDefault || "06");
+    setTanggalMulaiDefault(p.tanggalMulaiDefault || "10 Juni");
+    setTanggalTutupDefault(p.tanggalTutupDefault || "06 Juli");
     setIsModalOpen(true);
   };
 
@@ -157,11 +157,11 @@ export default function MasterProgramPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-300 mb-1">Tgl Mulai Pendaftaran</label>
-                    <input type="text" value={tanggalMulaiDefault} onChange={(e) => setTanggalMulaiDefault(e.target.value)} required className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" placeholder="Cth: 10" />
+                    <input type="text" value={tanggalMulaiDefault} onChange={(e) => setTanggalMulaiDefault(e.target.value)} required className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" placeholder="Cth: 10 Juni" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-300 mb-1">Tgl Tutup Pendaftaran</label>
-                    <input type="text" value={tanggalTutupDefault} onChange={(e) => setTanggalTutupDefault(e.target.value)} required className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" placeholder="Cth: 06" />
+                    <input type="text" value={tanggalTutupDefault} onChange={(e) => setTanggalTutupDefault(e.target.value)} required className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" placeholder="Cth: 06 Juli" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
