@@ -33,7 +33,7 @@ function formatRupiah(angka: number): string {
 }
 
 function formatTanggal(date: Date): string {
-  return date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  return date.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 function loadImg(src: string): Promise<HTMLImageElement> {
@@ -61,6 +61,7 @@ export const generateRegistrationPdf = async (data: {
   santri: any;
   transaksi: any;
   program: any;
+  dufah?: any;
   isRenew?: boolean;
   noKwitansi?: string;
   qrUrl?: string; // URL untuk QR code footer, misal link ke invoice online
@@ -212,7 +213,7 @@ export const generateRegistrationPdf = async (data: {
 
       // ── TABEL DETAIL ──────────────────────────────────────────────
       const tableBody: any[][] = [[
-        { content: data.program.nama + `\n(${data.program.durasiBulan} Duf'ah)`, styles: { fontStyle: "bold" } },
+        { content: data.program.nama + `\n(${data.program.durasiBulan} Duf'ah)\nMulai: ${data.dufah?.nama ?? '-'}`, styles: { fontStyle: "bold" } },
         { content: formatRupiah(subtotal), styles: { halign: "right" } },
         { content: String(data.transaksi.jumlahUnit ?? 1), styles: { halign: "center" } },
         { content: formatRupiah(subtotal * (data.transaksi.jumlahUnit ?? 1)), styles: { halign: "right" } },

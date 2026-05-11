@@ -104,6 +104,7 @@ export default function DaftarUlangPage() {
             santri: santriData,
             transaksi: data.data.transaksi,
             program: data.data.program,
+            dufah: data.data.dufah,
             isRenew: true
           });
         } catch(e) {

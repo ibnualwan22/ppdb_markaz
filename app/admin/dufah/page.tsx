@@ -235,8 +235,8 @@ export default function ManajemenDufahPage() {
                   <tr key={dufah.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${dufah.isActive ? 'bg-green-900/10' : ''}`}>
                     <td className="p-4 font-bold text-lg text-gray-200">{dufah.nama}</td>
                     <td className="p-4">
-                      <p className="text-sm"><span className="text-green-500 font-bold">Buka:</span> {dufah.tanggalBuka ? new Date(dufah.tanggalBuka).toLocaleString('id-ID') : '-'}</p>
-                      <p className="text-sm"><span className="text-red-500 font-bold">Tutup:</span> {dufah.tanggalTutup ? new Date(dufah.tanggalTutup).toLocaleString('id-ID') : '-'}</p>
+                      <p className="text-sm"><span className="text-green-500 font-bold">Buka:</span> {dufah.tanggalBuka ? `${new Date(dufah.tanggalBuka).getDate().toString().padStart(2, '0')}/${(new Date(dufah.tanggalBuka).getMonth() + 1).toString().padStart(2, '0')}/${new Date(dufah.tanggalBuka).getFullYear()} ${new Date(dufah.tanggalBuka).getHours().toString().padStart(2, '0')}:${new Date(dufah.tanggalBuka).getMinutes().toString().padStart(2, '0')}` : '-'}</p>
+                      <p className="text-sm"><span className="text-red-500 font-bold">Tutup:</span> {dufah.tanggalTutup ? `${new Date(dufah.tanggalTutup).getDate().toString().padStart(2, '0')}/${(new Date(dufah.tanggalTutup).getMonth() + 1).toString().padStart(2, '0')}/${new Date(dufah.tanggalTutup).getFullYear()} ${new Date(dufah.tanggalTutup).getHours().toString().padStart(2, '0')}:${new Date(dufah.tanggalTutup).getMinutes().toString().padStart(2, '0')}` : '-'}</p>
                     </td>
                     <td className="p-4 text-center">
                       {dufah.isActive ? (

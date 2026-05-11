@@ -115,7 +115,7 @@ export async function POST(request: Request) {
         }
       });
 
-      return { santri, transaksi, program, noKwitansi };
+      return { santri, transaksi, program, noKwitansi, dufah: targetDufah };
     });
 
     emitDataUpdate("pendaftaran-baru");

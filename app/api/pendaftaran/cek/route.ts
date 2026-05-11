@@ -35,6 +35,11 @@ export async function GET(request: Request) {
         id: santri.id,
         nama: santri.nama,
         nis: santri.nis,
+        gender: santri.gender,
+        tempatLahir: santri.tempatLahir,
+        tanggalLahir: santri.tanggalLahir,
+        noWaOrtu: santri.noWaOrtu,
+        detailAlamat: santri.detailAlamat,
         kategori: santri.kategori,
         isAktif: santri.isAktif,
         batasAktifDufah: santri.batasAktifDufah

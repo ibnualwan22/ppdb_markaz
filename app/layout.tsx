@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PPDB Markaz 2026",
-  description: "PPDB Markaz Arabiyah 2026",
+  title: "PPDB Markaz Arabiyah — Pusat Bahasa Arab & Mediator Timur Tengah",
+  description: "Penerimaan Peserta Didik Baru Markaz Arabiyah Pare. Pusat bimbingan bahasa Arab intensif dan mediator resmi studi ke Timur Tengah & Eropa.",
   icons: {
-    icon: "/images/logo-markaz.png",
+    icon: "/images/logo.png",
   },
 };
 

@@ -219,6 +219,7 @@ export default function PendaftaranPage() {
             santri: data.data.santri,
             transaksi: data.data.transaksi,
             program: data.data.program,
+            dufah: data.data.dufah,
             isRenew: false
           });
         } catch (e) {
@@ -378,6 +379,22 @@ export default function PendaftaranPage() {
                     const tgMulai = p.tanggalMulaiDefault || "10";
                     const tgTutup = p.tanggalTutupDefault || "06";
 
+                    let displayMulai = tgMulai;
+                    let displayTutup = tgTutup;
+
+                    if (targetDufah && targetDufah.tanggalBuka) {
+                      if (/^\d+$/.test(tgMulai.trim())) {
+                        const d = new Date(targetDufah.tanggalBuka);
+                        d.setMonth(d.getMonth() + 1);
+                        displayMulai = `${tgMulai.trim()} ${d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+                      }
+                      if (/^\d+$/.test(tgTutup.trim())) {
+                        const d = new Date(targetDufah.tanggalBuka);
+                        d.setMonth(d.getMonth() + 1 + p.durasiBulan);
+                        displayTutup = `${tgTutup.trim()} ${d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+                      }
+                    }
+
                     return (
                       <div
                         key={p.id}
@@ -393,7 +410,7 @@ export default function PendaftaranPage() {
                             {targetDufah ? `Periode ${targetDufah.namaPeriodeLengkap || targetDufah.nama}` : "Pendaftaran Sedang Ditutup"}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 mb-3">Tgl Program: <strong className="text-gray-300">{tgMulai} - {tgTutup}</strong></p>
+                        <p className="text-xs text-gray-500 mb-3">Tgl Program: <strong className="text-gray-300">{displayMulai} - {displayTutup}</strong></p>
                         <p className="text-2xl font-black text-gold-500 mt-2">Rp {new Intl.NumberFormat('id-ID').format(p.harga)}</p>
                       </div>
                     )

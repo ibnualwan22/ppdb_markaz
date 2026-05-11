@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: "Tagihan perpanjangan berhasil diterbitkan.",
-      data: { transaksi, program }
+      data: { transaksi, program, dufah: targetDufah }
     });
   } catch (error: any) {
     console.error("Error renew:", error);
