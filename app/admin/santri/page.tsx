@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Protect, usePermissions } from "@/components/Protect";
+import Swal from "sweetalert2";
 
 // SVG Icon Components
 const IconSearch = () => (
@@ -64,6 +65,7 @@ export default function MasterSantriPage() {
   const [daftarDufah, setDaftarDufah] = useState<any[]>([]);
   const { hasAccess } = usePermissions();
   const canManageSantri = hasAccess("manage_santri");
+  const isSuperAdmin = hasAccess("all_access");
 
   const [keyword, setKeyword] = useState("");
   const [filterDufah, setFilterDufah] = useState("AKTIF");
@@ -238,10 +240,22 @@ export default function MasterSantriPage() {
   };
 
   const hapusSantri = async (id: string, nama: string) => {
-    const result = await swalDanger(
-      "Hapus Permanen Santri?",
-      `Yakin ingin menghapus ${nama}? Semua riwayat asrama akan ikut terhapus. Aksi ini tidak bisa dibatalkan!`
-    );
+    const result = await Swal.fire({
+      title: "Hapus Permanen Santri?",
+      html: `Yakin ingin menghapus <b>${nama}</b>? Semua riwayat dan transaksi akan ikut terhapus.<br><br>Ketik <b>${nama}</b> untuk melanjutkan:`,
+      input: "text",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, Hapus Permanen",
+      cancelButtonText: "Batal",
+      inputValidator: (value) => {
+        if (value !== nama) {
+          return "Nama tidak cocok!";
+        }
+      }
+    });
     if (!result.isConfirmed) return;
 
     const res = await fetch(`/api/santri/${id}`, { method: "DELETE" });
@@ -729,7 +743,7 @@ export default function MasterSantriPage() {
                             </>
                           )}
 
-                          {canManageSantri && (
+                          {isSuperAdmin && (
                             <button
                               onClick={() => hapusSantri(santri.id, santri.nama)}
                               className="bg-dark-900 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-900/20 transition text-xs font-bold border border-red-900/50 flex items-center gap-1"

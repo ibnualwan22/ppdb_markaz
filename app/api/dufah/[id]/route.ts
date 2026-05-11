@@ -26,3 +26,20 @@ export async function PATCH(
     return NextResponse.json({ error: "Gagal memperbarui Duf'ah" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    
+    await prisma.dufah.delete({
+      where: { id: parseInt(id) }
+    });
+
+    return NextResponse.json({ message: "Duf'ah berhasil dihapus" });
+  } catch (error) {
+    return NextResponse.json({ error: "Gagal menghapus Duf'ah" }, { status: 500 });
+  }
+}

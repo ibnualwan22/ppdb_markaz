@@ -3,178 +3,139 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql" // Tetap gunakan PostgreSQL (Supabase/Neon)
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
-
-// ==========================================
-// 1. MASTER DATA LOKASI (Bisa ditambah/edit/hapus dari Menu Admin)
-// ==========================================
 
 model Sakan {
   id        String   @id @default(uuid())
-  nama      String // Contoh: "Balfaqih", "Ibn Sina"
+  nama      String
   kategori  String   @default("BANIN")
   isLocked  Boolean  @default(false)
-  kamar     Kamar[] // Relasi: 1 Sakan punya banyak Kamar
   createdAt DateTime @default(now())
+  kamar     Kamar[]
 }
 
 model Kamar {
-  id        String   @id @default(uuid())
-  nama      String
-  sakanId   String
-  isLocked  Boolean  @default(false) // <--- TAMBAHKAN BARIS INI
+  id         String   @id @default(uuid())
+  nama       String
+  sakanId    String
+  isLocked   Boolean  @default(false)
   keterangan String?
-  sakan     Sakan    @relation(fields: [sakanId], references: [id], onDelete: Cascade)
-  lemari    Lemari[]
+  sakan      Sakan    @relation(fields: [sakanId], references: [id], onDelete: Cascade)
+  lemari     Lemari[]
 }
 
 model Lemari {
-  id        String   @id @default(uuid())
-  nomor     String   // Contoh: "A1", "A2", "B1"
-  kamarId   String   // Kunci tamu ke tabel Kamar
-  isLocked  Boolean  @default(false)
-  isPriority Boolean @default(false) // Penanda prioritas isi lemari dari Muasis
+  id         String         @id @default(uuid())
+  nomor      String
+  kamarId    String
+  isLocked   Boolean        @default(false)
+  isPriority Boolean        @default(false)
   keterangan String?
-  kamar     Kamar    @relation(fields: [kamarId], references: [id], onDelete: Cascade)
-  penghuni  RiwayatDufah[] // Relasi ke riwayat santri yang menempati
+  kamar      Kamar          @relation(fields: [kamarId], references: [id], onDelete: Cascade)
+  penghuni   RiwayatDufah[]
 }
 
-// ==========================================
-// 2. DATA UTAMA (Santri & Periode Waktu)
-// ==========================================
-
 model Santri {
-  id       String  @id @default(uuid())
-  nama     String
-  kategori String // "BARU", "LAMA", "KSU"
-  gender   String  @default("BANIN")
-  isAktif  Boolean @default(true)
-
-  // Data Pribadi Baru
-  nis          String?   @unique
-  tempatLahir  String?
-  tanggalLahir DateTime?
-  namaOrtu     String?
-  noWaOrtu     String?
-  noWaSantri   String?
-
-  // Status Cuti
-  saldoDufah     Int     @default(0)
-  expiredDufahId Int?
-  isCuti         Boolean @default(false)
-
-  // Data Alamat
-  provinsi     String?
-  kabupaten    String?
-  kecamatan    String?
-  desa         String?
-  detailAlamat String?
-
-  // Logic Engine Core
-  batasAktifDufah Int @default(1)
-
-  riwayat   RiwayatDufah[]
-  transaksi TransaksiPendaftaran[]
-
-  createdAt DateTime @default(now())
+  id              String                 @id @default(uuid())
+  nama            String
+  kategori        String
+  gender          String                 @default("BANIN")
+  isAktif         Boolean                @default(true)
+  nis             String?                @unique
+  tempatLahir     String?
+  tanggalLahir    DateTime?
+  namaOrtu        String?
+  noWaOrtu        String?
+  noWaSantri      String?
+  provinsi        String?
+  kabupaten       String?
+  kecamatan       String?
+  desa            String?
+  detailAlamat    String?
+  batasAktifDufah Int                    @default(1)
+  createdAt       DateTime               @default(now())
+  expiredDufahId  Int?
+  isCuti          Boolean                @default(false)
+  saldoDufah      Int                    @default(0)
+  riwayat         RiwayatDufah[]
+  transaksi       TransaksiPendaftaran[]
 }
 
 model Dufah {
-  id          Int     @id @default(autoincrement())
-  nama        String // Contoh: "Duf'ah 87"
-  isActive    Boolean @default(false) // Penanda bulan yang sedang berjalan
-  isTahunBaru Boolean @default(false) // Untuk reset Syawal
-
-  // Fitur Time-bound untuk link pendaftaran santri lama
-  tanggalBuka  DateTime?
-  tanggalTutup DateTime?
-
+  id                   Int                    @id @default(autoincrement())
+  nama                 String
+  isActive             Boolean                @default(false)
+  isTahunBaru          Boolean                @default(false)
+  tanggalBuka          DateTime?
+  tanggalTutup         DateTime?
   riwayat              RiwayatDufah[]
   transaksiPendaftaran TransaksiPendaftaran[]
 }
 
-// ==========================================
-// 3. TABEL TRANSAKSI (Penghubung Santri, Waktu, dan Lokasi)
-// ==========================================
-
 model RiwayatDufah {
-  id       String @id @default(uuid())
-  santriId String
-  dufahId  Int
-
-  // Relasi Langsung ke Lemari (Otomatis mengetahui Kamar & Sakan)
-  lemariId String?
-  lemari   Lemari? @relation(fields: [lemariId], references: [id])
-
-  // Status Alur PPDB
-  status        String  @default("PRE_LIST") // "PRE_LIST", "ASSIGNED", "CHECKED_IN"
-  isIdCardTaken Boolean @default(false)
-  nomorIdCard   Int?
-
-  // Mims Store Checklist
-  isDresscodeTaken     Boolean @default(false)
+  id                   String    @id @default(uuid())
+  santriId             String
+  dufahId              Int
+  lemariId             String?
+  status               String    @default("PRE_LIST")
+  isIdCardTaken        Boolean   @default(false)
+  nomorIdCard          Int?
+  isDresscodeTaken     Boolean   @default(false)
   ukuranDresscode      String?
-  isToteBagTaken       Boolean @default(false)
-  isPinTaken           Boolean @default(false)
-  isSongkokKhimarTaken Boolean @default(false)
+  isToteBagTaken       Boolean   @default(false)
+  isPinTaken           Boolean   @default(false)
+  isSongkokKhimarTaken Boolean   @default(false)
   ukuranSongkok        String?
-  isMalzamahTaken      Boolean @default(false)
-  isTabirotTaken       Boolean @default(false)
+  isMalzamahTaken      Boolean   @default(false)
+  isTabirotTaken       Boolean   @default(false)
+  bulanKe              Int       @default(1)
+  updatedAt            DateTime  @default(now()) @updatedAt
+  waktuAmbilKartu      DateTime?
+  dufah                Dufah     @relation(fields: [dufahId], references: [id], onDelete: Cascade)
+  lemari               Lemari?   @relation(fields: [lemariId], references: [id])
+  santri               Santri    @relation(fields: [santriId], references: [id], onDelete: Cascade)
 
-  bulanKe         Int       @default(1)
-  updatedAt       DateTime  @default(now()) @updatedAt
-  waktuAmbilKartu DateTime?
-
-  // Relasi Utama
-  santri Santri @relation(fields: [santriId], references: [id], onDelete: Cascade)
-  dufah  Dufah  @relation(fields: [dufahId], references: [id], onDelete: Cascade)
-
-  @@unique([santriId, dufahId]) // Mencegah 1 santri terdaftar 2 kali di bulan yang sama
+  @@unique([santriId, dufahId])
 }
 
-// ==========================================
-// 4. AUTHENTICATION & RBAC
-// ==========================================
-
 model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  password  String
-  nama      String
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id                    String                 @id @default(uuid())
+  username              String                 @unique
+  password              String
+  nama                  String
+  roleId                String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   transaksiDiverifikasi TransaksiPendaftaran[]
+  role                  Role                   @relation(fields: [roleId], references: [id])
 }
 
 model Role {
   id          String           @id @default(uuid())
   nama        String           @unique
-  users       User[]
-  permissions RolePermission[]
-  apiKeys     ApiKey[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  apiKeys     ApiKey[]
+  permissions RolePermission[]
+  users       User[]
 }
 
 model Permission {
   id        String           @id @default(uuid())
   namaAksi  String           @unique
   deskripsi String?
-  roles     RolePermission[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
+  roles     RolePermission[]
 }
 
 model RolePermission {
   roleId       String
   permissionId String
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
 }
@@ -185,75 +146,59 @@ model ApiKey {
   namaProject String
   roleId      String
   isActive    Boolean  @default(true)
-  role        Role     @relation(fields: [roleId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  role        Role     @relation(fields: [roleId], references: [id])
 }
-
-// ==========================================
-// 5. MASTER DATA PROGRAM & TRANSAKSI
-// ==========================================
 
 model Program {
   id                  String                 @id @default(uuid())
-  nama                String // "Reguler 1 Bulan", "Intensif 3 Bulan"
+  nama                String
   harga               Float
   durasiBulan         Int                    @default(1)
   isActive            Boolean                @default(true)
-  tanggalMulaiDefault String? // "10"
-  tanggalTutupDefault String? // "06"
-  transaksi           TransaksiPendaftaran[]
   createdAt           DateTime               @default(now())
+  tanggalMulaiDefault String?
+  tanggalTutupDefault String?
+  transaksi           TransaksiPendaftaran[]
 }
 
 model TransaksiPendaftaran {
-  id               String @id @default(uuid())
-  noKwitansi       String @unique
+  id               String    @id @default(uuid())
+  noKwitansi       String    @unique
   santriId         String
   programId        String
   nominalProgram   Float
   kodeUnik         Int
-  totalTagihan     Float // nominal + kodeUnik
-  statusPembayaran String @default("PENDING") // "PENDING", "PAID", "KSU_GRATIS"
-
-  diverifikasiOleh String? // Menyimpan ID Admin Keuangan yang memvalidasi
-  admin            User?   @relation(fields: [diverifikasiOleh], references: [id])
-
-  dufahTujuanId Int?
-  dufahTujuan   Dufah? @relation(fields: [dufahTujuanId], references: [id])
-
-  santri  Santri  @relation(fields: [santriId], references: [id])
-  program Program @relation(fields: [programId], references: [id])
-
-  createdAt  DateTime  @default(now())
-  waktuLunas DateTime?
+  totalTagihan     Float
+  statusPembayaran String    @default("PENDING")
+  diverifikasiOleh String?
+  createdAt        DateTime  @default(now())
+  waktuLunas       DateTime?
+  dufahTujuanId    Int?
+  admin            User?     @relation(fields: [diverifikasiOleh], references: [id])
+  dufahTujuan      Dufah?    @relation(fields: [dufahTujuanId], references: [id], onDelete: SetNull)
+  program          Program   @relation(fields: [programId], references: [id])
+  santri           Santri    @relation(fields: [santriId], references: [id], onDelete: Cascade)
 }
-
-// ==========================================
-// 6. GLOBAL NOTIFICATIONS
-// ==========================================
 
 model Notification {
   id                 String   @id @default(uuid())
   title              String
   message            String
-  link               String?  // Link rute opsional jika notif diklik
-  permissionRequired String   // Kunci siapa yang boleh melihat notif ini (misal: "receive_notif_keuangan")
+  link               String?
+  permissionRequired String
   createdAt          DateTime @default(now())
 }
 
-// ==========================================
-// 7. ACTIVITY LOG (Audit Trail)
-// ==========================================
-
 model ActivityLog {
   id        String   @id @default(uuid())
-  aksi      String   // "CREATE", "UPDATE", "DELETE", "VERIFY"
-  modul     String   // "Pendaftaran", "Asrama", "ID Card", "Mimstore", "Santri", dll
-  deskripsi String   // Pesan detail: "Admin X memverifikasi pembayaran santri Y"
-  userId    String?  // ID User yang melakukan aksi (null jika dari form publik)
-  namaUser  String   // Nama lengkap pelaku, "Sistem" jika otomatis
-  targetId  String?  // ID objek yang terkena dampak (santriId, transaksiId, dll)
-  metadata  String?  // JSON string untuk data tambahan
+  aksi      String
+  modul     String
+  deskripsi String
+  userId    String?
+  namaUser  String
+  targetId  String?
+  metadata  String?
   createdAt DateTime @default(now())
 }
