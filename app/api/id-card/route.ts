@@ -1,43 +1,84 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { emitDataUpdate, emitNotification } from "@/app/lib/pusherServer";
+import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    // Default ke BULAN_INI jika tidak ada param
+    const filterDufahId = searchParams.get("dufahId") || "BULAN_INI";
+
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
-    if (!dufahAktif) return NextResponse.json({ belum: [], sudah: [], dufahNama: "Tidak ada Duf'ah Aktif" });
 
-    const belum = await prisma.riwayatDufah.findMany({
-      where: { 
-        dufahId: dufahAktif.id, 
-        lemariId: { not: null }, 
-        isIdCardTaken: false, 
-        santri: { kategori: { not: 'KSU' } } 
-      },
-      include: { 
-        santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
-        lemari: { include: { kamar: { include: { sakan: true } } } } 
-      },
-      orderBy: { updatedAt: 'desc' }
+    // Ambil semua dufah untuk dropdown filter di frontend
+    const allDufahList = await prisma.dufah.findMany({ orderBy: { id: 'desc' } });
+
+    if (!dufahAktif) return NextResponse.json({
+      belum: [], sudah: [], dufahNama: "Tidak ada Duf'ah Aktif", daftarDufah: allDufahList
     });
 
-    const sudah = await prisma.riwayatDufah.findMany({
-      where: { 
-        dufahId: dufahAktif.id, 
-        lemariId: { not: null }, 
-        isIdCardTaken: true, 
-        santri: { kategori: { not: 'KSU' } } 
+    let relevantDufahIds: number[] | undefined = undefined;
+    let dufahLabel = dufahAktif.nama;
+
+    if (filterDufahId === "ALL") {
+      relevantDufahIds = undefined; // Undefined = tanpa filter, ambil semua
+      dufahLabel = "Semua Duf'ah";
+    } else if (filterDufahId && !isNaN(Number(filterDufahId))) {
+      // Filter ke dufah spesifik
+      relevantDufahIds = [Number(filterDufahId)];
+      const specificDufah = await prisma.dufah.findUnique({ where: { id: Number(filterDufahId) } });
+      dufahLabel = specificDufah?.nama || "Duf'ah Tidak Diketahui";
+    } else {
+      // BULAN_INI: Duf'ah Aktif + Duf'ah Target (yang tanggalBuka/tanggalTutup mencakup bulan ini)
+      const now = new Date();
+      const dufahTarget = allDufahList.find(df => {
+        if (!df.tanggalBuka || !df.tanggalTutup) return false;
+        return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+      });
+
+      relevantDufahIds = [dufahAktif.id];
+      if (dufahTarget && dufahTarget.id !== dufahAktif.id) {
+        relevantDufahIds.push(dufahTarget.id);
+      }
+      dufahLabel = dufahTarget && dufahTarget.id !== dufahAktif.id
+        ? `${dufahAktif.nama} & ${dufahTarget.nama}`
+        : dufahAktif.nama;
+    }
+
+    const whereDufah = relevantDufahIds ? { in: relevantDufahIds } : undefined;
+
+    // Ambil semua riwayat dalam scope, orderBy id desc agar yang terbaru duluan
+    // distinct: ['santriId'] = jika santri memperbarui pendaftaran, hanya tampilkan data terbaru
+    const allRiwayat = await prisma.riwayatDufah.findMany({
+      where: {
+        ...(whereDufah && { dufahId: whereDufah }),
+        lemariId: { not: null }
       },
-      include: { 
-        santri: { select: { id: true, nama: true, kategori: true, gender: true } }, 
-        lemari: { include: { kamar: { include: { sakan: true } } } } 
+      include: {
+        santri: { select: { id: true, nama: true, kategori: true, gender: true, nis: true, batasAktifDufah: true, noWaSantri: true, noWaOrtu: true } },
+        lemari: { include: { kamar: { include: { sakan: true } } } },
+        dufah: { select: { id: true, nama: true } },
       },
-      orderBy: { nomorIdCard: 'desc' }
+      orderBy: { id: 'desc' }, // Terbaru duluan
+      distinct: ['santriId']   // Hanya ambil 1 record terbaru per santri
     });
 
-    return NextResponse.json({ belum, sudah, dufahNama: dufahAktif.nama });
+    const belum = allRiwayat
+      .filter(r => !r.isIdCardTaken)
+      .sort((a, b) => a.santri.nama.localeCompare(b.santri.nama));
+
+    const sudah = allRiwayat
+      .filter(r => r.isIdCardTaken)
+      .sort((a, b) => {
+        const timeA = a.waktuAmbilKartu ? a.waktuAmbilKartu.getTime() : 0;
+        const timeB = b.waktuAmbilKartu ? b.waktuAmbilKartu.getTime() : 0;
+        return timeA - timeB;
+      });
+
+    return NextResponse.json({ belum, sudah, dufahNama: dufahLabel, daftarDufah: allDufahList });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memuat data" }, { status: 500 });
   }
@@ -45,28 +86,20 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, customNomor } = await request.json(); 
+    const { id } = await request.json(); 
 
     // Gunakan Transaction untuk mencegah Race Condition saat pembuatan nomor urut
     const updated = await prisma.$transaction(async (tx) => {
       const riwayatCurrent = await tx.riwayatDufah.findUnique({ where: { id } });
       if (!riwayatCurrent) throw new Error("Data riwayat tidak ditemukan");
 
-      let nextNomor = customNomor ? parseInt(customNomor, 10) : null;
+      // Cari nomor ID Card tertinggi di Duf'ah yang sama
+      const maxData = await tx.riwayatDufah.aggregate({
+        where: { dufahId: riwayatCurrent.dufahId },
+        _max: { nomorIdCard: true }
+      });
 
-      if (nextNomor) {
-        const isTaken = await tx.riwayatDufah.findFirst({
-          where: { dufahId: riwayatCurrent.dufahId, nomorIdCard: nextNomor }
-        });
-        if (isTaken) throw new Error("CUSTOM_TAKEN");
-      } else {
-        // Cari nomor ID Card tertinggi di Duf'ah yang sama
-        const maxData = await tx.riwayatDufah.aggregate({
-          where: { dufahId: riwayatCurrent.dufahId },
-          _max: { nomorIdCard: true }
-        });
-        nextNomor = (maxData._max.nomorIdCard || 0) + 1;
-      }
+      const nextNomor = (maxData._max.nomorIdCard || 0) + 1;
 
       return await tx.riwayatDufah.update({
         where: { id },
@@ -80,14 +113,30 @@ export async function PATCH(request: Request) {
     });
 
     emitDataUpdate("id-card");
-    emitNotification("idcard", `💳 [No. ${updated.nomorIdCard}] ${updated.santri.nama} telah menerima ID Card`, { nama: updated.santri.nama });
+    
+    await sendGlobalNotification(
+      "ID Card Diserahkan 💳",
+      `[No. ${updated.nomorIdCard}] ID Card santri a.n ${updated.santri.nama} telah dicetak dan diserahkan.`,
+      "receive_notif_idcard",
+      "/admin/id-card"
+    );
+
+    const session = await getServerSession(authOptions);
+    const u = session?.user as any;
+    const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
+
+    await logActivity({
+      aksi: "UPDATE",
+      modul: "ID Card",
+      deskripsi: `Menyerahkan ID Card No. ${updated.nomorIdCard} kepada santri a.n ${updated.santri.nama}`,
+      namaUser: pelaku,
+      userId: u?.id,
+      targetId: updated.santriId,
+    });
 
     return NextResponse.json({ message: "ID Card berhasil diserahkan", data: updated });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in PATCH /api/id-card:", error);
-    if (error.message === "CUSTOM_TAKEN") {
-      return NextResponse.json({ error: "Nomor ID Card custom tersebut sudah dipakai." }, { status: 400 });
-    }
     return NextResponse.json({ error: "Gagal verifikasi" }, { status: 500 });
   }
 }

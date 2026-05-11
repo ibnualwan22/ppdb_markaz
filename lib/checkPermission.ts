@@ -1,9 +1,7 @@
+import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth"
 import { authOptions } from "./auth"
-import { PrismaClient } from "@prisma/client"
 import { NextRequest } from "next/server"
-
-const prisma = new PrismaClient()
 
 /**
  * Utility untuk mengecek izin akses (Permission) dari sebuah sesi atau API Key eksternal

@@ -1,7 +1,6 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export async function GET() {
   try {
@@ -76,8 +75,7 @@ export async function GET() {
         where: { 
           dufahId: dufahAktif.id, 
           lemariId: { not: null }, 
-          isIdCardTaken: false,
-          santri: { kategori: { not: 'KSU' } } // KSU Dikecualikan
+          isIdCardTaken: false
         },
         include: {
           santri: { select: { nama: true, kategori: true, gender: true } },

@@ -1,7 +1,6 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 // Fungsi POST: Menambah Lemari (contoh: A1, A2) ke dalam Kamar
 export async function POST(request: Request) {

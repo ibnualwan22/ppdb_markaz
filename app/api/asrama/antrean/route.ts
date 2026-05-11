@@ -1,31 +1,41 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    // Cari Duf'ah yang sedang berjalan
+    // Cari Duf'ah yang sedang berjalan (isActive)
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
     
     if (!dufahAktif) {
       return NextResponse.json([]);
     }
 
+    // Cari juga Duf'ah yang sedang buka pendaftaran (berdasarkan tanggal)
+    const now = new Date();
+    const allDufahs = await prisma.dufah.findMany();
+    const dufahTarget = allDufahs.find(df => {
+      if (!df.tanggalBuka || !df.tanggalTutup) return false;
+      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+    });
+
+    // Kumpulkan ID dufah yang relevan (hanya yang AKTIF)
+    const relevantDufahIds = [dufahAktif.id];
+
     const dufahLama = await prisma.dufah.findFirst({
       where: { id: { lt: dufahAktif.id } },
       orderBy: { id: 'desc' }
     });
 
-    // Tarik semua data riwayat yang statusnya PRE_LIST (butuh kamar) di bulan ini
+    // Tarik semua data riwayat yang butuh kamar dari dufah aktif DAN dufah target
     const antrean = await prisma.riwayatDufah.findMany({
       where: {
-        dufahId: dufahAktif.id,
+        dufahId: { in: relevantDufahIds },
         lemariId: null,
       },
       include: {
         santri: {
-          select: { id: true, nama: true, kategori: true, gender: true }
+          select: { id: true, nama: true, kategori: true, gender: true, nis: true, kabupaten: true }
         }
       },
       orderBy: {

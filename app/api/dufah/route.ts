@@ -1,7 +1,6 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export async function GET() {
   try {
@@ -23,8 +22,8 @@ export async function POST(request: Request) {
       data: {
         nama,
         isActive: false, // Default selalu false sampai diaktifkan manual
-        tanggalBuka: tanggalBuka ? new Date(tanggalBuka) : null,
-        tanggalTutup: tanggalTutup ? new Date(tanggalTutup) : null,
+        tanggalBuka: tanggalBuka ? new Date(`${tanggalBuka}+07:00`) : null,
+        tanggalTutup: tanggalTutup ? new Date(`${tanggalTutup}+07:00`) : null,
       }
     });
 

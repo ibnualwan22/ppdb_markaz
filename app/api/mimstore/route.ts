@@ -1,20 +1,34 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { emitDataUpdate, logActivity } from "@/app/lib/pusherServer";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-const prisma = new PrismaClient();
 
 export async function GET() {
   try {
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
     if (!dufahAktif) return NextResponse.json({ data: [], dufahNama: "Tidak ada Duf'ah Aktif" });
 
+    // Cari juga Duf'ah yang sedang buka pendaftaran (berdasarkan tanggal)
+    const now = new Date();
+    const allDufahs = await prisma.dufah.findMany();
+    const dufahTarget = allDufahs.find(df => {
+      if (!df.tanggalBuka || !df.tanggalTutup) return false;
+      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+    });
+
+    // Kumpulkan ID dufah yang relevan
+    // PRIORITAS: Hanya tampilkan yang aktif sekarang agar tidak tercampur dengan calon santri bulan depan.
+    const relevantDufahIds = [dufahAktif.id];
+
     const data = await prisma.riwayatDufah.findMany({
       where: {
-        dufahId: dufahAktif.id,
+        dufahId: { in: relevantDufahIds },
         bulanKe: 1, // Only santri baru (bulan pertama)
       },
       include: {
-        santri: { select: { id: true, nama: true, gender: true } },
+        santri: { select: { id: true, nama: true, gender: true, nis: true } },
         lemari: { include: { kamar: { include: { sakan: true } } } }
       },
       orderBy: {
@@ -22,7 +36,9 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({ data, dufahNama: dufahAktif.nama });
+    const dufahLabel = dufahAktif.nama;
+
+    return NextResponse.json({ data, dufahNama: dufahLabel });
   } catch (error) {
     console.error("Error GET /api/mimstore:", error);
     return NextResponse.json({ error: "Gagal memuat data" }, { status: 500 });
@@ -53,6 +69,21 @@ export async function PATCH(request: Request) {
     const updated = await prisma.riwayatDufah.update({
       where: { id },
       data: { [field]: value }
+    });
+
+    emitDataUpdate("mimstore");
+
+    const session = await getServerSession(authOptions);
+    const u = session?.user as any;
+    const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
+
+    await logActivity({
+      aksi: "UPDATE",
+      modul: "Mimstore",
+      deskripsi: `Memperbarui atribut "${field}" menjadi "${value}" untuk santri ID: ${id}`,
+      namaUser: pelaku,
+      userId: u?.id,
+      targetId: id,
     });
 
     return NextResponse.json({ message: "Berhasil diupdate", data: updated });

@@ -1,7 +1,6 @@
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
 export async function PATCH(
   request: Request,
@@ -17,8 +16,8 @@ export async function PATCH(
       data: {
         nama,
         // Konversi string dari frontend menjadi format Date yang dipahami database
-        tanggalBuka: tanggalBuka ? new Date(tanggalBuka) : null,
-        tanggalTutup: tanggalTutup ? new Date(tanggalTutup) : null,
+        tanggalBuka: tanggalBuka ? new Date(`${tanggalBuka}+07:00`) : null,
+        tanggalTutup: tanggalTutup ? new Date(`${tanggalTutup}+07:00`) : null,
       }
     });
 

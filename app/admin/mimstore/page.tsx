@@ -128,8 +128,6 @@ export default function MimStorePage() {
   // Modal
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Notif
-  const [notif, setNotif] = useState({ show: false, pesan: "" });
   const pusher = usePusher();
 
   // Copy
@@ -179,11 +177,9 @@ export default function MimStorePage() {
   useEffect(() => {
     if (!pusher) return;
     const onUpdate = (p: any) => { if (!p.tag || p.tag === "mimstore" || p.tag === "id-card") muatData(true); };
-    const onIdCard = (p: any) => { setNotif({ show: true, pesan: p.message }); setTimeout(() => setNotif({ show: false, pesan: "" }), 5000); };
     const ch = pusher.subscribe("ppdb-channel");
     ch.bind("data:update", onUpdate);
-    ch.bind("notif:idcard", onIdCard);
-    return () => { ch.unbind("data:update", onUpdate); ch.unbind("notif:idcard", onIdCard); pusher.unsubscribe("ppdb-channel"); };
+    return () => { ch.unbind("data:update", onUpdate); pusher.unsubscribe("ppdb-channel"); };
   }, [pusher]);
 
   // ── Update ─────────────────────────────────────────────
@@ -220,7 +216,7 @@ export default function MimStorePage() {
   const exportExcel = () => {
     const rows = dataDitampilkan.map((item, idx) => ({
       "No":             idx + 1,
-      "No. ID Card":    item.nomorIdCard || "-",
+      "NIS":            item.santri.nis || "-",
       "Nama Santri":    item.santri.nama,
       "Gender":         item.santri.gender,
       "Sakan":          item.lemari?.kamar?.sakan?.nama || "-",
@@ -310,17 +306,6 @@ export default function MimStorePage() {
   return (
     <Protect permission="view_mimstore" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat Mims Store.</div>}>
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-screen relative overflow-hidden">
-
-      {/* POP-UP NOTIFIKASI */}
-      <div className={`fixed top-5 right-5 z-50 transform transition-all duration-500 ease-out ${notif.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
-        <div className="bg-dark-800 border-l-4 border-gold-500 shadow-2xl rounded-xl p-4 flex items-center gap-3 min-w-[300px] border-y border-r border-gold-500/20">
-          <div className="bg-dark-900 border border-gold-500/30 p-2 rounded-full text-gold-500"><IconBell /></div>
-          <div>
-            <h4 className="font-bold text-gold-400 text-sm">Informasi Baru</h4>
-            <p className="text-gray-300 text-xs font-medium">{notif.pesan}</p>
-          </div>
-        </div>
-      </div>
 
       {/* ── HEADER ─────────────────────────────────────────── */}
       <div className="mb-8 border-b border-gold-500/10 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -461,7 +446,7 @@ export default function MimStorePage() {
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead className="bg-dark-900 border-b border-gold-500/20 sticky top-0 z-10">
               <tr>
-                <th className="p-4 text-gold-600 font-bold text-center w-24">No. ID Card</th>
+                <th className="p-4 text-gold-600 font-bold text-center w-32">NIS</th>
                 <th className="p-4 text-gold-600 font-bold min-w-[200px]">Nama Lengkap & Lokasi</th>
                 <th className="p-4 text-gold-600 font-bold text-center">Dresscode</th>
                 <th className="p-4 text-gold-600 font-bold text-center">Tote Bag</th>
@@ -485,7 +470,7 @@ export default function MimStorePage() {
                 <tr key={item.id} className="border-b border-gold-500/5 hover:bg-dark-900/50">
                   <td className="p-4 text-center">
                     <span className="bg-dark-900 text-gray-300 border border-gray-700 font-black text-sm px-2.5 py-1 rounded-lg">
-                      {item.nomorIdCard || "-"}
+                      {item.santri.nis || "-"}
                     </span>
                   </td>
                   <td className="p-4">

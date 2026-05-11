@@ -77,6 +77,7 @@ export default function MasterSantriPage() {
   const itemsPerPage = 50;
 
   const [riwayatTerpilih, setRiwayatTerpilih] = useState<any | null>(null);
+  const [biodataTerpilih, setBiodataTerpilih] = useState<any | null>(null);
 
   // State Edit Modal
   const [editModal, setEditModal] = useState<any | null>(null);
@@ -87,6 +88,12 @@ export default function MasterSantriPage() {
   const [editNomorIdCard, setEditNomorIdCard] = useState("");
   const [editRiwayatId, setEditRiwayatId] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+
+  // State Lengkapi Data (Transisi NIS)
+  const [lengkapiModal, setLengkapiModal] = useState<any | null>(null);
+  const [lengkapiTglLahir, setLengkapiTglLahir] = useState("");
+  const [lengkapiDurasi, setLengkapiDurasi] = useState("0");
+  const [lengkapiLoading, setLengkapiLoading] = useState(false);
 
   const muatDaftarDufah = async () => {
     const res = await fetch("/api/dufah");
@@ -113,6 +120,34 @@ export default function MasterSantriPage() {
     muatDataSantri();
   }, [filterDufah, filterGender, filterKategori, filterBulanKe, keyword]);
 
+  const hitungSisaDurasi = (santri: any) => {
+    if (santri.kategori === "KSU") return "Tak Terbatas";
+    if (santri.isCuti) return `${santri.saldoDufah || 0} Bulan (Cuti)`;
+    if (!santri.isAktif) return "0 Bulan";
+    
+    const dufahAktif = daftarDufah.find(d => d.isActive);
+    const currentId = dufahAktif ? dufahAktif.id : 0;
+    
+    if (currentId === 0) return "-";
+
+    // Cek apakah santri punya riwayat di bulan aktif saat ini
+    const riwayatAktif = santri.riwayat?.find((r: any) => r.dufahId === currentId);
+    
+    // Jika tidak aktif bulan ini tapi punya batas durasi di masa depan
+    if (!riwayatAktif && santri.batasAktifDufah > currentId) {
+      // Cari riwayat pendaftaran terdekat di masa depan
+      const riwayatDepan = santri.riwayat?.find((r: any) => r.dufahId > currentId);
+      if (riwayatDepan) {
+        const startId = riwayatDepan.dufahId;
+        const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
+        return `${durasi} Bulan (Mulai Aktif ${riwayatDepan.dufah.nama})`;
+      }
+    }
+
+    const sisa = Math.max(0, (santri.batasAktifDufah || 0) - currentId + 1);
+    return `${sisa} Bulan`;
+  };
+
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
     const aksi = statusSaatIni ? "MENGELUARKAN (Check Out)" : "MENGAKTIFKAN KEMBALI";
     
@@ -133,6 +168,32 @@ export default function MasterSantriPage() {
       muatDataSantri();
     } else {
       swalError("Gagal merubah status santri");
+    }
+  };
+
+  const toggleCuti = async (id: string, nama: string, statusCutiSaatIni: boolean) => {
+    const aksi = statusCutiSaatIni ? "MENGAKHIRI CUTI & MENGAKTIFKAN" : "MENGAJUKAN CUTI";
+    
+    const result = await swalConfirm(
+      `Yakin ingin ${aksi}?`,
+      statusCutiSaatIni 
+        ? `Cuti ${nama} akan dicabut dan sisa masa aktif akan ditambahkan kembali.` 
+        : `Sisa masa aktif ${nama} akan disimpan sebagai saldo (maksimal 6 bulan).`
+    );
+    if (!result.isConfirmed) return;
+
+    const res = await fetch(`/api/santri/cuti`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ santriId: id, isCuti: !statusCutiSaatIni })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      swalSuccess("Berhasil", data.message || `Status cuti ${nama} berhasil diubah.`);
+      muatDataSantri();
+    } else {
+      swalError(data.error || "Gagal merubah status cuti");
     }
   };
 
@@ -184,6 +245,27 @@ export default function MasterSantriPage() {
       muatDataSantri();
     } else {
       swalError("Gagal menghapus santri");
+    }
+  };
+
+  const simpanLengkapiData = async () => {
+    if (!lengkapiModal || !lengkapiTglLahir) return swalError("Tanggal lahir wajib diisi!");
+    setLengkapiLoading(true);
+    const res = await fetch(`/api/santri/${lengkapiModal.id}/lengkapi-data`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        tanggalLahir: lengkapiTglLahir,
+        tambahanDurasi: parseInt(lengkapiDurasi, 10)
+      })
+    });
+    setLengkapiLoading(false);
+    if (res.ok) {
+      swalSuccess("Data santri berhasil dilengkapi dan NIS telah dibuat!");
+      setLengkapiModal(null);
+      muatDataSantri();
+    } else {
+      swalError("Gagal melengkapi data santri");
     }
   };
 
@@ -278,7 +360,7 @@ export default function MasterSantriPage() {
       Nama: santri.nama,
       Sakan: santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
       Lemari: santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
-      "No. ID Card": santri.kategori === "KSU" ? "-" : (santri.riwayat?.[0]?.nomorIdCard || "-"),
+      "Sisa Durasi": hitungSisaDurasi(santri),
       "Bulan Ke": santri.riwayat?.[0]?.bulanKe || "-",
       Kategori: santri.kategori,
       Status: santri.isAktif ? "Aktif" : "Keluar"
@@ -302,7 +384,7 @@ export default function MasterSantriPage() {
       santri.nama,
       santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
       santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
-      santri.kategori === "KSU" ? "-" : (santri.riwayat?.[0]?.nomorIdCard || "-"),
+      hitungSisaDurasi(santri),
       santri.riwayat?.[0]?.bulanKe || "-",
       santri.kategori,
       santri.isAktif ? "Aktif" : "Keluar",
@@ -311,7 +393,7 @@ export default function MasterSantriPage() {
 
     autoTable(doc, {
       startY: 50,
-      head: [["No", "Nama", "Sakan", "Lemari", "ID Card", "Bln", "Kategori", "Status"]],
+      head: [["No", "Nama", "Sakan", "Lemari", "Sisa Durasi", "Bln", "Kategori", "Status"]],
       body: tableData.map(row => row.slice(0, 8)), // Extract the actual table fields
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 3 },
@@ -450,7 +532,7 @@ export default function MasterSantriPage() {
                 <tr>
                   <th className="p-4 text-gold-600 font-bold text-center w-12">No</th>
                   <th className="p-4 text-gold-600 font-bold">Nama Lengkap</th>
-                  <th className="p-4 text-gold-600 font-bold text-center">No. ID Card</th>
+                  <th className="p-4 text-gold-600 font-bold text-center">Sisa Durasi</th>
                   <th className="p-4 text-gold-600 font-bold text-center">Bulan Ke-</th>
                   <th className="p-4 text-gold-600 font-bold">Kategori</th>
                   <th className="p-4 text-gold-600 font-bold">Status</th>
@@ -488,12 +570,15 @@ export default function MasterSantriPage() {
                         <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-500 line-through' : 'text-gray-200'}`}>
                           {santri.nama} {santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gold-500 font-mono mt-1 font-bold">
+                          NIS: {santri.nis || "Belum ada"}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">
                           Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
                         </p>
                       </td>
                       <td className="p-4 text-center font-bold text-gold-400">
-                        {santri.kategori === 'KSU' ? '-' : santri.riwayat?.[0]?.nomorIdCard || '-'}
+                        {hitungSisaDurasi(santri)}
                       </td>
                       <td className="p-4 text-center font-bold text-gold-400">
                         {santri.riwayat?.[0]?.bulanKe || '-'}
@@ -504,7 +589,11 @@ export default function MasterSantriPage() {
                         </span>
                       </td>
                       <td className="p-4">
-                        {santri.isAktif ? (
+                        {santri.isCuti ? (
+                          <span className="px-3 py-1 bg-gray-900/20 text-gray-400 border border-gray-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                            <IconDocument /> Cuti
+                          </span>
+                        ) : santri.isAktif ? (
                           <span className="px-3 py-1 bg-green-900/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
                             <IconCheck /> Aktif
                           </span>
@@ -522,6 +611,25 @@ export default function MasterSantriPage() {
                           >
                             <IconDocument /> Riwayat
                           </button>
+                          <button
+                            onClick={() => setBiodataTerpilih(santri)}
+                            className="bg-dark-900 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition text-xs font-bold border border-blue-500/20 flex items-center gap-1"
+                          >
+                            <IconDocument /> Biodata
+                          </button>
+
+                          {canManageSantri && !santri.nis && (
+                            <button
+                              onClick={() => {
+                                setLengkapiModal(santri);
+                                setLengkapiTglLahir("");
+                                setLengkapiDurasi("0");
+                              }}
+                              className="bg-dark-900 text-gold-500 hover:text-black px-3 py-1.5 rounded-lg hover:bg-gold-500 transition text-xs font-bold border border-gold-500 flex items-center gap-1 shadow-[0_0_10px_rgba(212,175,55,0.2)]"
+                            >
+                              <IconEdit /> Lengkapi Data & NIS
+                            </button>
+                          )}
 
                           {canManageSantri && (
                             <button
@@ -533,12 +641,27 @@ export default function MasterSantriPage() {
                           )}
 
                           {canManageSantri && (
-                            <button
-                              onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
-                              className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
-                            >
-                              {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
-                            </button>
+                            <>
+                            {/* Hanya tampilkan tombol Check Out/Aktifkan jika TIDAK SEDANG CUTI */}
+                            {!santri.isCuti && (
+                              <button
+                                onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
+                                className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
+                              >
+                                {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
+                              </button>
+                            )}
+
+                            {/* Hanya tampilkan tombol Cuti jika Aktif atau sedang Cuti (Bukan Check Out) */}
+                            {(santri.isAktif || santri.isCuti) && (
+                              <button
+                                onClick={() => toggleCuti(santri.id, santri.nama, santri.isCuti)}
+                                className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isCuti ? 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20' : 'bg-dark-900 text-gray-400 border-gray-700 hover:bg-gray-800'}`}
+                              >
+                                {santri.isCuti ? <><IconCheck /> Selesai Cuti</> : <><IconDocument /> Cuti</>}
+                              </button>
+                            )}
+                            </>
                           )}
 
                           {canManageSantri && (
@@ -729,6 +852,102 @@ export default function MasterSantriPage() {
               <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
                 <button onClick={() => setRiwayatTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
                   Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL BIODATA */}
+        {biodataTerpilih && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="bg-dark-900 border-b border-gold-500/10 p-5 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconDocument /> Biodata Lengkap Santri</h2>
+                  <p className="text-gray-400 text-sm mt-1">Pusat Data Kependudukan Markaz</p>
+                </div>
+                <button onClick={() => setBiodataTerpilih(null)} className="text-gray-400 hover:text-red-500 font-bold text-xl transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                <div className="bg-dark-900 border border-gold-500/10 p-5 rounded-xl">
+                  <h3 className="text-gold-500 font-bold mb-3 border-b border-gold-500/10 pb-2">Informasi Pribadi</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500 block">Nama Lengkap</span><strong className="text-gray-200">{biodataTerpilih.nama}</strong></div>
+                    <div><span className="text-gray-500 block">Jenis Kelamin</span><strong className="text-gray-200">{biodataTerpilih.gender}</strong></div>
+                    <div><span className="text-gray-500 block">NIS</span><strong className="text-gold-400 font-mono">{biodataTerpilih.nis || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">NIK</span><strong className="text-gray-200 font-mono">{biodataTerpilih.nik || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">Tempat Lahir</span><strong className="text-gray-200">{biodataTerpilih.tempatLahir || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">Tanggal Lahir</span><strong className="text-gray-200">{biodataTerpilih.tanggalLahir ? new Date(biodataTerpilih.tanggalLahir).toLocaleDateString('id-ID') : "-"}</strong></div>
+                  </div>
+                </div>
+
+                <div className="bg-dark-900 border border-gold-500/10 p-5 rounded-xl">
+                  <h3 className="text-gold-500 font-bold mb-3 border-b border-gold-500/10 pb-2">Kontak & Alamat</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500 block">Nama Orang Tua/Wali</span><strong className="text-gray-200">{biodataTerpilih.namaOrtu || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">No. WA Orang Tua</span><strong className="text-gray-200">{biodataTerpilih.noWaOrtu || "-"}</strong></div>
+                    <div><span className="text-gray-500 block">No. WA Santri</span><strong className="text-gray-200">{biodataTerpilih.noWaSantri || "-"}</strong></div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500 block">Alamat Lengkap</span>
+                      <strong className="text-gray-200 block mt-1">
+                        {biodataTerpilih.detailAlamat ? `${biodataTerpilih.detailAlamat}, ${biodataTerpilih.desa}, Kec. ${biodataTerpilih.kecamatan}, Kab. ${biodataTerpilih.kabupaten}, Prov. ${biodataTerpilih.provinsi}` : "-"}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 text-right">
+                <button onClick={() => setBiodataTerpilih(null)} className="px-6 py-2.5 bg-dark-800 text-gray-400 font-bold rounded-xl hover:bg-dark-900 hover:text-gray-200 border border-gray-700 transition">
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL LENGKAPI DATA & NIS */}
+        {lengkapiModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-800 border border-gold-500/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+              <div className="bg-dark-900 border-b border-gold-500/10 p-5">
+                <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconEdit /> Lengkapi Data & Buat NIS</h2>
+                <p className="text-gray-400 text-sm mt-1">Santri: <strong className="text-gray-200">{lengkapiModal.nama}</strong></p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-xl mb-2">
+                  <p className="text-xs text-blue-300">
+                    Masukkan Tanggal Lahir santri untuk men-generate NIS secara otomatis (Berdasarkan Duf'ah pertama mendaftar). Anda juga dapat menentukan sisa masa aktif langganan.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Tanggal Lahir *</label>
+                  <input type="date" value={lengkapiTglLahir} onChange={(e) => setLengkapiTglLahir(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Sisa Durasi Aktif</label>
+                  <select value={lengkapiDurasi} onChange={(e) => setLengkapiDurasi(e.target.value)} className="w-full p-3 border border-dark-900 bg-dark-900 text-gold-500 font-bold rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner">
+                    <option value="0">0 Bulan (Hanya aktif di Duf'ah saat ini)</option>
+                    <option value="1">1 Bulan (Aktif sampai bulan depan)</option>
+                    <option value="2">2 Bulan</option>
+                    <option value="3">3 Bulan</option>
+                    <option value="6">6 Bulan</option>
+                    <option value="12">12 Bulan (1 Tahun)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
+                <button onClick={() => setLengkapiModal(null)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                <button onClick={simpanLengkapiData} disabled={lengkapiLoading} className="px-6 py-2.5 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                  {lengkapiLoading ? "Menyimpan..." : "Simpan & Generate"}
                 </button>
               </div>
             </div>
