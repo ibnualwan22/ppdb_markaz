@@ -30,7 +30,19 @@ async function main() {
     { namaAksi: 'manage_mimstore', deskripsi: 'Menandai status pengambilan atribut santri' },
 
     // Dashboard
-    { namaAksi: 'view_dashboard', deskripsi: 'Melihat layar dashboard (Grafik & Statistik)' }
+    { namaAksi: 'view_dashboard', deskripsi: 'Melihat layar dashboard (Grafik & Statistik)' },
+
+    // Keuangan & Pendaftaran
+    { namaAksi: 'view_keuangan', deskripsi: 'Melihat data keuangan & pendaftaran santri' },
+
+    // Master Program
+    { namaAksi: 'manage_program', deskripsi: 'Mengelola data program pendidikan (Tambah/Edit/Hapus)' },
+
+    // Activity Log
+    { namaAksi: 'view_activity_log', deskripsi: 'Melihat log aktivitas seluruh pengguna' },
+
+    // Masa Aktif (Super Admin Only by convention)
+    { namaAksi: 'edit_masa_aktif', deskripsi: 'Mengedit masa aktif (batasAktifDufah) santri secara manual' },
   ]
 
   // Upsert all permissions

@@ -66,6 +66,7 @@ export default function MasterSantriPage() {
   const { hasAccess } = usePermissions();
   const canManageSantri = hasAccess("manage_santri");
   const isSuperAdmin = hasAccess("all_access");
+  const canEditMasaAktif = hasAccess("edit_masa_aktif") || isSuperAdmin;
 
   const [keyword, setKeyword] = useState("");
   const [filterDufah, setFilterDufah] = useState("AKTIF");
@@ -290,6 +291,41 @@ export default function MasterSantriPage() {
       muatDataSantri();
     } else {
       swalError("Gagal melengkapi data santri");
+    }
+  };
+
+  const editMasaAktif = async (santri: any) => {
+    const dufahAktif = daftarDufah.find(d => d.isActive);
+    const currentId = dufahAktif ? dufahAktif.id : 0;
+    const currentBatas = santri.batasAktifDufah || 0;
+
+    const { value, isConfirmed } = await Swal.fire({
+      title: `Edit Masa Aktif`,
+      html: `<p style="margin-bottom:8px;font-size:14px;">Santri: <b>${santri.nama}</b></p>
+             <p style="margin-bottom:8px;font-size:12px;color:#999;">Duf'ah aktif saat ini: ID ${currentId}</p>
+             <p style="margin-bottom:16px;font-size:12px;color:#999;">Batas aktif saat ini: ID ${currentBatas}</p>
+             <label style="font-size:13px;font-weight:600;">Batas Aktif Duf'ah (ID angka):</label>`,
+      input: 'number',
+      inputValue: currentBatas,
+      inputAttributes: { min: '0', step: '1' },
+      showCancelButton: true,
+      confirmButtonText: 'Simpan',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#d4af37',
+    });
+    if (!isConfirmed || value === undefined) return;
+
+    const res = await fetch(`/api/santri/${santri.id}/masa-aktif`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ batasAktifDufah: parseInt(value, 10) }),
+    });
+    if (res.ok) {
+      swalSuccess('Berhasil', `Masa aktif ${santri.nama} berhasil diperbarui.`);
+      muatDataSantri();
+    } else {
+      const err = await res.json();
+      swalError(err.error || 'Gagal memperbarui masa aktif.');
     }
   };
 
@@ -658,6 +694,15 @@ export default function MasterSantriPage() {
                       </td>
                       <td className="p-4 text-center font-bold text-gold-400">
                         {hitungSisaDurasi(santri)}
+                        {canEditMasaAktif && (
+                          <button
+                            onClick={() => editMasaAktif(santri)}
+                            className="ml-1.5 text-gray-500 hover:text-gold-500 transition inline-flex items-center"
+                            title="Edit Masa Aktif"
+                          >
+                            <IconEdit />
+                          </button>
+                        )}
                       </td>
                       <td className="p-4 text-center font-bold text-gold-400">
                         {santri.riwayat?.[0]?.bulanKe || '-'}
