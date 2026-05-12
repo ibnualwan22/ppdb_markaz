@@ -267,12 +267,7 @@ export default function LengkapiDataPage() {
               </div>
             </div>
 
-            {selected.nis && (
-              <div className="px-4 py-3 rounded-xl bg-gold-500/5 border border-gold-500/20 mb-6 text-center">
-                <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">NIS</span>
-                <p className="text-2xl font-black text-gold-500 tracking-wider">{selected.nis}</p>
-              </div>
-            )}
+
 
 
 
