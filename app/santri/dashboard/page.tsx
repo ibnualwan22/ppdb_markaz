@@ -79,14 +79,14 @@ export default async function SantriDashboardPage() {
     if (res.ok) {
       const json = await res.json();
       if (json.success) {
-        siakadData = json.riwayat || [];
+        siakadData = (json.riwayat || []).reverse();
       }
     }
   } catch (error) {
     // Gunakan console.log/warn agar tidak men-trigger error overlay di Next.js saat domain belum tersedia
     console.warn("Info: Gagal mengambil data akademik dari Siakad (mungkin API belum siap atau offline).");
   }
-
+  const fmtTgl = (d: string) => { try { return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return d; } };
 
   return (
     <div className="min-h-screen bg-dark-950 p-4 md:p-8 font-sans">
@@ -291,138 +291,173 @@ export default async function SantriDashboardPage() {
         </div>
 
         {/* Riwayat Akademik */}
-        <div className="bg-dark-900 border border-gold-500/20 p-6 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex justify-between items-center mb-6 border-b border-gold-500/20 pb-3">
-            <h2 className="text-lg font-bold text-gold-500">Riwayat Akademik</h2>
+        <div className="bg-dark-900 border border-gold-500/20 p-6 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-3 mb-6 border-b border-gold-500/20 pb-3">
+            <svg className="w-5 h-5 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            <h2 className="text-lg font-bold text-gold-500">Transkrip Akademik</h2>
           </div>
           {(!siakadData || siakadData.length === 0) ? (
-            <div className="p-8 text-center text-gray-500 italic border border-dashed border-dark-700 rounded-xl">
-              Belum ada data akademik yang tercatat di sistem SIAKAD.
-            </div>
+            <div className="p-8 text-center text-gray-500 italic border border-dashed border-dark-700 rounded-xl">Belum ada data akademik dari SIAKAD.</div>
           ) : (
-            <div className="space-y-8">
-              {siakadData.map((aka: any, idx: number) => (
-                <div key={idx} className="bg-dark-950 p-6 rounded-xl border border-dark-800 relative">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/5 rounded-bl-full pointer-events-none" />
-
-                  <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 border-b border-dark-800 pb-4 relative z-10">
+            <div className="space-y-6">
+              {siakadData.map((aka: any, idx: number) => {
+                const statusCls = (s: string) => s === 'HADIR' ? 'bg-green-500/10 text-green-400' : s === 'IZIN' ? 'bg-blue-500/10 text-blue-400' : s === 'SAKIT' ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400';
+                return (
+                <div key={idx} className="rounded-xl border border-dark-700 overflow-hidden">
+                  {/* Header Dufah */}
+                  <div className="bg-dark-950 px-5 py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                     <div>
-                      <h3 className="text-xl font-black text-white">{aka.dufah}</h3>
-                      <p className="text-gold-400 font-bold mt-1">{aka.akademik?.program} • {aka.akademik?.kelas}</p>
+                      <h3 className="text-base font-black text-white">{aka.dufah}</h3>
+                      <p className="text-gold-400 text-sm font-semibold mt-0.5">{aka.akademik?.program} &bull; {aka.akademik?.kelas}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {aka.akademik?.is_tasmi && (
-                        <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 text-xs font-bold uppercase">
-                          Tasmi'
-                        </span>
-                      )}
-                      <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${aka.akademik?.status_kelulusan === 'LULUS' ? 'bg-green-500/10 text-green-500 border-green-500/30' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'}`}>
-                        {aka.akademik?.status_kelulusan || "BERJALAN"}
-                      </span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {aka.akademik?.is_tasmi && <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 text-[10px] font-bold uppercase">Tasmi&apos;</span>}
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${aka.akademik?.status_kelulusan === 'LULUS' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : aka.akademik?.status_kelulusan === 'TIDAK_LULUS' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>{aka.akademik?.status_kelulusan?.replace('_',' ') || 'BERJALAN'}</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-                    {/* Nilai Mapel */}
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Nilai Ujian</h4>
-                      <div className="space-y-2">
-                        {(!aka.nilai_per_mapel || aka.nilai_per_mapel.length === 0) ? (
-                          <p className="text-sm text-gray-600 italic">Belum ada nilai.</p>
-                        ) : (
-                          aka.nilai_per_mapel.map((m: any, midx: number) => (
-                            <div key={midx} className="flex justify-between items-center p-3 rounded-lg bg-dark-900 border border-dark-800">
-                              <span className="text-gray-300 text-sm font-medium">{m.mapel}</span>
-                              <span className="font-bold text-gold-400">{m.nilai}</span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
+                  {/* Tabel Nilai: Mapel | Usbu 1 | Usbu 2 | Nihai | Akhir */}
+                  <div className="p-5">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Nilai Ujian</h4>
+                    {(!aka.nilai_per_mapel || aka.nilai_per_mapel.length === 0) ? <p className="text-sm text-gray-600 italic">Belum ada nilai.</p> : (
+                    <div className="overflow-x-auto rounded-lg border border-dark-700">
+                      <table className="w-full text-sm">
+                        <thead><tr className="bg-dark-950 text-gold-500/70">
+                          <th className="text-left p-3 font-bold">Mata Pelajaran</th>
+                          <th className="text-center p-3 font-bold">Usbu&apos; 1</th>
+                          <th className="text-center p-3 font-bold">Usbu&apos; 2</th>
+                          <th className="text-center p-3 font-bold">Nihai</th>
+                          <th className="text-center p-3 font-bold">Akhir</th>
+                        </tr></thead>
+                        <tbody>{aka.nilai_per_mapel.map((n: any, ni: number) => (
+                          <tr key={ni} className={`border-t border-dark-800 ${ni % 2 === 0 ? 'bg-dark-900/50' : ''}`}>
+                            <td className="p-3 text-gray-300 font-medium">{n.mapel}</td>
+                            <td className="p-3 text-center font-bold text-gold-400">{n.nilai_usbu_1 ?? '-'}</td>
+                            <td className="p-3 text-center font-bold text-gold-400">{n.nilai_usbu_2 ?? '-'}</td>
+                            <td className="p-3 text-center font-bold text-gold-400">{n.nilai_nihai ?? '-'}</td>
+                            <td className="p-3 text-center font-bold text-white">{n.nilai_akhir ?? '-'}</td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    </div>)}
+                  </div>
 
-                    {/* Absensi */}
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Rekap Absensi (Per Usbu')</h4>
-                      <div className="space-y-2">
-                        {(!aka.rekap_absen_per_usbu || aka.rekap_absen_per_usbu.length === 0) ? (
-                          <p className="text-sm text-gray-600 italic">Belum ada rekap absen.</p>
-                        ) : (
-                          aka.rekap_absen_per_usbu.map((abs: any, absidx: number) => (
-                            <div key={absidx} className="flex flex-wrap justify-between items-center p-3 rounded-lg bg-dark-900 border border-dark-800 gap-2">
-                              <span className="text-gray-300 text-sm font-medium">Usbu' {abs.usbu}</span>
-                              <div className="flex gap-2 text-xs font-bold">
-                                <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded">H: {abs.hadir}</span>
-                                <span className="px-2 py-1 bg-blue-500/10 text-blue-500 rounded">I: {abs.izin}</span>
-                                <span className="px-2 py-1 bg-amber-500/10 text-amber-500 rounded">S: {abs.sakit}</span>
-                                <span className="px-2 py-1 bg-red-500/10 text-red-500 rounded">A: {abs.alpa}</span>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
+                  {/* Rekap Absensi Per Usbu */}
+                  <div className="px-5 pb-5">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Rekap Absensi Per Usbu&apos;</h4>
+                    {(!aka.rekap_absen_per_usbu || aka.rekap_absen_per_usbu.length === 0) ? <p className="text-sm text-gray-600 italic">Belum ada rekap.</p> : (
+                    <div className="overflow-x-auto rounded-lg border border-dark-700">
+                      <table className="w-full text-sm">
+                        <thead><tr className="bg-dark-950 text-gold-500/70">
+                          <th className="text-left p-3 font-bold">Usbu&apos;</th>
+                          <th className="text-center p-3 font-bold text-green-500">Hadir</th>
+                          <th className="text-center p-3 font-bold text-blue-400">Izin</th>
+                          <th className="text-center p-3 font-bold text-amber-400">Sakit</th>
+                          <th className="text-center p-3 font-bold text-red-400">Alpha</th>
+                          <th className="text-center p-3 font-bold text-gold-400">Rata-rata</th>
+                        </tr></thead>
+                        <tbody>{aka.rekap_absen_per_usbu.map((a: any, ai: number) => (
+                          <tr key={ai} className={`border-t border-dark-800 ${ai % 2 === 0 ? 'bg-dark-900/50' : ''}`}>
+                            <td className="p-3 text-gray-300 font-medium">Usbu&apos; {a.usbu}</td>
+                            <td className="p-3 text-center font-bold text-green-400">{a.total_hadir}</td>
+                            <td className="p-3 text-center font-bold text-blue-400">{a.total_izin}</td>
+                            <td className="p-3 text-center font-bold text-amber-400">{a.total_sakit}</td>
+                            <td className="p-3 text-center font-bold text-red-400">{a.total_alpha}</td>
+                            <td className="p-3 text-center font-bold text-gold-400">{a.rata_rata_nilai ?? '-'}</td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    </div>)}
+                  </div>
+
+                  {/* Kartu Rekap Keseluruhan: Kelas / Sakan / Kegiatan */}
+                  <div className="px-5 pb-5">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Rekap Kehadiran Keseluruhan</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {[{key:'rekap_absen_kelas',label:'Kelas'},{key:'rekap_absen_sakan',label:'Sakan'},{key:'rekap_absen_kegiatan',label:'Kegiatan'}].map(cat => {
+                        const r = aka[cat.key];
+                        return (
+                        <div key={cat.key} className="bg-dark-950 p-4 rounded-lg border border-dark-800">
+                          <p className="text-[10px] font-bold text-gold-500 uppercase tracking-wider mb-3">{cat.label}</p>
+                          {!r ? <p className="text-xs text-gray-600 italic">Belum ada data</p> : (
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="flex justify-between"><span className="text-gray-500">Hadir</span><span className="font-bold text-green-400">{r.total_hadir}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Izin</span><span className="font-bold text-blue-400">{r.total_izin}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Sakit</span><span className="font-bold text-amber-400">{r.total_sakit}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Alpha</span><span className="font-bold text-red-400">{r.total_alpha}</span></div>
+                            <div className="col-span-2 pt-2 border-t border-dark-700 flex justify-between"><span className="text-gray-500">Total Hari</span><span className="font-bold text-white">{r.total_hari}</span></div>
+                          </div>)}
+                        </div>);
+                      })}
                     </div>
                   </div>
 
-                  {/* Histori Absen Detail */}
+                  {/* Rincian Histori Absen — Tabel per Kategori */}
                   {aka.histori_absen && (
-                    <div className="mt-8 pt-6 border-t border-dark-800 relative z-10">
-                      <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Riwayat Pelanggaran Absensi</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                        <div className="bg-dark-900 p-4 rounded-xl border border-dark-800">
-                          <h5 className="text-xs font-bold text-gold-500 mb-3 border-b border-dark-700 pb-2">Absen Kelas</h5>
-                          {(!aka.histori_absen.kelas || aka.histori_absen.kelas.length === 0) ? (
-                            <p className="text-xs text-gray-600 italic">Nihil</p>
-                          ) : (
-                            <ul className="space-y-2">
-                              {aka.histori_absen.kelas.map((hk: any, i: number) => (
-                                <li key={i} className="text-xs text-gray-300">
-                                  <span className="text-gray-500 block">{hk.tanggal}</span>
-                                  {hk.keterangan}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-
-                        <div className="bg-dark-900 p-4 rounded-xl border border-dark-800">
-                          <h5 className="text-xs font-bold text-gold-500 mb-3 border-b border-dark-700 pb-2">Absen Sakan</h5>
-                          {(!aka.histori_absen.sakan || aka.histori_absen.sakan.length === 0) ? (
-                            <p className="text-xs text-gray-600 italic">Nihil</p>
-                          ) : (
-                            <ul className="space-y-2">
-                              {aka.histori_absen.sakan.map((hs: any, i: number) => (
-                                <li key={i} className="text-xs text-gray-300">
-                                  <span className="text-gray-500 block">{hs.tanggal}</span>
-                                  {hs.keterangan}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-
-                        <div className="bg-dark-900 p-4 rounded-xl border border-dark-800">
-                          <h5 className="text-xs font-bold text-gold-500 mb-3 border-b border-dark-700 pb-2">Absen Kegiatan</h5>
-                          {(!aka.histori_absen.kegiatan || aka.histori_absen.kegiatan.length === 0) ? (
-                            <p className="text-xs text-gray-600 italic">Nihil</p>
-                          ) : (
-                            <ul className="space-y-2">
-                              {aka.histori_absen.kegiatan.map((kg: any, i: number) => (
-                                <li key={i} className="text-xs text-gray-300">
-                                  <span className="text-gray-500 block">{kg.tanggal} - {kg.nama_kegiatan}</span>
-                                  {kg.keterangan}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
+                  <div className="px-5 pb-5 pt-3 border-t border-dark-800 space-y-4">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Rincian Kehadiran</h4>
+                    {/* Absen Kelas */}
+                    {aka.histori_absen.kelas?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-gold-500 uppercase tracking-wider mb-2">Kelas</p>
+                      <div className="overflow-x-auto rounded-lg border border-dark-700 max-h-60 overflow-y-auto">
+                        <table className="w-full text-xs">
+                          <thead className="sticky top-0"><tr className="bg-dark-950 text-gold-500/70">
+                            <th className="text-left p-2 font-bold">Tanggal</th><th className="text-left p-2 font-bold">Sesi</th><th className="text-center p-2 font-bold">Status</th><th className="text-left p-2 font-bold">Ket.</th>
+                          </tr></thead>
+                          <tbody>{aka.histori_absen.kelas.map((h: any, i: number) => (
+                            <tr key={i} className={`border-t border-dark-800 ${h.status === 'ALPHA' ? 'bg-red-500/5' : ''}`}>
+                              <td className="p-2 text-gray-400">{fmtTgl(h.tanggal)}</td>
+                              <td className="p-2 text-gray-300">{h.sesi?.replace('_',' ') || '-'}</td>
+                              <td className="p-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusCls(h.status)}`}>{h.status}</span></td>
+                              <td className="p-2 text-gray-400">{h.keterangan || '-'}</td>
+                            </tr>
+                          ))}</tbody>
+                        </table>
                       </div>
-                    </div>
-                  )}
-
+                    </div>)}
+                    {/* Absen Sakan */}
+                    {aka.histori_absen.sakan?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-gold-500 uppercase tracking-wider mb-2">Sakan</p>
+                      <div className="overflow-x-auto rounded-lg border border-dark-700 max-h-60 overflow-y-auto">
+                        <table className="w-full text-xs">
+                          <thead className="sticky top-0"><tr className="bg-dark-950 text-gold-500/70">
+                            <th className="text-left p-2 font-bold">Tanggal</th><th className="text-center p-2 font-bold">Status</th><th className="text-left p-2 font-bold">Ket.</th>
+                          </tr></thead>
+                          <tbody>{aka.histori_absen.sakan.map((h: any, i: number) => (
+                            <tr key={i} className={`border-t border-dark-800 ${h.status === 'ALPHA' ? 'bg-red-500/5' : ''}`}>
+                              <td className="p-2 text-gray-400">{fmtTgl(h.tanggal)}</td>
+                              <td className="p-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusCls(h.status)}`}>{h.status}</span></td>
+                              <td className="p-2 text-gray-400">{h.keterangan || '-'}</td>
+                            </tr>
+                          ))}</tbody>
+                        </table>
+                      </div>
+                    </div>)}
+                    {/* Absen Kegiatan */}
+                    {aka.histori_absen.kegiatan?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-gold-500 uppercase tracking-wider mb-2">Kegiatan</p>
+                      <div className="overflow-x-auto rounded-lg border border-dark-700 max-h-60 overflow-y-auto">
+                        <table className="w-full text-xs">
+                          <thead className="sticky top-0"><tr className="bg-dark-950 text-gold-500/70">
+                            <th className="text-left p-2 font-bold">Tanggal</th><th className="text-left p-2 font-bold">Kegiatan</th><th className="text-center p-2 font-bold">Status</th><th className="text-left p-2 font-bold">Ket.</th>
+                          </tr></thead>
+                          <tbody>{aka.histori_absen.kegiatan.map((h: any, i: number) => (
+                            <tr key={i} className={`border-t border-dark-800 ${h.status === 'ALPHA' ? 'bg-red-500/5' : ''}`}>
+                              <td className="p-2 text-gray-400">{fmtTgl(h.tanggal)}</td>
+                              <td className="p-2 text-gray-300">{h.nama_kegiatan || '-'}</td>
+                              <td className="p-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusCls(h.status)}`}>{h.status}</span></td>
+                              <td className="p-2 text-gray-400">{h.keterangan || '-'}</td>
+                            </tr>
+                          ))}</tbody>
+                        </table>
+                      </div>
+                    </div>)}
+                  </div>)}
                 </div>
-              ))}
-            </div>
+              );})}</div>
           )}
         </div>
 
