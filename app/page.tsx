@@ -143,6 +143,46 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] bg-luxury-pattern text-gray-200 font-sans flex flex-col relative overflow-hidden selection:bg-gold-500 selection:text-black">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "Markaz Arabiyah",
+            "image": "https://ppdb.markazarabiyah.com/images/logo.png",
+            "@id": "https://ppdb.markazarabiyah.com",
+            "url": "https://ppdb.markazarabiyah.com",
+            "telephone": "+6281212887788",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Jl. Cemp. No.32, Tegalsari, Tulungrejo, Kec. Pare",
+              "addressLocality": "Kabupaten Kediri",
+              "addressRegion": "Jawa Timur",
+              "postalCode": "64212",
+              "addressCountry": "ID"
+            },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": -7.7519625,
+              "longitude": 112.1801004
+            },
+            "openingHoursSpecification": {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday"
+              ],
+              "opens": "08:00",
+              "closes": "16:00"
+            }
+          })
+        }}
+      />
       {/* Background Decor */}
       <div className="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] bg-gold-500/10 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-200px] right-[-200px] w-[600px] h-[600px] bg-gold-600/5 rounded-full blur-[120px] pointer-events-none"></div>

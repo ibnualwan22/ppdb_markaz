@@ -13,8 +13,10 @@
   --color-gold-400: #E6C587;
   --color-gold-500: #D4AF37;
   --color-gold-600: #C2A36B;
+  --color-dark-700: #2a2a2a;
   --color-dark-800: #1a1a1a;
   --color-dark-900: #121212;
+  --color-dark-950: #0a0a0a;
   --font-sans: 'Inter', var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
 }
