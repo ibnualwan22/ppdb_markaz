@@ -150,9 +150,9 @@ export default function Home() {
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             "name": "Markaz Arabiyah",
-            "image": "https://ppdb.markazarabiyah.com/images/logo.png",
-            "@id": "https://ppdb.markazarabiyah.com",
-            "url": "https://ppdb.markazarabiyah.com",
+            "image": "https://ppdb.markazarabiyah.site/images/logo.png",
+            "@id": "https://ppdb.markazarabiyah.site",
+            "url": "https://ppdb.markazarabiyah.site",
             "telephone": "+6281212887788",
             "address": {
               "@type": "PostalAddress",

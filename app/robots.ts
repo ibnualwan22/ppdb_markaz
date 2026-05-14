@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin', '/api', '/santri', '/login'],
     },
-    sitemap: 'https://ppdb.markazarabiyah.com/sitemap.xml',
+    sitemap: 'https://ppdb.markazarabiyah.site/sitemap.xml',
   }
 }

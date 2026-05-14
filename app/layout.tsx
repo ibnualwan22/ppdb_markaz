@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "PPDB Markaz Arabiyah — Pusat Bahasa Arab & Mediator Timur Tengah",
     description: "Penerimaan Peserta Didik Baru Markaz Arabiyah Pare. Pusat bimbingan bahasa Arab intensif dan mediator resmi studi ke Timur Tengah & Eropa.",
-    url: "https://ppdb.markazarabiyah.com",
+    url: "https://ppdb.markazarabiyah.site",
     siteName: "Markaz Arabiyah",
     images: [
       {

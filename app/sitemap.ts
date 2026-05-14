@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
  
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://ppdb.markazarabiyah.com'
+  const baseUrl = 'https://ppdb.markazarabiyah.site'
   
   return [
     {
