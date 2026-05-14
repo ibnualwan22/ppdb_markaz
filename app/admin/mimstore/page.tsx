@@ -474,7 +474,14 @@ export default function MimStorePage() {
                     </span>
                   </td>
                   <td className="p-4">
-                    <p className="font-bold text-gray-200 text-base">{item.santri.nama}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-gray-200 text-base">{item.santri.nama}</p>
+                      {item.santri.kategori && (
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded text-white ${item.santri.kategori === 'KSU' ? 'bg-purple-600' : item.santri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
+                          {item.santri.kategori}
+                        </span>
+                      )}
+                    </div>
                     {item.lemari ? (
                       <p className="text-xs text-gray-500 mt-1 uppercase font-medium">
                         {item.lemari.kamar.sakan.nama} • {item.lemari.kamar.nama} • lkr {item.lemari.nomor}

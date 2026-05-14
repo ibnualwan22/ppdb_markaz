@@ -52,18 +52,74 @@ export async function POST(request: Request) {
     const nominalProgram = isBeliAtribut ? program.harga : Math.max(0, program.harga - 100000);
     const totalTagihan = nominalProgram + kodeUnik;
 
-    const transaksi = await prisma.transaksiPendaftaran.create({
-      data: {
-        noKwitansi: generateInvoiceNumber(dufahTujuanId),
-        santriId,
-        programId,
-        dufahTujuanId,
-        nominalProgram,
-        kodeUnik,
-        totalTagihan,
-        statusPembayaran: "PENDING"
-      }
+    // Acuan kamar sebelumnya tempat dia menetap adalah Duf'ah sebelum dufahTujuan ini
+    const dufahLama = await prisma.dufah.findFirst({
+      where: { id: { lt: dufahTujuanId } },
+      orderBy: { id: 'desc' }
     });
+
+    let riwayatBulanLalu = null;
+    if (dufahLama) {
+      riwayatBulanLalu = await prisma.riwayatDufah.findUnique({
+        where: { santriId_dufahId: { santriId, dufahId: dufahLama.id } }
+      });
+    }
+
+    const batasMaksimal = 3;
+    let lemariBaru = null;
+    let statusBaru = "PRE_LIST";
+    let bulanKeBaru = 1;
+
+    if (riwayatBulanLalu && riwayatBulanLalu.lemariId) {
+      const durasiBerjalan = riwayatBulanLalu.bulanKe;
+      if (durasiBerjalan % batasMaksimal !== 0) {
+        lemariBaru = riwayatBulanLalu.lemariId;
+        statusBaru = "ASSIGNED";
+        bulanKeBaru = durasiBerjalan + 1;
+      } else {
+        lemariBaru = null;
+        statusBaru = "PRE_LIST";
+        bulanKeBaru = durasiBerjalan + 1;
+      }
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const trx = await tx.transaksiPendaftaran.create({
+        data: {
+          noKwitansi: generateInvoiceNumber(dufahTujuanId),
+          santriId,
+          programId,
+          dufahTujuanId,
+          nominalProgram,
+          kodeUnik,
+          totalTagihan,
+          statusPembayaran: "PENDING"
+        }
+      });
+
+      // Buat riwayat jika belum ada untuk dufah tujuan agar terdeteksi booking/belum lunas di asrama
+      const existingRiwayat = await tx.riwayatDufah.findUnique({
+        where: { santriId_dufahId: { santriId, dufahId: dufahTujuanId } }
+      });
+
+      if (!existingRiwayat) {
+        await tx.riwayatDufah.create({
+          data: {
+            santriId,
+            dufahId: dufahTujuanId,
+            lemariId: lemariBaru,
+            status: statusBaru,
+            isIdCardTaken: false,
+            bulanKe: bulanKeBaru,
+            isLunas: false
+          }
+        });
+      }
+
+      return trx;
+    });
+
+    const transaksi = result;
 
     return NextResponse.json({
       message: "Tagihan perpanjangan berhasil diterbitkan.",

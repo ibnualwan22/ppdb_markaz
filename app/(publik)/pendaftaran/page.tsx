@@ -241,7 +241,7 @@ export default function PendaftaranPage() {
         <div className="text-center mb-10">
           <Image src="/images/logo.png" alt="Logo Markaz" width={80} height={80} className="mx-auto drop-shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
           <h1 className="text-3xl md:text-4xl font-extrabold text-gold-500 mt-4 tracking-wide">Pendaftaran Online</h1>
-          <p className="text-gray-400 mt-2">Markaz Arabiyyah</p>
+          <p className="text-gray-400 mt-2">Markaz Arabiyah</p>
         </div>
 
         {/* Stepper Progress */}
@@ -420,10 +420,10 @@ export default function PendaftaranPage() {
 
               {/* AGREEMENT SECTION */}
               <div className="mt-6 bg-dark-900 border border-gold-500/20 p-4 rounded-xl flex items-start gap-3">
-                <input 
-                  type="checkbox" 
-                  id="agreement" 
-                  checked={isAgreed} 
+                <input
+                  type="checkbox"
+                  id="agreement"
+                  checked={isAgreed}
                   onChange={(e) => setIsAgreed(e.target.checked)}
                   className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer shrink-0"
                 />

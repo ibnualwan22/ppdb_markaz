@@ -62,11 +62,25 @@ export async function POST(request: Request) {
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
     if (!dufahAktif) return NextResponse.json({ error: "Pendaftaran ditutup." }, { status: 403 });
 
+    // Cari Duf'ah tujuan: Prioritaskan Duf'ah masa depan/terbaru yang tanggal pendaftarannya sedang buka
+    const allDufahs = await prisma.dufah.findMany({ orderBy: { id: 'desc' } });
+    const now = new Date();
+    let dufahTujuan = allDufahs.find(df => {
+      if (!df.tanggalBuka || !df.tanggalTutup) return false;
+      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+    });
+
+    // Jika tidak ada yang buka berdasarkan tanggal, default ke dufahAktif
+    if (!dufahTujuan) {
+      dufahTujuan = dufahAktif;
+    }
+
     const dataSantri = await prisma.santri.findUnique({ where: { id: santriId } });
     if (!dataSantri) return NextResponse.json({ error: "Santri tidak ditemukan" }, { status: 404 });
 
+    // Acuan kamar sebelumnya tempat dia menetap adalah Duf'ah sebelum dufahTujuan ini
     const dufahLama = await prisma.dufah.findFirst({
-      where: { id: { lt: dufahAktif.id } },
+      where: { id: { lt: dufahTujuan.id } },
       orderBy: { id: 'desc' }
     });
 
@@ -107,11 +121,12 @@ export async function POST(request: Request) {
     const pendaftaranBerhasil = await prisma.riwayatDufah.create({
       data: {
         santriId: santriId,
-        dufahId: dufahAktif.id,
+        dufahId: dufahTujuan.id,
         lemariId: lemariBaru, 
         status: statusBaru,
         isIdCardTaken: false,
-        bulanKe: bulanKeBaru 
+        bulanKe: bulanKeBaru,
+        isLunas: false
       },
     });
 

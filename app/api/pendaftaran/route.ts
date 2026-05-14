@@ -47,8 +47,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Program tidak ditemukan" }, { status: 404 });
     }
 
-    // 2. Tentukan Dufah Tujuan berdasarkan waktu saat ini
-    const allDufahs = await prisma.dufah.findMany({ orderBy: { id: 'asc' } });
+    // 2. Tentukan Dufah Tujuan berdasarkan waktu saat ini (prioritaskan Duf'ah terbaru/tertinggi jika tumpang tindih)
+    const allDufahs = await prisma.dufah.findMany({ orderBy: { id: 'desc' } });
     const now = new Date();
     
     // Cari Dufah yang rentang pendaftarannya mencakup waktu saat ini
@@ -163,9 +163,20 @@ export async function GET() {
       orderBy: { id: 'asc' }
     });
 
+    // Ambil daftar riwayat santri lama yang belum lunas (isLunas: false)
+    const daftarUlang = await prisma.riwayatDufah.findMany({
+      where: { isLunas: false },
+      include: {
+        santri: true,
+        dufah: true
+      },
+      orderBy: { updatedAt: "desc" }
+    });
+
     return NextResponse.json({
       transaksi,
-      allDufah
+      allDufah,
+      daftarUlang
     });
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data transaksi" }, { status: 500 });

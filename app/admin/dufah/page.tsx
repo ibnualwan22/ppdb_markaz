@@ -67,13 +67,64 @@ export default function ManajemenDufahPage() {
     muatData();
   }, []);
 
+  const handleCustomFormat = (val: string) => {
+    let v = val.replace(/\D/g, "");
+    if (v.length > 12) v = v.substring(0, 12);
+
+    if (v.length >= 11) {
+      return `${v.substring(0, 2)}/${v.substring(2, 4)}/${v.substring(4, 8)} ${v.substring(8, 10)}:${v.substring(10)}`;
+    } else if (v.length >= 9) {
+      return `${v.substring(0, 2)}/${v.substring(2, 4)}/${v.substring(4, 8)} ${v.substring(8)}`;
+    } else if (v.length >= 5) {
+      return `${v.substring(0, 2)}/${v.substring(2, 4)}/${v.substring(4)}`;
+    } else if (v.length >= 3) {
+      return `${v.substring(0, 2)}/${v.substring(2)}`;
+    }
+    return v;
+  };
+
+  const parseCustomDateTime = (formattedStr: string) => {
+    if (!formattedStr) return null;
+    const parts = formattedStr.trim().split(/\s+/);
+    if (parts.length < 1) return null;
+    const dateParts = parts[0].split("/");
+    if (dateParts.length !== 3) return null;
+    
+    const day = dateParts[0].padStart(2, "0");
+    const month = dateParts[1].padStart(2, "0");
+    const year = dateParts[2];
+    if (year.length !== 4) return null;
+
+    let hour = "00";
+    let minute = "00";
+    if (parts.length > 1) {
+      const timeParts = parts[1].split(":");
+      hour = timeParts[0].padStart(2, "0");
+      if (timeParts.length > 1) {
+        minute = timeParts[1].padStart(2, "0");
+      }
+    }
+
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  };
+
   const simpanDufahBaru = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsedBuka = parseCustomDateTime(tanggalBuka);
+    const parsedTutup = parseCustomDateTime(tanggalTutup);
+
+    if (tanggalBuka && !parsedBuka) {
+      return swalError("Format Salah", "Format Buka Pendaftaran harus DD/MM/YYYY HH:mm lengkap (Contoh: 01/05/2026 08:30)");
+    }
+    if (tanggalTutup && !parsedTutup) {
+      return swalError("Format Salah", "Format Tutup Pendaftaran harus DD/MM/YYYY HH:mm lengkap (Contoh: 01/05/2026 08:30)");
+    }
+
     setLoading(true);
     const res = await fetch("/api/dufah", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama: namaBaru, tanggalBuka, tanggalTutup }),
+      body: JSON.stringify({ nama: namaBaru, tanggalBuka: parsedBuka, tanggalTutup: parsedTutup }),
     });
 
     if (res.ok) {
@@ -104,20 +155,23 @@ export default function ManajemenDufahPage() {
     setLoading(false);
   };
 
-  const formatDateForInput = (dateString: string | null) => {
+  const formatDateForDisplayCustom = (dateString: string | null) => {
     if (!dateString) return "";
     const d = new Date(dateString);
-    // Format to YYYY-MM-DDThh:mm using local timezone (WIB)
-    // We adjust by adding 7 hours to UTC and then taking ISO string
     const dWib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-    return dWib.toISOString().slice(0, 16);
+    const day = dWib.getUTCDate().toString().padStart(2, "0");
+    const month = (dWib.getUTCMonth() + 1).toString().padStart(2, "0");
+    const year = dWib.getUTCFullYear();
+    const hours = dWib.getUTCHours().toString().padStart(2, "0");
+    const minutes = dWib.getUTCMinutes().toString().padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
   const bukaModalEdit = (dufah: any) => {
     setEditId(dufah.id);
     setEditNama(dufah.nama);
-    setEditTanggalBuka(formatDateForInput(dufah.tanggalBuka));
-    setEditTanggalTutup(formatDateForInput(dufah.tanggalTutup));
+    setEditTanggalBuka(formatDateForDisplayCustom(dufah.tanggalBuka));
+    setEditTanggalTutup(formatDateForDisplayCustom(dufah.tanggalTutup));
     setIsModalOpen(true);
   };
 
@@ -125,14 +179,24 @@ export default function ManajemenDufahPage() {
     e.preventDefault();
     if (!editId) return;
 
+    const parsedBuka = parseCustomDateTime(editTanggalBuka);
+    const parsedTutup = parseCustomDateTime(editTanggalTutup);
+
+    if (editTanggalBuka && !parsedBuka) {
+      return swalError("Format Salah", "Format Buka Pendaftaran harus DD/MM/YYYY HH:mm lengkap (Contoh: 01/05/2026 08:30)");
+    }
+    if (editTanggalTutup && !parsedTutup) {
+      return swalError("Format Salah", "Format Tutup Pendaftaran harus DD/MM/YYYY HH:mm lengkap (Contoh: 01/05/2026 08:30)");
+    }
+
     setLoading(true);
     const res = await fetch(`/api/dufah/${editId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         nama: editNama,
-        tanggalBuka: editTanggalBuka || null,
-        tanggalTutup: editTanggalTutup || null
+        tanggalBuka: parsedBuka,
+        tanggalTutup: parsedTutup
       }),
     });
 
@@ -196,11 +260,11 @@ export default function ManajemenDufahPage() {
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-1">Buka Pendaftaran</label>
-            <input type="datetime-local" value={tanggalBuka} onChange={(e) => setTanggalBuka(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner" required />
+            <input type="text" placeholder="DD/MM/YYYY HH:mm" value={tanggalBuka} onChange={(e) => setTanggalBuka(handleCustomFormat(e.target.value))} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner font-mono" required />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-1">Tutup Pendaftaran</label>
-            <input type="datetime-local" value={tanggalTutup} onChange={(e) => setTanggalTutup(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner" required />
+            <input type="text" placeholder="DD/MM/YYYY HH:mm" value={tanggalTutup} onChange={(e) => setTanggalTutup(handleCustomFormat(e.target.value))} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 placeholder:text-gray-600 shadow-inner font-mono" required />
           </div>
         </div>
         <button type="submit" disabled={loading} className="mt-4 w-full bg-gold-500 text-black font-bold py-3 rounded-xl hover:bg-gold-400 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)] disabled:opacity-50">
@@ -300,11 +364,11 @@ export default function ManajemenDufahPage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-1">Buka Pendaftaran</label>
-                <input type="datetime-local" value={editTanggalBuka} onChange={(e) => setEditTanggalBuka(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner" required />
+                <input type="text" placeholder="DD/MM/YYYY HH:mm" value={editTanggalBuka} onChange={(e) => setEditTanggalBuka(handleCustomFormat(e.target.value))} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner font-mono" required />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-300 mb-1">Tutup Pendaftaran</label>
-                <input type="datetime-local" value={editTanggalTutup} onChange={(e) => setEditTanggalTutup(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner" required />
+                <input type="text" placeholder="DD/MM/YYYY HH:mm" value={editTanggalTutup} onChange={(e) => setEditTanggalTutup(handleCustomFormat(e.target.value))} className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 text-gray-200 shadow-inner font-mono" required />
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-gold-500/10">

@@ -25,10 +25,10 @@ export async function GET() {
     const data = await prisma.riwayatDufah.findMany({
       where: {
         dufahId: { in: relevantDufahIds },
-        bulanKe: 1, // Only santri baru (bulan pertama)
+        isLunas: true,
       },
       include: {
-        santri: { select: { id: true, nama: true, gender: true, nis: true } },
+        santri: { select: { id: true, nama: true, gender: true, nis: true, kategori: true } },
         lemari: { include: { kamar: { include: { sakan: true } } } }
       },
       orderBy: {

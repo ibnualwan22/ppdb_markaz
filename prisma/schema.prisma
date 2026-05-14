@@ -91,6 +91,7 @@ model RiwayatDufah {
   isMalzamahTaken      Boolean   @default(false)
   isTabirotTaken       Boolean   @default(false)
   bulanKe              Int       @default(1)
+  isLunas              Boolean   @default(true)
   updatedAt            DateTime  @default(now()) @updatedAt
   waktuAmbilKartu      DateTime?
   dufah                Dufah     @relation(fields: [dufahId], references: [id], onDelete: Cascade)

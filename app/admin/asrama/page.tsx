@@ -234,10 +234,11 @@ export default function MejaAsramaPage() {
           {/* Area Denah (Grid Lemari per Kamar) */}
           <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 mt-4">
             {/* Keterangan Warna */}
-            <div className="flex items-center justify-center gap-6 text-xs font-bold bg-dark-800 text-gray-300 p-3 rounded-xl border border-gold-500/10 shadow-sm">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-bold bg-dark-800 text-gray-300 p-3 rounded-xl border border-gold-500/10 shadow-sm">
               <div className="flex items-center gap-2"><div className="w-5 h-5 rounded border border-gold-500 bg-dark-900"></div> Tersedia</div>
               <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-blue-600 border border-blue-500"></div> Dipilih</div>
-              <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-gray-700 border border-gray-600"></div> Terisi</div>
+              <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-gray-700 border border-gray-600"></div> Terisi Lunas</div>
+              <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-500 flex items-center justify-center font-black">!</div> Booking / Belum Lunas</div>
             </div>
 
             {activeSakan && activeSakan.kamar.filter((k:any) => !k.isLocked).map((kamar: any) => {
@@ -254,12 +255,16 @@ export default function MejaAsramaPage() {
 
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 sm:gap-4 mx-auto max-w-2xl">
                     {lemariList.map((lemari: any) => {
-                      const isTerisi = lemari.penghuni && lemari.penghuni.length > 0;
+                      const penghuni = lemari.penghuni?.[0];
+                      const isTerisi = !!penghuni;
+                      const isBelumLunas = isTerisi && penghuni.isLunas === false;
                       const isSelected = selectedLemari?.id === lemari.id;
 
                       let btnClass = "w-full aspect-square rounded-xl sm:rounded-2xl border-2 flex items-center justify-center transition-all font-bold text-sm sm:text-base cursor-pointer shadow-sm relative ";
 
-                      if (isTerisi) {
+                      if (isBelumLunas) {
+                        btnClass += "bg-amber-500/10 border-amber-500/50 text-amber-500 cursor-not-allowed";
+                      } else if (isTerisi) {
                         btnClass += "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-80";
                       } else if (isSelected) {
                         btnClass += "bg-blue-600 border-blue-500 text-white shadow-md transform scale-105";
@@ -275,12 +280,16 @@ export default function MejaAsramaPage() {
                             if(!isTerisi) setSelectedLemari({ ...lemari, kamarNama: kamar.nama, sakanNama: activeSakan.nama });
                           }}
                           className={btnClass}
-                          title={isTerisi ? lemari.penghuni[0].santri.nama : `Lemari ${lemari.nomor}`}
+                          title={isTerisi ? `${penghuni.santri?.nama} (${isBelumLunas ? 'Booking / Belum Lunas' : 'Lunas'})` : `Lemari ${lemari.nomor}`}
                         >
                           {lemari.nomor}
                           {/* Label priority */}
                           {lemari.isPriority && !isTerisi && (
                             <span className="absolute -top-2 -right-2 text-orange-500 bg-white rounded-full">★</span>
+                          )}
+                          {/* Penanda Belum Lunas */}
+                          {isBelumLunas && (
+                            <span className="absolute -top-2 -right-2 w-5 h-5 bg-amber-500 text-black rounded-full text-xs font-black flex items-center justify-center shadow" title="Booking / Belum Lunas">!</span>
                           )}
                         </button>
                       );

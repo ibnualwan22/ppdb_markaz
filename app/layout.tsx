@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PPDB Markaz Arabiyah — Pusat Bahasa Arab & Mediator Timur Tengah",
-  description: "Penerimaan Peserta Didik Baru Markaz Arabiyah Pare. Pusat bimbingan bahasa Arab intensif dan mediator resmi studi ke Timur Tengah & Eropa.",
-  keywords: ["PPDB Markaz Arabiyah", "Kursus Bahasa Arab Pare", "Belajar Bahasa Arab", "Mediator Timur Tengah", "Studi ke Mesir", "Kampung Inggris Pare"],
+  title: "Markaz Arabiyah — Kursus Bahasa Arab Pare Kampung Inggris & Mediator Timur Tengah",
+  description: "Pusat bimbingan dan kursus bahasa Arab intensif terbaik di Pare Kampung Inggris Kediri. Melayani pendaftaran PPDB offline/online serta mediator resmi studi ke Timur Tengah & Eropa.",
+  keywords: ["Kursus Bahasa Arab Pare", "Kampung Inggris Pare Bahasa Arab", "Markaz Arabiyah Pare", "PPDB Markaz Arabiyah", "Belajar Bahasa Arab Pare", "Mediator Studi Timur Tengah", "Kuliah di Mesir"],
   authors: [{ name: "Markaz Arabiyah" }],
   openGraph: {
-    title: "PPDB Markaz Arabiyah — Pusat Bahasa Arab & Mediator Timur Tengah",
-    description: "Penerimaan Peserta Didik Baru Markaz Arabiyah Pare. Pusat bimbingan bahasa Arab intensif dan mediator resmi studi ke Timur Tengah & Eropa.",
+    title: "Markaz Arabiyah — Kursus Bahasa Arab Pare Kampung Inggris",
+    description: "Pusat bimbingan dan kursus bahasa Arab intensif terbaik di Pare Kampung Inggris Kediri. Melayani pendaftaran PPDB serta mediator resmi studi ke Timur Tengah.",
     url: "https://ppdb.markazarabiyah.site",
     siteName: "Markaz Arabiyah",
     images: [
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "PPDB Markaz Arabiyah — Pusat Bahasa Arab & Mediator Timur Tengah",
-    description: "Penerimaan Peserta Didik Baru Markaz Arabiyah Pare. Pusat bimbingan bahasa Arab intensif dan mediator resmi studi ke Timur Tengah & Eropa.",
+    title: "Markaz Arabiyah — Kursus Bahasa Arab Pare Kampung Inggris",
+    description: "Pusat bimbingan dan kursus bahasa Arab intensif terbaik di Pare Kampung Inggris Kediri. Melayani pendaftaran PPDB serta mediator resmi studi ke Timur Tengah.",
     images: ["/images/logo.png"],
   },
   icons: {

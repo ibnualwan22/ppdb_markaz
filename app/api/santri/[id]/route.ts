@@ -14,35 +14,31 @@ export async function PATCH(
     const body = await request.json();
     const { isAktif } = body;
 
-    // 1. Update profil utamanya
+    const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
+
+    // 1. Update profil utamanya, dan jika Check Out (isAktif: false), hapus sisa durasinya
     const santriUpdate = await prisma.santri.update({
       where: { id },
-      data: { isAktif }
+      data: { 
+        isAktif,
+        ...(isAktif === false && dufahAktif ? { batasAktifDufah: dufahAktif.id - 1 } : {})
+      }
     });
 
-    // 2. LOGIKA PENGUSIRAN KAMAR
-    if (isAktif === false) {
-      const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
-      
-      if (dufahAktif) {
-        await prisma.riwayatDufah.updateMany({
-          where: {
-            santriId: id,
-            dufahId: dufahAktif.id
-          },
-          data: {
-            lemariId: null,
-            status: "PRE_LIST"
-          }
-        });
-      }
+    // Kamar/lemari tetap dipertahankan agar jika daftar ulang di duf'ah depan, bisa lanjut di lemari yang sama.
+    // Namun tandai status riwayat bulan ini sebagai CHECKED_OUT agar sisa durasi tidak terhitung ganda.
+    if (isAktif === false && dufahAktif) {
+      await prisma.riwayatDufah.updateMany({
+        where: { santriId: id, dufahId: dufahAktif.id },
+        data: { status: "CHECKED_OUT" }
+      });
     }
 
     // KIRIM NOTIFIKASI JIKA CHECK OUT
     if (isAktif === false) {
       await sendGlobalNotification(
         "Santri Check Out 🚪",
-        `Santri a.n ${santriUpdate.nama} telah check out. Kamar/Lemari telah dikosongkan.`,
+        `Santri a.n ${santriUpdate.nama} telah di-check out (Sisa durasi direset, data slot kamar tetap tersimpan).`,
         "receive_notif_status_santri",
         "/admin/santri"
       );
@@ -65,7 +61,7 @@ export async function PATCH(
       aksi: "UPDATE",
       modul: "Santri",
       deskripsi: isAktif === false 
-        ? `Check Out santri a.n ${santriUpdate.nama} — Kamar dikosongkan`
+        ? `Check Out santri a.n ${santriUpdate.nama} — Sisa durasi direset`
         : `Mengaktifkan kembali santri a.n ${santriUpdate.nama}`,
       namaUser: pelaku,
       userId: u?.id,

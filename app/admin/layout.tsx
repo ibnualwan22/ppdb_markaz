@@ -156,18 +156,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
                   if (target.parentElement) {
-                    target.parentElement.innerHTML = `<span style="font-size:${desktopCollapsed?'10px':'14px'};font-weight:700;color:white;">MA</span>`;
+                    target.parentElement.innerHTML = `<span style="font-size:${desktopCollapsed ? '10px' : '14px'};font-weight:700;color:white;">MA</span>`;
                   }
                 }}
               />
             </div>
-            
+
             <div className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${desktopCollapsed ? 'h-0 opacity-0' : 'h-auto opacity-100'}`}>
-              <h2 className="text-lg font-bold tracking-wide text-gold-500 mt-3">PPDB Markaz Arabiyyah</h2>
+              <h2 className="text-lg font-bold tracking-wide text-gold-500 mt-3">PPDB Markaz Arabiyah</h2>
               <p className="text-xs text-gray-500 mt-1 font-medium">Portal Administrasi</p>
             </div>
 
-            <button 
+            <button
               onClick={() => setDesktopCollapsed(!desktopCollapsed)}
               className="hidden md:flex absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 bg-gold-500 text-black rounded-full items-center justify-center shadow-lg hover:scale-110 transition-transform z-10"
               title={desktopCollapsed ? "Perbesar Sidebar" : "Persempit Sidebar"}
@@ -178,7 +178,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
           {/* Navigation */}
           <nav className={`flex-1 ${desktopCollapsed ? 'p-2' : 'p-4'} space-y-1.5 overflow-y-auto overflow-x-hidden transition-all custom-scrollbar`}>
-            
+
             {menuItems.some(item => hasAccess(item.permission)) && (
               <>
                 <p className={`text-[10px] font-bold text-gold-600/70 uppercase tracking-widest mb-2 transition-all ${desktopCollapsed ? 'px-0 text-center opacity-50 text-[8px] mt-4' : 'px-3 mt-2'}`}>
@@ -218,7 +218,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 ))}
               </div>
             )}
-            
+
             <div className={`pt-4 mt-4 border-t border-gold-500/10`}>
               <p className={`text-[10px] font-bold text-gold-600/70 uppercase tracking-widest mb-2 transition-all ${desktopCollapsed ? 'px-0 text-center opacity-50 text-[8px]' : 'px-3'}`}>
                 {desktopCollapsed ? '---' : 'Security & Akun'}
@@ -271,7 +271,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <h1 className="text-sm font-bold text-gold-500 md:hidden">PPDB Markaz</h1>
               <h1 className="text-sm font-bold text-gray-400 hidden md:block uppercase tracking-wider">Dashboard</h1>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <GlobalNotification />
               <div className="w-8 md:hidden" />

@@ -138,8 +138,16 @@ export default function MasterSantriPage() {
     
     if (currentId === 0) return "-";
 
-    // Cek apakah santri punya riwayat di bulan aktif saat ini
-    const riwayatAktif = santri.riwayat?.find((r: any) => r.dufahId === currentId);
+    // Cek apakah pendaftaran/aktif terbarunya adalah untuk Duf'ah masa depan
+    const riwayatTerbaru = santri.riwayat?.[0];
+    if (riwayatTerbaru && riwayatTerbaru.dufahId > currentId) {
+      const startId = riwayatTerbaru.dufahId;
+      const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
+      return `${durasi} Bulan (Mulai Aktif ${riwayatTerbaru.dufah?.nama || "Duf'ah Depan"})`;
+    }
+
+    // Cek apakah santri punya riwayat aktif di bulan saat ini (dan bukan status CHECKED_OUT)
+    const riwayatAktif = santri.riwayat?.find((r: any) => r.dufahId === currentId && r.status !== "CHECKED_OUT");
     
     // Jika tidak aktif bulan ini tapi punya batas durasi di masa depan
     if (!riwayatAktif && santri.batasAktifDufah > currentId) {
@@ -148,7 +156,7 @@ export default function MasterSantriPage() {
       if (riwayatDepan) {
         const startId = riwayatDepan.dufahId;
         const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
-        return `${durasi} Bulan (Mulai Aktif ${riwayatDepan.dufah.nama})`;
+        return `${durasi} Bulan (Mulai Aktif ${riwayatDepan.dufah?.nama || "Duf'ah Depan"})`;
       }
     }
 

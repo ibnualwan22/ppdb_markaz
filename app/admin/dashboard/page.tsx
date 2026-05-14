@@ -388,8 +388,10 @@ export default function DashboardMuasisPage() {
 
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {kamar.lemari.map((lemari: any) => {
-                              const isTerisi = lemari.penghuni && lemari.penghuni.length > 0;
-                              const dataSantri = isTerisi ? lemari.penghuni[0].santri : null;
+                              const penghuni = lemari.penghuni?.[0];
+                              const isTerisi = !!penghuni;
+                              const dataSantri = isTerisi ? penghuni.santri : null;
+                              const isBelumLunas = isTerisi && penghuni.isLunas === false;
                               const isLemariLocked = lemari.isLocked || isKamarLocked;
                               const isHighlighted = lemariMatchesSantri(lemari);
 
@@ -424,16 +426,21 @@ export default function DashboardMuasisPage() {
                                 <div key={lemari.id} className={`p-2 rounded-lg border flex flex-col justify-between min-h-[70px] group relative transition-all ${
                                   isHighlighted 
                                     ? 'bg-yellow-900/20 border-yellow-500/50 ring-1 ring-yellow-500/50 shadow-md shadow-yellow-500/10' 
-                                    : isTerisi 
-                                      ? bgLemariTerisi 
-                                      : 'bg-dark-900/30 border-gray-800 border-dashed hover:border-gold-500/30'
+                                    : isBelumLunas
+                                      ? 'bg-amber-500/10 border-amber-500/50'
+                                      : isTerisi 
+                                        ? bgLemariTerisi 
+                                        : 'bg-dark-900/30 border-gray-800 border-dashed hover:border-gold-500/30'
                                 }`}>
-                                  <div className="flex justify-between items-start mb-1">
-                                    <span className={`text-[10px] font-black ${lemari.isPriority ? 'text-orange-500 border-orange-500/50 bg-orange-500/10' : 'text-gray-400 border-gray-800 bg-dark-900'} px-1.5 py-0.5 rounded shadow-sm border`}>
+                                  <div className="flex justify-between items-start mb-1 gap-1">
+                                    <span className={`text-[10px] font-black ${lemari.isPriority ? 'text-orange-500 border-orange-500/50 bg-orange-500/10' : 'text-gray-400 border-gray-800 bg-dark-900'} px-1.5 py-0.5 rounded shadow-sm border shrink-0`}>
                                       {lemari.nomor}
                                     </span>
                                     
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 flex-wrap justify-end">
+                                      {isBelumLunas && (
+                                        <span className="w-4 h-4 bg-amber-500 text-black rounded-full text-[10px] font-black flex items-center justify-center shadow shrink-0" title="Booking / Belum Lunas">!</span>
+                                      )}
                                       {isTerisi && (
                                         <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded text-white ${dataSantri.kategori === 'KSU' ? 'bg-purple-600' : dataSantri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
                                           {dataSantri.kategori}
@@ -472,7 +479,7 @@ export default function DashboardMuasisPage() {
                                   
                                   <div className="mt-auto">
                                     {isTerisi ? (
-                                      <p className={`font-bold text-xs leading-tight truncate ${isHighlighted ? 'text-yellow-500' : 'text-gray-300'}`} title={dataSantri.nama}>
+                                      <p className={`font-bold text-xs leading-tight truncate ${isHighlighted ? 'text-yellow-500' : isBelumLunas ? 'text-amber-400' : 'text-gray-300'}`} title={`${dataSantri.nama} (${isBelumLunas ? 'Booking / Belum Lunas' : 'Lunas'})`}>
                                         {dataSantri.nama}
                                       </p>
                                     ) : (
@@ -537,6 +544,14 @@ export default function DashboardMuasisPage() {
               <button onClick={() => setSearchSantri("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gold-500 font-bold"><IconX /></button>
             )}
           </div>
+        </div>
+
+        {/* Keterangan Warna */}
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-bold bg-dark-800 text-gray-300 p-3 rounded-xl border border-gold-500/10 shadow-sm mt-4">
+          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded border border-gold-500 bg-dark-900"></div> Tersedia</div>
+          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-gray-700 border border-gray-600"></div> Terisi Lunas</div>
+          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-500 flex items-center justify-center font-black">!</div> Booking / Belum Lunas</div>
+          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-yellow-900/20 border border-yellow-500 text-yellow-500 flex items-center justify-center font-black">★</div> Tersorot Pencarian</div>
         </div>
       </div>
 

@@ -13,6 +13,7 @@ export default function MejaKeuanganPage() {
   const { data: session } = useSession();
   const [transaksi, setTransaksi] = useState<any[]>([]);
   const [allDufah, setAllDufah] = useState<any[]>([]);
+  const [daftarUlang, setDaftarUlang] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filterScope, setFilterScope] = useState("AKTIF"); // "AKTIF" atau "GLOBAL"
@@ -26,6 +27,7 @@ export default function MejaKeuanganPage() {
         const data = await res.json();
         setTransaksi(data.transaksi || []);
         setAllDufah(data.allDufah || []);
+        setDaftarUlang(data.daftarUlang || []);
       }
     } catch (e) {
       console.error(e);
@@ -74,6 +76,51 @@ export default function MejaKeuanganPage() {
     }
   };
 
+  const prosesVerifikasiDaftarUlang = async (id: string) => {
+    if (!confirm("Yakin ingin memverifikasi pelunasan daftar ulang santri lama ini?")) return;
+    setLoading(true);
+    try {
+      const adminId = (session?.user as any)?.id;
+      const res = await fetch(`/api/daftar-ulang/${id}/verifikasi`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        swalSuccess("Berhasil", "Daftar ulang berhasil diverifikasi lunas.");
+        muatData();
+      } else {
+        swalError("Gagal", data.error || "Gagal memverifikasi");
+      }
+    } catch (e) {
+      swalError("Error", "Terjadi kesalahan server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const batalkanDaftarUlang = async (id: string) => {
+    if (!confirm("Yakin ingin membatalkan pendaftaran ulang santri ini? Data kamar asramanya untuk periode ini akan dilepas.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/daftar-ulang/${id}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok) {
+        swalSuccess("Berhasil", "Daftar ulang berhasil dibatalkan.");
+        muatData();
+      } else {
+        swalError("Gagal", data.error || "Gagal membatalkan");
+      }
+    } catch (e) {
+      swalError("Error", "Terjadi kesalahan server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTagihWa = (noWa: string, nama: string, tagihan: number) => {
     if (!noWa) return swalError("Error", "Nomor WA tidak tersedia");
     const pesan = `Assalamu'alaikum, Bapak/Ibu wali dari santri *${nama}*.\n\nKami dari Admin Markaz Arabiyah menginformasikan bahwa tagihan pendaftaran sebesar *Rp ${new Intl.NumberFormat('id-ID').format(tagihan)}* masih berstatus PENDING. Mohon segera melunasi ke rekening BRI 0555-01-001108-569 agar ananda bisa segera diproses kamar asramanya.\n\nJazakumullah khairan.`;
@@ -110,6 +157,18 @@ export default function MejaKeuanganPage() {
     t.santri.nama.toLowerCase().includes(search.toLowerCase()) ||
     t.noKwitansi.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredDaftarUlang = daftarUlang.filter(d => {
+    // Sembunyikan dari tabel atas jika santri sudah memiliki tagihan perpanjangan online di tabel bawah
+    const hasOnlineInvoice = filteredData.some(t => t.santriId === d.santriId && t.statusPembayaran === "PENDING");
+    if (hasOnlineInvoice) return false;
+
+    const matchesScope = filterScope === "AKTIF"
+      ? activeDufah && d.dufahId === activeDufah.id
+      : true;
+    const matchesSearch = d.santri?.nama.toLowerCase().includes(search.toLowerCase());
+    return matchesScope && matchesSearch;
+  });
 
   // Data for Charts
   const pieData = [
@@ -212,6 +271,81 @@ export default function MejaKeuanganPage() {
           </div>
         </div>
 
+        {/* Daftar Ulang Santri Lama Table */}
+        {filteredDaftarUlang.length > 0 && (
+          <div className="bg-dark-800 border border-blue-500/20 rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-4 bg-blue-500/10 border-b border-blue-500/20 flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-blue-400">Daftar Ulang Santri Lama (Menunggu Pembayaran)</h3>
+                <p className="text-xs text-gray-400">Santri lama yang melanjutkan ke Duf'ah berikutnya namun belum melakukan konfirmasi transfer</p>
+              </div>
+              <span className="bg-blue-500/20 text-blue-400 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-500/30">
+                {filteredDaftarUlang.length} Santri
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-gray-300">
+                <thead className="text-xs text-gray-400 uppercase bg-dark-900 border-b border-blue-500/10">
+                  <tr>
+                    <th className="px-4 py-4 text-center w-12">No</th>
+                    <th className="px-4 py-4">Duf'ah Tujuan</th>
+                    <th className="px-4 py-4">Nama Santri</th>
+                    <th className="px-4 py-4">Kamar / Sakan Saat Ini</th>
+                    <th className="px-4 py-4 text-center">Status Lunas</th>
+                    <th className="px-4 py-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDaftarUlang.map((d, index) => (
+                    <tr key={d.id} className="border-b border-gray-800 hover:bg-dark-900/50 transition-colors">
+                      <td className="px-4 py-4 text-center font-bold text-gray-400">{index + 1}</td>
+                      <td className="px-4 py-4 font-bold text-gold-400">{d.dufah?.nama}</td>
+                      <td className="px-4 py-4 font-bold text-white">
+                        {d.santri?.nama}
+                        <div className="text-[10px] text-gray-500 font-mono mt-0.5">NIS: {d.santri?.nis || "-"}</div>
+                      </td>
+                      <td className="px-4 py-4 text-xs">
+                        {d.lemariId ? (
+                          <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">Slot Tersimpan</span>
+                        ) : (
+                          <span className="text-amber-400 italic">Antrean / Belum Plot</span>
+                        )}
+                        <div className="text-[10px] text-gray-500 mt-0.5">Bulan ke-{d.bulanKe}</div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-md text-xs font-bold border border-red-500/30">PENDING</span>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <div className="flex gap-2 justify-center">
+                          {((session?.user as any)?.permissions?.includes("verify_pendaftaran") || (session?.user as any)?.permissions?.includes("all_access")) && (
+                            <button
+                              onClick={() => prosesVerifikasiDaftarUlang(d.id)}
+                              disabled={loading}
+                              className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                            >
+                              ✓ Konfirmasi Lunas
+                            </button>
+                          )}
+                          {((session?.user as any)?.permissions?.includes("verify_pendaftaran") || (session?.user as any)?.permissions?.includes("all_access")) && (
+                            <button
+                              onClick={() => batalkanDaftarUlang(d.id)}
+                              disabled={loading}
+                              className="bg-red-600 hover:bg-red-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                              title="Batalkan / Lepas Kamar"
+                            >
+                              ✕ Batal
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Data Table */}
         <div className="bg-dark-800 border border-gold-500/10 rounded-2xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
@@ -249,6 +383,11 @@ export default function MejaKeuanganPage() {
                           <>
                             {t.program.nama}
                             <div className="text-xs text-gold-500 mt-0.5">{t.program.durasiBulan} Bulan</div>
+                            {t.dufahTujuanId && (
+                              <div className="text-[10px] font-bold text-blue-400 mt-0.5">
+                                Mulai Aktif: {allDufah.find(d => d.id === t.dufahTujuanId)?.nama || `Duf'ah ${t.dufahTujuanId}`}
+                              </div>
+                            )}
                           </>
                         )}
                       </td>

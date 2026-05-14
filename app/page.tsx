@@ -558,6 +558,84 @@ export default function Home() {
           </div>
         </section>
 
+        {/* FAQ / PERTANYAAN POPULER (SEO KEYWORD TARGETS) */}
+        <section className="py-24 px-6 bg-white/[0.01] border-t border-white/5">
+          <div className="max-w-5xl mx-auto">
+            <FadeIn>
+              <div className="text-center mb-16">
+                <div className="inline-block mb-3 px-4 py-1 rounded-lg bg-gold-500/10 text-gold-400 text-[10px] font-black uppercase tracking-widest border border-gold-500/20">
+                  Informasi Populer
+                </div>
+                <h3 className="text-3xl md:text-5xl font-black text-white mb-4">
+                  Pertanyaan Seputar <span className="text-gold-500">Kursus Bahasa Arab</span> di Pare
+                </h3>
+                <p className="text-gray-400 font-medium max-w-2xl mx-auto text-sm md:text-base">
+                  Jawaban cepat untuk pertanyaan yang paling sering diajukan calon santri Markaz Arabiyah Kampung Inggris.
+                </p>
+                <div className="w-20 h-1 bg-gold-500 mx-auto mt-6 rounded-full"></div>
+              </div>
+            </FadeIn>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FadeIn delay={100}>
+                <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-gold-500/30 transition-all h-full flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-lg font-bold text-white mb-3 flex items-start gap-3">
+                      <span className="text-gold-500 shrink-0">Q:</span>
+                      Berapa biaya kursus bahasa Arab di Pare Kampung Inggris?
+                    </h4>
+                    <p className="text-sm text-gray-400 leading-relaxed font-medium pl-6">
+                      Biaya kursus bahasa Arab di Markaz Arabiyah Pare sangat terjangkau, bervariasi mulai dari program intensif bulanan hingga paket eksklusif bimbingan studi ke Timur Tengah. Investasi sudah disesuaikan untuk fasilitas premium dan efisiensi belajar santri.
+                    </p>
+                  </div>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={200}>
+                <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-gold-500/30 transition-all h-full flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-lg font-bold text-white mb-3 flex items-start gap-3">
+                      <span className="text-gold-500 shrink-0">Q:</span>
+                      Apakah Markaz Arabiyah Pare menyediakan asrama / sakan?
+                    </h4>
+                    <p className="text-sm text-gray-400 leading-relaxed font-medium pl-6">
+                      Ya, kami menyediakan fasilitas sakan (asrama) terpadu di lingkungan Kampung Inggris Pare Kediri. Lingkungan berbahasa Arab 24 jam didesain khusus agar proses penguasaan bahasa menjadi jauh lebih cepat dan terbiasa dalam percakapan sehari-hari.
+                    </p>
+                  </div>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={300}>
+                <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-gold-500/30 transition-all h-full flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-lg font-bold text-white mb-3 flex items-start gap-3">
+                      <span className="text-gold-500 shrink-0">Q:</span>
+                      Bagaimana bimbingan studi ke Timur Tengah (Mesir, Yaman)?
+                    </h4>
+                    <p className="text-sm text-gray-400 leading-relaxed font-medium pl-6">
+                      Sebagai mediator resmi studi Timur Tengah terlengkap, Markaz Arabiyah mendampingi dari tahap bimbingan pemberkasan, pembekalan materi ujian/tahapan seleksi, hingga pemberangkatan resmi menuju universitas tujuan di Mesir maupun negara Timur Tengah dan Eropa.
+                    </p>
+                  </div>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={400}>
+                <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-gold-500/30 transition-all h-full flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-lg font-bold text-white mb-3 flex items-start gap-3">
+                      <span className="text-gold-500 shrink-0">Q:</span>
+                      Apakah cocok untuk pemula yang belajar dari nol?
+                    </h4>
+                    <p className="text-sm text-gray-400 leading-relaxed font-medium pl-6">
+                      Tentu saja. Kurikulum metode akselerasi kami dirancang secara sistematis mulai dari dasar (nol) hingga mahir, dibimbing langsung oleh tenaga pengajar profesional dan didukung interaksi intensif bersama penutur asli (native speaker).
+                    </p>
+                  </div>
+                </div>
+              </FadeIn>
+            </div>
+          </div>
+        </section>
+
         {/* KONTAK */}
         <section id="kontak" className="py-16 md:py-24 px-4 md:px-6 relative">
           <div className="max-w-5xl mx-auto">

@@ -163,30 +163,33 @@ export async function POST(
             lemariId: previousLemariId,
             status: previousLemariId ? "ASSIGNED" : "PRE_LIST", // Langsung ASSIGNED jika kamar lanjut
             bulanKe: newBulanKe,
-            // Jika TIDAK beli atribut, berarti sudah punya. Kita set true agar tidak muncul di tagihan Mims Store.
-            isDresscodeTaken: !isBeliAtribut,
-            isToteBagTaken: !isBeliAtribut,
-            isPinTaken: !isBeliAtribut,
-            isSongkokKhimarTaken: !isBeliAtribut,
-            isMalzamahTaken: !isBeliAtribut,
-            isTabirotTaken: !isBeliAtribut
+          // Jika TIDAK beli atribut, berarti sudah punya. Kita set true agar tidak muncul di tagihan Mims Store.
+          // Namun khusus untuk Malzamah dan Ta'birot, semua santri lama tetap berhak mengambil setiap bulan/dufah baru.
+          isDresscodeTaken: !isBeliAtribut,
+          isToteBagTaken: !isBeliAtribut,
+          isPinTaken: !isBeliAtribut,
+          isSongkokKhimarTaken: !isBeliAtribut,
+          isMalzamahTaken: false,
+          isTabirotTaken: false
           }
         });
       } else {
-        // Jika riwayat sudah ada, dan dia beli atribut, reset statusnya jadi false agar ditagih lagi.
-        if (isBeliAtribut) {
-           await tx.riwayatDufah.update({
-             where: { id: cekRiwayat.id },
-             data: {
-               isDresscodeTaken: false,
-               isToteBagTaken: false,
-               isPinTaken: false,
-               isSongkokKhimarTaken: false,
-               isMalzamahTaken: false,
-               isTabirotTaken: false
-             }
-           });
-        }
+        // Jika riwayat sudah ada, pastikan isLunas diubah menjadi true setelah diverifikasi.
+        // Dan jika dia beli atribut, reset statusnya jadi false agar ditagih lagi.
+        await tx.riwayatDufah.update({
+          where: { id: cekRiwayat.id },
+          data: {
+            isLunas: true,
+            ...(isBeliAtribut ? {
+              isDresscodeTaken: false,
+              isToteBagTaken: false,
+              isPinTaken: false,
+              isSongkokKhimarTaken: false,
+              isMalzamahTaken: false,
+              isTabirotTaken: false
+            } : {})
+          }
+        });
       }
 
       return santriUpdate;

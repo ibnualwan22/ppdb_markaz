@@ -17,7 +17,7 @@ export default function DaftarUlangPage() {
 
   // Data Hasil Pencarian
   const [santriData, setSantriData] = useState<any>(null);
-  
+
   // Pilihan
   const [programId, setProgramId] = useState("");
   const [isBeliAtribut, setIsBeliAtribut] = useState(false);
@@ -41,7 +41,7 @@ export default function DaftarUlangPage() {
 
   useEffect(() => {
     refreshCaptcha();
-    fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => {});
+    fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => { });
   }, []);
 
   const handleCariData = async (e: React.FormEvent) => {
@@ -107,7 +107,7 @@ export default function DaftarUlangPage() {
             dufah: data.data.dufah,
             isRenew: true
           });
-        } catch(e) {
+        } catch (e) {
           console.error("Gagal cetak PDF", e);
         }
       } else {
@@ -139,12 +139,12 @@ export default function DaftarUlangPage() {
         <div className="text-center mb-10">
           <Image src="/images/logo.png" alt="Logo Markaz" width={80} height={80} className="mx-auto drop-shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
           <h1 className="text-3xl md:text-4xl font-extrabold text-gold-500 mt-4 tracking-wide">Daftar Ulang Santri</h1>
-          <p className="text-gray-400 mt-2">Perpanjangan Program Markaz Arabiyyah</p>
+          <p className="text-gray-400 mt-2">Perpanjangan Program Markaz Arabiyah</p>
         </div>
 
         {/* Card Form */}
         <div className="bg-dark-800/80 backdrop-blur-md rounded-3xl p-6 md:p-10 border border-gold-500/20 shadow-2xl relative overflow-hidden">
-          
+
           {/* STEP 1: PENCARIAN */}
           {step === 1 && (
             <div className="animate-fadeIn">
@@ -175,7 +175,7 @@ export default function DaftarUlangPage() {
               <button onClick={() => setStep(1)} className="text-gold-500 font-bold mb-2 flex items-center gap-2 hover:text-gold-400 transition">
                 <span>&larr;</span> Kembali
               </button>
-              
+
               <div className="bg-dark-900 border border-gold-500/30 p-5 rounded-2xl flex items-center gap-4">
                 <div className="bg-gold-500/20 text-gold-500 w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shrink-0">
                   {santriData.nama.charAt(0).toUpperCase()}
@@ -196,28 +196,29 @@ export default function DaftarUlangPage() {
                 {programs.map(p => {
                   const hargaTampil = isBeliAtribut ? p.harga : p.harga - 100000;
                   return (
-                  <div 
-                    key={p.id} 
-                    onClick={() => setProgramId(p.id)}
-                    className={`cursor-pointer border-2 rounded-2xl p-5 transition-all duration-300 ${programId === p.id ? 'border-gold-500 bg-gold-500/5 shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-dark-900 bg-dark-900 hover:border-gold-500/30'}`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
-                      <span className="bg-dark-800 text-gold-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{p.durasiBulan} Bulan</span>
+                    <div
+                      key={p.id}
+                      onClick={() => setProgramId(p.id)}
+                      className={`cursor-pointer border-2 rounded-2xl p-5 transition-all duration-300 ${programId === p.id ? 'border-gold-500 bg-gold-500/5 shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-dark-900 bg-dark-900 hover:border-gold-500/30'}`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
+                        <span className="bg-dark-800 text-gold-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{p.durasiBulan} Bulan</span>
+                      </div>
+                      <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(hargaTampil)}</p>
+                      {!isBeliAtribut && (
+                        <p className="text-xs text-green-500 font-bold mt-1">Diskon Atribut Santri Lama (-100k)</p>
+                      )}
                     </div>
-                    <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(hargaTampil)}</p>
-                    {!isBeliAtribut && (
-                      <p className="text-xs text-green-500 font-bold mt-1">Diskon Atribut Santri Lama (-100k)</p>
-                    )}
-                  </div>
-                )})}
+                  )
+                })}
               </div>
 
               <div className="mt-6 bg-dark-900 border border-gold-500/30 p-4 rounded-xl flex items-start gap-3">
-                <input 
-                  type="checkbox" 
-                  id="beliAtribut" 
-                  checked={isBeliAtribut} 
+                <input
+                  type="checkbox"
+                  id="beliAtribut"
+                  checked={isBeliAtribut}
                   onChange={(e) => setIsBeliAtribut(e.target.checked)}
                   className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer"
                 />
@@ -229,10 +230,10 @@ export default function DaftarUlangPage() {
 
               {/* AGREEMENT SECTION */}
               <div className="mt-6 bg-dark-900 border border-gold-500/20 p-4 rounded-xl flex items-start gap-3">
-                <input 
-                  type="checkbox" 
-                  id="agreement" 
-                  checked={isAgreed} 
+                <input
+                  type="checkbox"
+                  id="agreement"
+                  checked={isAgreed}
                   onChange={(e) => setIsAgreed(e.target.checked)}
                   className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer shrink-0"
                 />
@@ -249,11 +250,11 @@ export default function DaftarUlangPage() {
                   <div className="bg-dark-800 text-white font-mono text-xl font-bold py-3 px-6 rounded-xl border border-dark-700">
                     {captchaA} + {captchaB} = ?
                   </div>
-                  <input 
-                    type="number" 
-                    value={captchaAnswer} 
-                    onChange={(e) => setCaptchaAnswer(e.target.value)} 
-                    placeholder="Jawaban" 
+                  <input
+                    type="number"
+                    value={captchaAnswer}
+                    onChange={(e) => setCaptchaAnswer(e.target.value)}
+                    placeholder="Jawaban"
                     className="w-full max-w-[120px] bg-dark-800 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white font-bold text-center"
                   />
                 </div>
@@ -276,7 +277,7 @@ export default function DaftarUlangPage() {
 
               <div className="bg-dark-900 rounded-2xl p-6 border border-gold-500/20 shadow-inner max-w-sm mx-auto text-left relative overflow-hidden">
                 <div className="absolute -top-4 -right-4 w-20 h-20 bg-gold-500/10 rounded-full blur-xl"></div>
-                
+
                 <p className="text-gray-400 text-sm font-bold mb-1">Nomor Kwitansi</p>
                 <p className="font-mono text-gold-500 mb-4">{invoice.noKwitansi}</p>
 
@@ -287,7 +288,7 @@ export default function DaftarUlangPage() {
                   <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Transfer ke Rekening</p>
                   <p className="text-xl font-black text-white font-mono tracking-widest">0555-01-001108-569</p>
                   <p className="text-sm font-bold text-blue-400 mt-1">BANK BRI a.n Markaz Arabiyah</p>
-                  <button 
+                  <button
                     onClick={() => copyToClipboard('055501001108569')}
                     className="mt-3 bg-dark-900 hover:bg-black text-gray-300 px-4 py-2 rounded-lg text-sm font-bold border border-gray-700 hover:border-gold-500 transition-colors flex items-center justify-center gap-2 w-full"
                   >
@@ -295,7 +296,7 @@ export default function DaftarUlangPage() {
                     Salin No. Rekening
                   </button>
                 </div>
-                
+
                 <p className="text-xs text-gray-500 text-center mt-4 italic">
                   *Pastikan transfer tepat hingga 3 digit terakhir (+{invoice.kodeUnik}) agar otomatis terbaca oleh Admin.
                 </p>
