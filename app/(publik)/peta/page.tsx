@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 
+// @ts-ignore - dynamic import resolves at runtime
 const PetaMap = dynamic(() => import("./PetaMap") as any, { ssr: false, loading: () => <div className="w-full h-[70vh] bg-dark-800 rounded-2xl animate-pulse flex items-center justify-center"><span className="text-gray-500 font-bold">Memuat peta...</span></div> }) as any;
 
 type Kategori = "SEMUA" | "BANIN" | "BANAT" | "UMUM";

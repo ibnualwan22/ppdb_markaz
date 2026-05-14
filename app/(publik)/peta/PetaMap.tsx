@@ -72,22 +72,24 @@ export default function PetaMap({ lokasi, allLokasi, posisiSaya, tujuan, gpsPosi
     const map = L.map(mapContainerRef.current, {
       center: CAMPUS_CENTER,
       zoom: 18,
-      maxZoom: 22,
+      maxZoom: 19,
       minZoom: 15,
       zoomControl: false,
     });
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    // Satellite view
+    // Satellite view (ArcGIS max zoom = 19)
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
       attribution: '&copy; Esri',
-      maxZoom: 22,
+      maxNativeZoom: 19,
+      maxZoom: 19,
     }).addTo(map);
 
     // Labels overlay
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
-      maxZoom: 22,
+      maxNativeZoom: 19,
+      maxZoom: 19,
     }).addTo(map);
 
     markersRef.current = L.layerGroup().addTo(map);
@@ -220,9 +222,9 @@ export default function PetaMap({ lokasi, allLokasi, posisiSaya, tujuan, gpsPosi
             duration: Math.round(route.duration / 60),
           });
 
-          // Fit bounds
+          // Fit bounds but keep a reasonable zoom (don't zoom out too far on mobile)
           const bounds = L.latLngBounds(coords);
-          mapRef.current!.fitBounds(bounds.pad(0.2));
+          mapRef.current!.fitBounds(bounds.pad(0.15), { maxZoom: 18, animate: true, duration: 0.5 });
         })
         .catch(() => {
           // Fallback: straight line
@@ -238,7 +240,7 @@ export default function PetaMap({ lokasi, allLokasi, posisiSaya, tujuan, gpsPosi
       ).addTo(mapRef.current);
 
       const bounds = L.latLngBounds([lat1, lng1], [lat2, lng2]);
-      mapRef.current.fitBounds(bounds.pad(0.3));
+      mapRef.current.fitBounds(bounds.pad(0.15), { maxZoom: 18, animate: true, duration: 0.5 });
     }
 
     return () => {
@@ -273,7 +275,7 @@ export default function PetaMap({ lokasi, allLokasi, posisiSaya, tujuan, gpsPosi
   }, [allLokasi, onSelectPosisi, onSelectTujuan]);
 
   return (
-    <div className="relative w-full h-[70vh] lg:h-[calc(100vh-80px)] rounded-2xl overflow-hidden border border-gold-500/10 shadow-2xl">
+    <div className="relative w-full h-[55vh] md:h-[70vh] lg:h-[calc(100vh-80px)] rounded-2xl overflow-hidden border border-gold-500/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Route info overlay */}
