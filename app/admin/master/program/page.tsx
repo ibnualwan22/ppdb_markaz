@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Protect } from "@/components/Protect";
+import { Protect, usePermissions } from "@/components/Protect";
 import { swalSuccess, swalError } from "@/app/lib/swal";
 
 export default function MasterProgramPage() {
   const [programs, setPrograms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const { hasAccess } = usePermissions();
+  const canManage = hasAccess("manage_program");
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Form State
@@ -78,19 +80,21 @@ export default function MasterProgramPage() {
   };
 
   return (
-    <Protect permission="">
+    <Protect permission="view_program" fallback={<div className="p-10 text-center text-red-500 font-bold text-2xl mt-20">Akses Ditolak: Anda tidak memiliki izin untuk melihat Master Program.</div>}>
       <div className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="flex justify-between items-end mb-8 border-b border-gold-500/10 pb-4">
           <div>
             <h1 className="text-3xl font-extrabold text-gold-500">Master Program</h1>
             <p className="text-gray-400 mt-1">Kelola program pendidikan dan paket asrama</p>
           </div>
-          <button
-            onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="bg-gold-500 text-black px-4 py-2 font-bold rounded-xl shadow-md hover:bg-gold-400 transition"
-          >
-            + Tambah Program
-          </button>
+          {canManage && (
+            <button
+              onClick={() => { resetForm(); setIsModalOpen(true); }}
+              className="bg-gold-500 text-black px-4 py-2 font-bold rounded-xl shadow-md hover:bg-gold-400 transition"
+            >
+              + Tambah Program
+            </button>
+          )}
         </div>
 
         <div className="bg-dark-800 rounded-2xl p-6 border border-gold-500/10 shadow-inner">
@@ -120,12 +124,14 @@ export default function MasterProgramPage() {
                         </span>
                       </td>
                       <td className="p-3 text-right">
-                        <button
-                          onClick={() => bukaModalEdit(p)}
-                          className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition"
-                        >
-                          Edit
-                        </button>
+                        {canManage && (
+                          <button
+                            onClick={() => bukaModalEdit(p)}
+                            className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                          >
+                            Edit
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -36,6 +36,7 @@ async function main() {
     { namaAksi: 'view_keuangan', deskripsi: 'Melihat data keuangan & pendaftaran santri' },
 
     // Master Program
+    { namaAksi: 'view_program', deskripsi: 'Melihat daftar program pendidikan' },
     { namaAksi: 'manage_program', deskripsi: 'Mengelola data program pendidikan (Tambah/Edit/Hapus)' },
 
     // Activity Log

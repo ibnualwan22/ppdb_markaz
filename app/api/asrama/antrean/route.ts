@@ -32,6 +32,7 @@ export async function GET() {
       where: {
         dufahId: { in: relevantDufahIds },
         lemariId: null,
+        santri: { isAktif: true },  // Hanya tampilkan santri yang masih aktif
       },
       include: {
         santri: {
