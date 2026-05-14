@@ -90,6 +90,7 @@ export default function Home() {
   const [activeFlow, setActiveFlow] = useState<"baru" | "lama">("baru");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [targetDufah, setTargetDufah] = useState<any>(null);
 
   const navLinks = [
     { href: "#beranda", label: "Beranda" },
@@ -97,20 +98,35 @@ export default function Home() {
     { href: "#program", label: "Program" },
     { href: "#statistik", label: "Statistik" },
     { href: "#lokasi", label: "Lokasi" },
+    { href: "/peta", label: "Denah" },
     { href: "#kontak", label: "Kontak" },
   ];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [progRes, statRes] = await Promise.all([
+        const [progRes, statRes, dufahRes] = await Promise.all([
           fetch("/api/publik/program"),
-          fetch("/api/publik/stats")
+          fetch("/api/publik/stats"),
+          fetch("/api/dufah")
         ]);
         const progData = await progRes.json();
         const statData = await statRes.json();
         setPrograms(progData);
         setStats(statData);
+
+        try {
+          const dufahData = await dufahRes.json();
+          const now = new Date();
+          const target = dufahData.find((df: any) => {
+            if (!df.tanggalBuka || !df.tanggalTutup) return false;
+            return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+          });
+          if (target) {
+            target.namaPeriodeLengkap = target.nama;
+          }
+          setTargetDufah(target || null);
+        } catch {}
       } catch (error) {
         console.error("Failed to fetch public data:", error);
       } finally {
@@ -379,51 +395,84 @@ export default function Home() {
             </FadeIn>
 
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-[400px] rounded-3xl bg-white/5 animate-pulse border border-white/10"></div>
+                  <div key={i} className="h-[400px] min-w-[300px] md:min-w-0 rounded-3xl bg-white/5 animate-pulse border border-white/10 snap-center"></div>
                 ))}
               </div>
             ) : programs.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {programs.map((prog, index) => (
-                  <FadeIn key={prog.id} delay={index * 100}>
-                    <div className="group relative p-8 rounded-3xl bg-white/[0.03] border border-white/10 hover:border-gold-500/50 hover:bg-gold-500/[0.02] transition-all overflow-hidden flex flex-col h-full">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 blur-3xl group-hover:bg-gold-500/10 transition-all"></div>
+              <>
+                {/* Swipe hint for mobile */}
+                <div className="flex items-center justify-center gap-2 mb-4 md:hidden">
+                  <svg className="w-4 h-4 text-gray-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                  <span className="text-xs text-gray-500 font-medium">Geser untuk melihat program lainnya</span>
+                  <svg className="w-4 h-4 text-gray-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                </div>
+                <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible">
+                  {programs.map((prog, index) => {
+                    // Auto-generate bulan & periode
+                    const tgMulai = prog.tanggalMulaiDefault || "10";
+                    const tgTutup = prog.tanggalTutupDefault || "06";
+                    let displayMulai = tgMulai;
+                    let displayTutup = tgTutup;
 
-                      <div className="mb-6">
-                        <span className="px-3 py-1 rounded-lg bg-gold-500/10 text-gold-400 text-[10px] font-black uppercase tracking-widest border border-gold-500/20">
-                          {prog.durasiBulan} Bulan
-                        </span>
+                    if (targetDufah && targetDufah.tanggalBuka) {
+                      if (/^\d+$/.test(tgMulai.trim())) {
+                        const d = new Date(targetDufah.tanggalBuka);
+                        d.setMonth(d.getMonth() + 1);
+                        displayMulai = `${tgMulai.trim()} ${d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+                      }
+                      if (/^\d+$/.test(tgTutup.trim())) {
+                        const d = new Date(targetDufah.tanggalBuka);
+                        d.setMonth(d.getMonth() + 1 + prog.durasiBulan);
+                        displayTutup = `${tgTutup.trim()} ${d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+                      }
+                    }
+
+                    return (
+                    <FadeIn key={prog.id} delay={index * 100}>
+                      <div className="group relative p-8 rounded-3xl bg-white/[0.03] border border-white/10 hover:border-gold-500/50 hover:bg-gold-500/[0.02] transition-all overflow-hidden flex flex-col h-full min-w-[300px] md:min-w-0 snap-center">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 blur-3xl group-hover:bg-gold-500/10 transition-all"></div>
+
+                        <div className="flex items-center justify-between mb-6">
+                          <span className="px-3 py-1 rounded-lg bg-gold-500/10 text-gold-400 text-[10px] font-black uppercase tracking-widest border border-gold-500/20">
+                            {prog.durasiBulan} Bulan
+                          </span>
+                          {targetDufah && (
+                            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[9px] font-bold border border-emerald-500/20">
+                              {targetDufah.namaPeriodeLengkap || targetDufah.nama}
+                            </span>
+                          )}
+                        </div>
+
+                        <h4 className="text-2xl font-black text-white mb-4 group-hover:text-gold-400 transition-colors">{prog.nama}</h4>
+
+                        <div className="space-y-3 mb-8 flex-1">
+                          <div className="flex items-center gap-3 text-gray-400">
+                            <svg className="w-5 h-5 text-gold-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            <span className="text-sm font-semibold">Mulai: {displayMulai}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-400">
+                            <svg className="w-5 h-5 text-gold-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span className="text-sm font-semibold">Tutup: {displayTutup}</span>
+                          </div>
+                          <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/5">
+                            <div className="text-xs text-gray-500 uppercase font-black tracking-widest mb-1">Investasi Program</div>
+                            <div className="text-3xl font-black text-white">Rp {prog.harga.toLocaleString()}</div>
+                          </div>
+                        </div>
+
+                        <Link
+                          href="/pendaftaran"
+                          className="w-full py-4 rounded-2xl bg-gold-500 text-black font-black text-center hover:bg-gold-400 transition-all shadow-lg active:scale-95"
+                        >
+                          Daftar Program
+                        </Link>
                       </div>
-
-                      <h4 className="text-2xl font-black text-white mb-4 group-hover:text-gold-400 transition-colors">{prog.nama}</h4>
-
-                      <div className="space-y-4 mb-8 flex-1">
-                        <div className="flex items-center gap-3 text-gray-400">
-                          <svg className="w-5 h-5 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                          <span className="text-sm font-semibold">Mulai: {prog.tanggalMulaiDefault || "-"}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-gray-400">
-                          <svg className="w-5 h-5 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          <span className="text-sm font-semibold">Tutup: {prog.tanggalTutupDefault || "-"}</span>
-                        </div>
-                        <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/5">
-                          <div className="text-xs text-gray-500 uppercase font-black tracking-widest mb-1">Investasi Program</div>
-                          <div className="text-3xl font-black text-white">Rp {prog.harga.toLocaleString()}</div>
-                        </div>
-                      </div>
-
-                      <Link
-                        href="/pendaftaran"
-                        className="w-full py-4 rounded-2xl bg-gold-500 text-black font-black text-center hover:bg-gold-400 transition-all shadow-lg active:scale-95"
-                      >
-                        Daftar Program
-                      </Link>
-                    </div>
-                  </FadeIn>
-                ))}
-              </div>
+                    </FadeIn>
+                  )})}
+                </div>
+              </>
             ) : (
               <div className="text-center p-12 rounded-3xl border border-dashed border-white/20">
                 <p className="text-gray-500 font-bold">Belum ada program aktif saat ini.</p>
