@@ -43,7 +43,10 @@ export const metadata: Metadata = {
     icon: "/images/logo.png",
   },
   verification: {
-    google: "iNuVFMDtd1omFrP6i4g2hA1gmZxwWTtyyZux3HSf4j8",
+    google: [
+      "iNuVFMDtd1omFrP6i4g2hA1gmZxwWTtyyZux3HSf4j8",
+      "google0689ffb743e0b7d5"
+    ],
   },
 };
 
