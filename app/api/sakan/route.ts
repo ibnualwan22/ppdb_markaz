@@ -15,7 +15,7 @@ export async function GET() {
               include: {
                 // HANYA tarik penghuni di bulan ini, lengkapi dengan data santrinya
                 penghuni: dufahAktif ? {
-                  where: { dufahId: dufahAktif.id },
+                  where: { dufahId: dufahAktif.id, status: { not: "CHECKED_OUT" } },
                   include: { santri: true }
                 } : false
               },

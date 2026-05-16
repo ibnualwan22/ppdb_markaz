@@ -25,7 +25,7 @@ export async function GET() {
       const sakanData = await prisma.sakan.findMany({
         include: {
           kamar: {
-            include: { lemari: { include: { penghuni: { where: { dufahId: dufahAktif.id } } } } }
+            include: { lemari: { include: { penghuni: { where: { dufahId: dufahAktif.id, status: { not: "CHECKED_OUT" } } } } } }
           }
         },
         orderBy: { nama: 'asc' }
