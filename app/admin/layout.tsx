@@ -87,12 +87,13 @@ const menuItems = [
   { href: "/admin/pendaftaran", label: "Meja Keuangan", icon: <IconCreditCard />, permission: "view_keuangan" },
   { href: "/admin/asrama", label: "Meja Asrama", icon: <IconBed />, permission: "view_asrama" },
   { href: "/admin/id-card", label: "Meja ID Card", icon: <IconIdCard />, permission: "view_idcard" },
-  { href: "/admin/mimstore", label: "Mims Store", icon: <IconStore />, permission: "view_mimstore" },
+  { href: "/admin/mimstore", label: "Mim Store", icon: <IconStore />, permission: "view_mimstore" },
 ];
 
 const masterItems = [
   { href: "/admin/master", label: "Master Lokasi", icon: <IconCog />, permission: "manage_asrama" },
   { href: "/admin/master/program", label: "Master Program", icon: <IconGradCap />, permission: "view_program" },
+  { href: "/admin/master/pengajar", label: "Dewan Asatidz", icon: <IconUserCircle />, permission: "view_program" },
   { href: "/admin/dufah", label: "Manajemen Duf'ah", icon: <IconCalendar />, permission: "manage_dufah" },
   { href: "/admin/santri", label: "Master Santri", icon: <IconGradCap />, permission: "view_santri" },
   { href: "/admin/santri/tanpa-nis", label: "Santri Tanpa NIS", icon: <IconUserCircle />, permission: "view_santri" },

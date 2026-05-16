@@ -17,6 +17,13 @@ interface Stats {
   totalSantriDB: number;
 }
 
+interface Pengajar {
+  id: string;
+  nama: string;
+  foto: string | null;
+  trackRecord: string[];
+}
+
 const Counter = ({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
   const countRef = useRef(null);
@@ -87,6 +94,7 @@ const FadeIn = ({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 export default function Home() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [pengajars, setPengajars] = useState<Pengajar[]>([]);
   const [activeFlow, setActiveFlow] = useState<"baru" | "lama">("baru");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -105,15 +113,17 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [progRes, statRes, dufahRes] = await Promise.all([
+        const [progRes, statRes, dufahRes, pengajarRes] = await Promise.all([
           fetch("/api/publik/program"),
           fetch("/api/publik/stats"),
-          fetch("/api/dufah")
+          fetch("/api/dufah"),
+          fetch("/api/publik/pengajar")
         ]);
         const progData = await progRes.json();
         const statData = await statRes.json();
         setPrograms(progData);
         setStats(statData);
+        try { const pengajarData = await pengajarRes.json(); setPengajars(pengajarData); } catch { }
 
         try {
           const dufahData = await dufahRes.json();
@@ -126,7 +136,7 @@ export default function Home() {
             target.namaPeriodeLengkap = target.nama;
           }
           setTargetDufah(target || null);
-        } catch {}
+        } catch { }
       } catch (error) {
         console.error("Failed to fetch public data:", error);
       } finally {
@@ -386,6 +396,81 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ASATIDZAH / PENGAJAR PROFESIONAL */}
+        {pengajars.length > 0 && (
+          <section className="py-24 px-6 bg-white/[0.02] border-y border-white/5 overflow-hidden">
+            <div className="max-w-7xl mx-auto">
+              <FadeIn>
+                <div className="text-center mb-16">
+                  <div className="inline-block mb-3 px-4 py-1 rounded-lg bg-gold-500/10 text-gold-400 text-[10px] font-black uppercase tracking-widest border border-gold-500/20">
+                    Tenaga Pengajar Profesional
+                  </div>
+                  <h3 className="text-4xl md:text-5xl font-black text-white mb-4">Tenaga Penajar <span className="text-gold-500">Profesional</span></h3>
+                  <p className="text-gray-400 font-medium max-w-2xl mx-auto">Dibimbing langsung oleh para ustadz berpengalaman dengan rekam jejak akademik dan dakwah di kancah internasional.</p>
+                  <div className="w-24 h-1 bg-gold-500 mx-auto mt-8 rounded-full"></div>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={200}>
+                <div className="relative group/carousel">
+                  {/* Gradient Edges */}
+                  <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-[#0a0a0a] to-transparent z-10 pointer-events-none"></div>
+                  <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-[#0a0a0a] to-transparent z-10 pointer-events-none"></div>
+
+                  {/* Scrolling Track */}
+                  <div className="overflow-hidden">
+                    <div className="flex gap-6 animate-scroll-left group-hover/carousel:[animation-play-state:paused]" style={{ width: 'max-content' }}>
+                      {[...pengajars, ...pengajars].map((p, i) => (
+                        <div
+                          key={`${p.id}-${i}`}
+                          className="relative w-[260px] md:w-[300px] shrink-0 rounded-3xl overflow-hidden group/card border border-white/5 hover:border-gold-500/30 transition-all"
+                        >
+                          {/* Photo Container */}
+                          <div className="relative w-full aspect-[3/4] bg-dark-800 overflow-hidden">
+                            {p.foto ? (
+                              <Image
+                                src={p.foto}
+                                alt={p.nama}
+                                fill
+                                className="object-cover object-top group-hover/card:scale-105 transition-transform duration-700"
+                                sizes="300px"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-dark-900">
+                                <svg className="w-24 h-24 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                            )}
+
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+
+                            {/* Content Over Photo */}
+                            <div className="absolute bottom-0 left-0 right-0 p-5">
+                              <h4 className="text-xl font-black text-white mb-2 drop-shadow-lg">{p.nama}</h4>
+                              {p.trackRecord.length > 0 && (
+                                <ul className="space-y-1.5">
+                                  {p.trackRecord.slice(0, 3).map((item, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
+                                      <span className="text-gold-400 mt-0.5 shrink-0">✦</span>
+                                      <span className="line-clamp-1 drop-shadow-lg">{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            </div>
+          </section>
+        )}
+
         {/* PILIHAN PROGRAM */}
         <section id="program" className="py-24 px-6 relative overflow-hidden">
           <div className="max-w-7xl mx-auto relative z-10">
@@ -433,47 +518,48 @@ export default function Home() {
                     }
 
                     return (
-                    <FadeIn key={prog.id} delay={index * 100}>
-                      <div className="group relative p-8 rounded-3xl bg-white/[0.03] border border-white/10 hover:border-gold-500/50 hover:bg-gold-500/[0.02] transition-all overflow-hidden flex flex-col h-full min-w-[300px] md:min-w-0 snap-center">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 blur-3xl group-hover:bg-gold-500/10 transition-all"></div>
+                      <FadeIn key={prog.id} delay={index * 100}>
+                        <div className="group relative p-8 rounded-3xl bg-white/[0.03] border border-white/10 hover:border-gold-500/50 hover:bg-gold-500/[0.02] transition-all overflow-hidden flex flex-col h-full min-w-[300px] md:min-w-0 snap-center">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 blur-3xl group-hover:bg-gold-500/10 transition-all"></div>
 
-                        <div className="flex items-center justify-between mb-6">
-                          <span className="px-3 py-1 rounded-lg bg-gold-500/10 text-gold-400 text-[10px] font-black uppercase tracking-widest border border-gold-500/20">
-                            {prog.durasiBulan} Bulan
-                          </span>
-                          {targetDufah && (
-                            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[9px] font-bold border border-emerald-500/20">
-                              {targetDufah.namaPeriodeLengkap || targetDufah.nama}
+                          <div className="flex items-center justify-between mb-6">
+                            <span className="px-3 py-1 rounded-lg bg-gold-500/10 text-gold-400 text-[10px] font-black uppercase tracking-widest border border-gold-500/20">
+                              {prog.durasiBulan} Bulan
                             </span>
-                          )}
+                            {targetDufah && (
+                              <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[9px] font-bold border border-emerald-500/20">
+                                {targetDufah.namaPeriodeLengkap || targetDufah.nama}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-2xl font-black text-white mb-4 group-hover:text-gold-400 transition-colors">{prog.nama}</h4>
+
+                          <div className="space-y-3 mb-8 flex-1">
+                            <div className="flex items-center gap-3 text-gray-400">
+                              <svg className="w-5 h-5 text-gold-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              <span className="text-sm font-semibold">Mulai: {displayMulai}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-400">
+                              <svg className="w-5 h-5 text-gold-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              <span className="text-sm font-semibold">Tutup: {displayTutup}</span>
+                            </div>
+                            <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/5">
+                              <div className="text-xs text-gray-500 uppercase font-black tracking-widest mb-1">Investasi Program</div>
+                              <div className="text-3xl font-black text-white">Rp {prog.harga.toLocaleString()}</div>
+                            </div>
+                          </div>
+
+                          <Link
+                            href="/pendaftaran"
+                            className="w-full py-4 rounded-2xl bg-gold-500 text-black font-black text-center hover:bg-gold-400 transition-all shadow-lg active:scale-95"
+                          >
+                            Daftar Program
+                          </Link>
                         </div>
-
-                        <h4 className="text-2xl font-black text-white mb-4 group-hover:text-gold-400 transition-colors">{prog.nama}</h4>
-
-                        <div className="space-y-3 mb-8 flex-1">
-                          <div className="flex items-center gap-3 text-gray-400">
-                            <svg className="w-5 h-5 text-gold-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            <span className="text-sm font-semibold">Mulai: {displayMulai}</span>
-                          </div>
-                          <div className="flex items-center gap-3 text-gray-400">
-                            <svg className="w-5 h-5 text-gold-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span className="text-sm font-semibold">Tutup: {displayTutup}</span>
-                          </div>
-                          <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/5">
-                            <div className="text-xs text-gray-500 uppercase font-black tracking-widest mb-1">Investasi Program</div>
-                            <div className="text-3xl font-black text-white">Rp {prog.harga.toLocaleString()}</div>
-                          </div>
-                        </div>
-
-                        <Link
-                          href="/pendaftaran"
-                          className="w-full py-4 rounded-2xl bg-gold-500 text-black font-black text-center hover:bg-gold-400 transition-all shadow-lg active:scale-95"
-                        >
-                          Daftar Program
-                        </Link>
-                      </div>
-                    </FadeIn>
-                  )})}
+                      </FadeIn>
+                    )
+                  })}
                 </div>
               </>
             ) : (
