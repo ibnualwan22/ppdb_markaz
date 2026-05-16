@@ -261,8 +261,11 @@ export default function Home() {
           </FadeIn>
 
           <FadeIn delay={400}>
-            <p className="max-w-3xl text-base sm:text-xl md:text-2xl text-gray-300 mb-8 md:mb-12 leading-relaxed font-bold bg-black/20 backdrop-blur-sm p-4 rounded-2xl border border-white/5">
+            <p className="max-w-3xl text-base sm:text-xl md:text-2xl text-gray-300 mb-4 md:mb-6 leading-relaxed font-bold bg-black/20 backdrop-blur-sm p-4 rounded-2xl border border-white/5">
               Pusat Bahasa Arab & Mediator Studi di Timur Tengah
+            </p>
+            <p className="max-w-3xl text-sm sm:text-base text-gray-400 mb-8 md:mb-12 leading-relaxed font-medium px-4">
+              Markaz Arabiyah adalah lembaga pendidikan bahasa Arab intensif terkemuka di Kampung Inggris Pare, Kediri. Dengan lebih dari 25.000 alumni dan metode akselerasi terbukti, kami menyediakan program kursus bahasa Arab dari nol hingga mahir, fasilitas asrama terpadu, serta bimbingan studi resmi ke Timur Tengah dan Eropa.
             </p>
           </FadeIn>
 

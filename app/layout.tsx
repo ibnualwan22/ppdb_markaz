@@ -14,20 +14,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Markaz Arabiyah — Kursus Bahasa Arab Pare Kampung Inggris & Mediator Timur Tengah",
-  description: "Pusat bimbingan dan kursus bahasa Arab intensif terbaik di Pare Kampung Inggris Kediri. Melayani pendaftaran PPDB offline/online serta mediator resmi studi ke Timur Tengah & Eropa.",
-  keywords: ["Kursus Bahasa Arab Pare", "Kampung Inggris Pare Bahasa Arab", "Markaz Arabiyah Pare", "PPDB Markaz Arabiyah", "Belajar Bahasa Arab Pare", "Mediator Studi Timur Tengah", "Kuliah di Mesir"],
+  metadataBase: new URL("https://ppdb.markazarabiyah.site"),
+  title: "Markaz Arabiyah — Kursus Bahasa Arab Terbaik di Pare Kampung Inggris Kediri",
+  description: "Markaz Arabiyah adalah lembaga pendidikan bahasa Arab intensif terkemuka di Kampung Inggris Pare, Kediri. Dengan lebih dari 25.000 alumni dan metode akselerasi terbukti, kami menyediakan program kursus bahasa Arab mulai dari nol hingga mahir, fasilitas asrama terpadu, serta bimbingan studi resmi ke Timur Tengah dan Eropa.",
+  keywords: ["Kursus Bahasa Arab Pare", "Kampung Inggris Pare Bahasa Arab", "Markaz Arabiyah Pare", "PPDB Markaz Arabiyah", "Belajar Bahasa Arab Pare", "Mediator Studi Timur Tengah", "Kuliah di Mesir", "Kursus Bahasa Arab Kediri", "Belajar Bahasa Arab dari Nol", "Asrama Bahasa Arab Pare"],
   authors: [{ name: "Markaz Arabiyah" }],
   openGraph: {
-    title: "Markaz Arabiyah — Kursus Bahasa Arab Pare Kampung Inggris",
-    description: "Pusat bimbingan dan kursus bahasa Arab intensif terbaik di Pare Kampung Inggris Kediri. Melayani pendaftaran PPDB serta mediator resmi studi ke Timur Tengah.",
+    title: "Markaz Arabiyah — Kursus Bahasa Arab Terbaik di Pare Kampung Inggris",
+    description: "Lembaga pendidikan bahasa Arab intensif terkemuka di Kampung Inggris Pare, Kediri. Lebih dari 25.000 alumni, metode akselerasi, asrama terpadu, dan bimbingan studi ke Timur Tengah.",
     url: "https://ppdb.markazarabiyah.site",
     siteName: "Markaz Arabiyah",
     images: [
       {
         url: "/images/logo.png",
-        width: 800,
-        height: 600,
+        width: 500,
+        height: 500,
+        alt: "Logo Markaz Arabiyah - Kursus Bahasa Arab Pare",
       },
     ],
     locale: "id_ID",
@@ -35,12 +37,15 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Markaz Arabiyah — Kursus Bahasa Arab Pare Kampung Inggris",
-    description: "Pusat bimbingan dan kursus bahasa Arab intensif terbaik di Pare Kampung Inggris Kediri. Melayani pendaftaran PPDB serta mediator resmi studi ke Timur Tengah.",
+    title: "Markaz Arabiyah — Kursus Bahasa Arab Terbaik di Pare Kampung Inggris",
+    description: "Lembaga pendidikan bahasa Arab intensif terkemuka di Kampung Inggris Pare, Kediri. Lebih dari 25.000 alumni, metode akselerasi, asrama terpadu, dan bimbingan studi ke Timur Tengah.",
     images: ["/images/logo.png"],
   },
   icons: {
-    icon: "/images/logo.png",
+    icon: [
+      { url: "/images/logo.png", sizes: "any" },
+    ],
+    apple: "/images/logo.png",
   },
   verification: {
     google: [
