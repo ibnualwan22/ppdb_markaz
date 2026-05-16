@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProviderWrapper } from "@/components/SessionProviderWrapper";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,6 +69,15 @@ export default function RootLayout({
         <SessionProviderWrapper>
           {children}
         </SessionProviderWrapper>
+
+        {/* Cloudflare Web Analytics */}
+        {process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN && (
+          <Script
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={`{"token": "${process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN}"}`}
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   );
