@@ -48,59 +48,73 @@ export default function PendaftaranPage() {
   // Invoice Result
   const [invoice, setInvoice] = useState<any>(null);
 
-  // reCAPTCHA
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const recaptchaRef = useRef<HTMLDivElement>(null);
+  // Cloudflare Turnstile
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   // Agreement
   const [isAgreed, setIsAgreed] = useState(false);
 
-  // reCAPTCHA callbacks
-  const onRecaptchaSuccess = useCallback((token: string) => {
-    setRecaptchaToken(token);
+  // Turnstile callbacks
+  const onTurnstileSuccess = useCallback((token: string) => {
+    setTurnstileToken(token);
   }, []);
 
-  const onRecaptchaExpired = useCallback(() => {
-    setRecaptchaToken(null);
+  const onTurnstileExpired = useCallback(() => {
+    setTurnstileToken(null);
   }, []);
 
-  // Fetch Provinces & Programs on Mount
-  // Load reCAPTCHA script
+  // Helper: render Turnstile widget jika div dan script sudah siap
+  const tryRenderTurnstile = useCallback(() => {
+    if (
+      turnstileRef.current &&
+      !(turnstileRef.current as any).__rendered &&
+      (window as any).turnstile
+    ) {
+      (window as any).turnstile.render(turnstileRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        callback: (token: string) => { (window as any).__onTurnstileSuccess?.(token); },
+        "expired-callback": () => { (window as any).__onTurnstileExpired?.(); },
+        theme: "dark",
+      });
+      (turnstileRef.current as any).__rendered = true;
+    }
+  }, []);
+
+  // Load Turnstile script
   useEffect(() => {
-    (window as any).onRecaptchaSuccess = onRecaptchaSuccess;
-    (window as any).onRecaptchaExpired = onRecaptchaExpired;
+    (window as any).__onTurnstileSuccess = onTurnstileSuccess;
+    (window as any).__onTurnstileExpired = onTurnstileExpired;
 
-    if (!document.querySelector('script[src*="recaptcha"]')) {
+    if (!document.querySelector('script[src*="turnstile"]')) {
       const script = document.createElement("script");
-      script.src = "https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoaded&render=explicit";
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoaded&render=explicit";
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
     }
 
-    (window as any).onRecaptchaLoaded = () => {
-      if (recaptchaRef.current && !(recaptchaRef.current as any).__rendered) {
-        (window as any).grecaptcha.render(recaptchaRef.current, {
-          sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-          callback: "onRecaptchaSuccess",
-          "expired-callback": "onRecaptchaExpired",
-          theme: "dark",
-        });
-        (recaptchaRef.current as any).__rendered = true;
-      }
+    (window as any).onTurnstileLoaded = () => {
+      tryRenderTurnstile();
     };
 
-    // Jika script sudah loaded sebelumnya (misal navigasi kembali)
-    if ((window as any).grecaptcha && (window as any).grecaptcha.render) {
-      (window as any).onRecaptchaLoaded();
-    }
+    // Jika script sudah loaded sebelumnya
+    tryRenderTurnstile();
 
     return () => {
-      delete (window as any).onRecaptchaSuccess;
-      delete (window as any).onRecaptchaExpired;
-      delete (window as any).onRecaptchaLoaded;
+      delete (window as any).__onTurnstileSuccess;
+      delete (window as any).__onTurnstileExpired;
+      delete (window as any).onTurnstileLoaded;
     };
-  }, [onRecaptchaSuccess, onRecaptchaExpired]);
+  }, [onTurnstileSuccess, onTurnstileExpired, tryRenderTurnstile]);
+
+  // Render widget saat step berubah ke 3 (div baru muncul di DOM)
+  useEffect(() => {
+    if (step === 3) {
+      const timer = setTimeout(() => tryRenderTurnstile(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [step, tryRenderTurnstile]);
 
   useEffect(() => {
     fetch(API_PROV).then(res => res.json()).then(data => setProvinces(data)).catch(() => { });
@@ -209,9 +223,9 @@ export default function PendaftaranPage() {
   const handleSubmit = async () => {
     if (!formData.programId) return swalError("Error", "Silakan pilih program.");
 
-    // Validasi reCAPTCHA
-    if (!recaptchaToken) {
-      return swalError("Verifikasi Gagal", "Silakan centang reCAPTCHA terlebih dahulu.");
+    // Validasi Turnstile
+    if (!turnstileToken) {
+      return swalError("Verifikasi Gagal", "Silakan tunggu verifikasi keamanan selesai.");
     }
 
     // Format WA (08 -> 628)
@@ -240,7 +254,7 @@ export default function PendaftaranPage() {
           desa: formData.desaNama,
           detailAlamat: formData.detailAlamat,
           programId: formData.programId,
-          recaptchaToken,
+          turnstileToken,
         })
       });
 
@@ -252,9 +266,12 @@ export default function PendaftaranPage() {
         setStep(4); // Pindah ke layar Invoice
         localStorage.removeItem("ppdb_pendaftaran_data");
         localStorage.removeItem("ppdb_pendaftaran_step");
-        // Reset reCAPTCHA
-        if ((window as any).grecaptcha) { (window as any).grecaptcha.reset(); }
-        setRecaptchaToken(null);
+        // Reset Turnstile
+        if ((window as any).turnstile && turnstileRef.current) {
+          (window as any).turnstile.reset(turnstileRef.current);
+          (turnstileRef.current as any).__rendered = false;
+        }
+        setTurnstileToken(null);
         try {
           generateRegistrationPdf({
             santri: data.data.santri,
@@ -474,13 +491,13 @@ export default function PendaftaranPage() {
                 </label>
               </div>
 
-              {/* reCAPTCHA SECTION */}
+              {/* TURNSTILE SECTION */}
               <div className="mt-8 bg-dark-900 border border-gold-500/20 p-5 rounded-2xl">
                 <label className="block text-sm font-bold text-gray-400 mb-3">Verifikasi Keamanan *</label>
                 <div className="flex justify-center">
-                  <div ref={recaptchaRef}></div>
+                  <div ref={turnstileRef}></div>
                 </div>
-                {recaptchaToken && (
+                {turnstileToken && (
                   <p className="text-green-400 text-sm text-center mt-3 font-bold">✓ Terverifikasi</p>
                 )}
               </div>
@@ -496,7 +513,7 @@ export default function PendaftaranPage() {
                 {targetDufah ? (
                   <button
                     onClick={handleSubmit}
-                    disabled={loading || !isAgreed || !recaptchaToken}
+                    disabled={loading || !isAgreed || !turnstileToken}
                     className="bg-gold-500 hover:bg-gold-400 text-black font-extrabold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Memproses...' : 'Selesaikan Pendaftaran \u2192'}

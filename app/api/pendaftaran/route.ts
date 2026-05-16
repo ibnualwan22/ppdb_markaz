@@ -30,23 +30,27 @@ export async function POST(request: Request) {
       gender, tanggalLahir,
       noWaOrtu, noWaSantri,
       programId,
-      recaptchaToken
+      turnstileToken
     } = body;
 
-    // Validasi reCAPTCHA di server
-    if (!recaptchaToken) {
-      return NextResponse.json({ error: "Verifikasi reCAPTCHA diperlukan." }, { status: 400 });
+    // Validasi Turnstile di server
+    if (!turnstileToken) {
+      return NextResponse.json({ error: "Verifikasi keamanan diperlukan." }, { status: 400 });
     }
 
-    const recaptchaRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    const turnstileRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}&remoteip=${ip}`,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: turnstileToken,
+        remoteip: ip,
+      }),
     });
-    const recaptchaData = await recaptchaRes.json();
+    const turnstileData = await turnstileRes.json();
 
-    if (!recaptchaData.success) {
-      return NextResponse.json({ error: "Verifikasi reCAPTCHA gagal. Silakan coba lagi." }, { status: 403 });
+    if (!turnstileData.success) {
+      return NextResponse.json({ error: "Verifikasi keamanan gagal. Silakan coba lagi." }, { status: 403 });
     }
 
     const nama = toTitleCase(body.nama);
