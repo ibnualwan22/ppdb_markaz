@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { swalSuccess, swalError } from "@/app/lib/swal";
@@ -48,23 +48,61 @@ export default function PendaftaranPage() {
   // Invoice Result
   const [invoice, setInvoice] = useState<any>(null);
 
-  // Captcha
-  const [captchaA, setCaptchaA] = useState(0);
-  const [captchaB, setCaptchaB] = useState(0);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  // reCAPTCHA
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
 
   // Agreement
   const [isAgreed, setIsAgreed] = useState(false);
 
-  const refreshCaptcha = () => {
-    setCaptchaA(Math.floor(Math.random() * 10) + 1);
-    setCaptchaB(Math.floor(Math.random() * 10) + 1);
-    setCaptchaAnswer("");
-  };
+  // reCAPTCHA callbacks
+  const onRecaptchaSuccess = useCallback((token: string) => {
+    setRecaptchaToken(token);
+  }, []);
+
+  const onRecaptchaExpired = useCallback(() => {
+    setRecaptchaToken(null);
+  }, []);
 
   // Fetch Provinces & Programs on Mount
+  // Load reCAPTCHA script
   useEffect(() => {
-    refreshCaptcha();
+    (window as any).onRecaptchaSuccess = onRecaptchaSuccess;
+    (window as any).onRecaptchaExpired = onRecaptchaExpired;
+
+    if (!document.querySelector('script[src*="recaptcha"]')) {
+      const script = document.createElement("script");
+      script.src = "https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoaded&render=explicit";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    (window as any).onRecaptchaLoaded = () => {
+      if (recaptchaRef.current && !(recaptchaRef.current as any).__rendered) {
+        (window as any).grecaptcha.render(recaptchaRef.current, {
+          sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+          callback: "onRecaptchaSuccess",
+          "expired-callback": "onRecaptchaExpired",
+          theme: "dark",
+        });
+        (recaptchaRef.current as any).__rendered = true;
+      }
+    };
+
+    // Jika script sudah loaded sebelumnya (misal navigasi kembali)
+    if ((window as any).grecaptcha && (window as any).grecaptcha.render) {
+      (window as any).onRecaptchaLoaded();
+    }
+
+    return () => {
+      delete (window as any).onRecaptchaSuccess;
+      delete (window as any).onRecaptchaExpired;
+      delete (window as any).onRecaptchaLoaded;
+    };
+  }, [onRecaptchaSuccess, onRecaptchaExpired]);
+
+  useEffect(() => {
     fetch(API_PROV).then(res => res.json()).then(data => setProvinces(data)).catch(() => { });
     fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => { });
     fetch("/api/dufah").then(res => res.json()).then(data => {
@@ -171,10 +209,9 @@ export default function PendaftaranPage() {
   const handleSubmit = async () => {
     if (!formData.programId) return swalError("Error", "Silakan pilih program.");
 
-    // Validasi Captcha
-    if (parseInt(captchaAnswer, 10) !== captchaA + captchaB) {
-      refreshCaptcha();
-      return swalError("Verifikasi Gagal", "Jawaban matematika salah.");
+    // Validasi reCAPTCHA
+    if (!recaptchaToken) {
+      return swalError("Verifikasi Gagal", "Silakan centang reCAPTCHA terlebih dahulu.");
     }
 
     // Format WA (08 -> 628)
@@ -202,7 +239,8 @@ export default function PendaftaranPage() {
           kecamatan: formData.kecamatanNama,
           desa: formData.desaNama,
           detailAlamat: formData.detailAlamat,
-          programId: formData.programId
+          programId: formData.programId,
+          recaptchaToken,
         })
       });
 
@@ -214,6 +252,9 @@ export default function PendaftaranPage() {
         setStep(4); // Pindah ke layar Invoice
         localStorage.removeItem("ppdb_pendaftaran_data");
         localStorage.removeItem("ppdb_pendaftaran_step");
+        // Reset reCAPTCHA
+        if ((window as any).grecaptcha) { (window as any).grecaptcha.reset(); }
+        setRecaptchaToken(null);
         try {
           generateRegistrationPdf({
             santri: data.data.santri,
@@ -433,21 +474,15 @@ export default function PendaftaranPage() {
                 </label>
               </div>
 
-              {/* CAPTCHA SECTION */}
+              {/* reCAPTCHA SECTION */}
               <div className="mt-8 bg-dark-900 border border-gold-500/20 p-5 rounded-2xl">
-                <label className="block text-sm font-bold text-gray-400 mb-2">Verifikasi Keamanan *</label>
-                <div className="flex items-center gap-4">
-                  <div className="bg-dark-800 text-white font-mono text-xl font-bold py-3 px-6 rounded-xl border border-dark-700">
-                    {captchaA} + {captchaB} = ?
-                  </div>
-                  <input
-                    type="number"
-                    value={captchaAnswer}
-                    onChange={(e) => setCaptchaAnswer(e.target.value)}
-                    placeholder="Jawaban"
-                    className="w-full max-w-[120px] bg-dark-800 border border-dark-900 focus:border-gold-500/50 rounded-xl p-3 outline-none text-white font-bold text-center"
-                  />
+                <label className="block text-sm font-bold text-gray-400 mb-3">Verifikasi Keamanan *</label>
+                <div className="flex justify-center">
+                  <div ref={recaptchaRef}></div>
                 </div>
+                {recaptchaToken && (
+                  <p className="text-green-400 text-sm text-center mt-3 font-bold">✓ Terverifikasi</p>
+                )}
               </div>
 
               <div className="flex justify-between items-center w-full mt-8">
@@ -461,7 +496,7 @@ export default function PendaftaranPage() {
                 {targetDufah ? (
                   <button
                     onClick={handleSubmit}
-                    disabled={loading || !isAgreed}
+                    disabled={loading || !isAgreed || !recaptchaToken}
                     className="bg-gold-500 hover:bg-gold-400 text-black font-extrabold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Memproses...' : 'Selesaikan Pendaftaran \u2192'}

@@ -29,8 +29,25 @@ export async function POST(request: Request) {
     const {
       gender, tanggalLahir,
       noWaOrtu, noWaSantri,
-      programId
+      programId,
+      recaptchaToken
     } = body;
+
+    // Validasi reCAPTCHA di server
+    if (!recaptchaToken) {
+      return NextResponse.json({ error: "Verifikasi reCAPTCHA diperlukan." }, { status: 400 });
+    }
+
+    const recaptchaRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}&remoteip=${ip}`,
+    });
+    const recaptchaData = await recaptchaRes.json();
+
+    if (!recaptchaData.success) {
+      return NextResponse.json({ error: "Verifikasi reCAPTCHA gagal. Silakan coba lagi." }, { status: 403 });
+    }
 
     const nama = toTitleCase(body.nama);
     const tempatLahir = toTitleCase(body.tempatLahir);
