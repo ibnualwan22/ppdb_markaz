@@ -26,6 +26,7 @@ export async function GET() {
       where: {
         dufahId: { in: relevantDufahIds },
         isLunas: true,
+        status: { not: "CHECKED_OUT" },
       },
       include: {
         santri: { select: { id: true, nama: true, gender: true, nis: true, kategori: true } },

@@ -52,17 +52,17 @@ export async function GET() {
 
       // 1. Hitung MURNI Santri Baru di Meja ID Card
       stats.idCardBaru = await prisma.riwayatDufah.count({
-        where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, santri: { kategori: 'BARU' } }
+        where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, status: { not: "CHECKED_OUT" }, santri: { kategori: 'BARU' } }
       });
 
       // 2. Hitung MURNI Santri Lama di Meja ID Card (KSU DIKELUARKAN!)
       stats.idCardLama = await prisma.riwayatDufah.count({
-        where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, santri: { kategori: 'LAMA' } }
+        where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, status: { not: "CHECKED_OUT" }, santri: { kategori: 'LAMA' } }
       });
 
       // 3. Hitung Total KSU yang menempati Sakan
       stats.totalKSU = await prisma.riwayatDufah.count({
-        where: { dufahId: dufahAktif.id, lemariId: { not: null }, santri: { kategori: 'KSU' } }
+        where: { dufahId: dufahAktif.id, lemariId: { not: null }, status: { not: "CHECKED_OUT" }, santri: { kategori: 'KSU' } }
       });
 
       stats.totalAmbilIdCard = stats.idCardBaru + stats.idCardLama;
@@ -75,7 +75,8 @@ export async function GET() {
         where: { 
           dufahId: dufahAktif.id, 
           lemariId: { not: null }, 
-          isIdCardTaken: false
+          isIdCardTaken: false,
+          status: { not: "CHECKED_OUT" }
         },
         include: {
           santri: { select: { nama: true, kategori: true, gender: true } },

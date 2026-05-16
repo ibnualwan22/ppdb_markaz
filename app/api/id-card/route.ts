@@ -57,6 +57,7 @@ export async function GET(request: Request) {
         ...(whereDufah && { dufahId: whereDufah }),
         lemariId: { not: null },
         isLunas: true,
+        status: { not: "CHECKED_OUT" },
       },
       include: {
         santri: { select: { id: true, nama: true, kategori: true, gender: true, nis: true, batasAktifDufah: true, noWaSantri: true, noWaOrtu: true } },
