@@ -138,7 +138,18 @@ export default function MejaKeuanganPage() {
         const matchesTarget = targetDufah && (t.dufahTujuanId === targetDufah.id || t.noKwitansi.includes(`-${targetDufah.id}-`) || t.noKwitansi.includes(`RENEW-${targetDufah.id}-`));
         return matchesActive || matchesTarget;
       })
-    : transaksi;
+    : filterScope === "GLOBAL"
+      ? transaksi
+      : transaksi.filter(t => {
+          const dufahIdStr = filterScope;
+          return t.dufahTujuanId?.toString() === dufahIdStr || t.noKwitansi.includes(`-${dufahIdStr}-`) || t.noKwitansi.includes(`RENEW-${dufahIdStr}-`);
+        });
+
+  const selectedDufahLabel = filterScope === "AKTIF" 
+    ? (activeDufah?.nama || targetDufah?.nama || "Duf'ah Aktif")
+    : filterScope === "GLOBAL"
+      ? "Semua Data (Global)"
+      : allDufah.find(d => d.id.toString() === filterScope)?.nama || "Duf'ah";
 
   const totalLunas = filteredByScope
     .filter(t => t.statusPembayaran === "PAID")
@@ -165,7 +176,9 @@ export default function MejaKeuanganPage() {
 
     const matchesScope = filterScope === "AKTIF"
       ? activeDufah && d.dufahId === activeDufah.id
-      : true;
+      : filterScope === "GLOBAL"
+        ? true
+        : d.dufahId?.toString() === filterScope;
     const matchesSearch = d.santri?.nama.toLowerCase().includes(search.toLowerCase());
     return matchesScope && matchesSearch;
   });
@@ -200,6 +213,9 @@ export default function MejaKeuanganPage() {
             >
               <option value="AKTIF">Filter: Duf'ah Aktif Saja</option>
               <option value="GLOBAL">Filter: Semua Data (Global)</option>
+              {allDufah.map(d => (
+                <option key={d.id} value={d.id.toString()}>Filter: {d.nama}</option>
+              ))}
             </select>
             <input
               type="text"
@@ -244,7 +260,7 @@ export default function MejaKeuanganPage() {
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-dark-800 border border-gold-500/10 p-6 rounded-2xl shadow-lg h-[300px]">
-            <h3 className="text-sm font-bold text-gray-400 mb-4 text-center">Rasio Pembayaran {activeDufah?.nama}</h3>
+            <h3 className="text-sm font-bold text-gray-400 mb-4 text-center">Rasio Pembayaran {selectedDufahLabel}</h3>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5}>
@@ -365,7 +381,7 @@ export default function MejaKeuanganPage() {
               <tbody>
                 {filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-10 text-gray-500">Tidak ada data pendaftaran di {activeDufah?.nama}</td>
+                    <td colSpan={7} className="text-center py-10 text-gray-500">Tidak ada data pendaftaran di {selectedDufahLabel}</td>
                   </tr>
                 ) : (
                   filteredData.map((t, index) => (
