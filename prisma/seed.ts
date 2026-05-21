@@ -34,6 +34,15 @@ async function main() {
 
     // Keuangan & Pendaftaran
     { namaAksi: 'view_keuangan', deskripsi: 'Melihat data keuangan & pendaftaran santri' },
+    { namaAksi: 'verify_pendaftaran', deskripsi: 'Melakukan verifikasi pembayaran santri' },
+    { namaAksi: 'bypass_ksu', deskripsi: 'Mendaftarkan santri via jalur gratis (KSU)' },
+    { namaAksi: 'export_laporan_keuangan', deskripsi: 'Mengunduh laporan keuangan' },
+
+    // Notifikasi
+    { namaAksi: 'receive_notif_pendaftaran_baru', deskripsi: 'Menerima notifikasi pendaftaran lunas' },
+    { namaAksi: 'receive_notif_plot_asrama', deskripsi: 'Menerima notifikasi plotting asrama selesai' },
+    { namaAksi: 'receive_notif_status_santri', deskripsi: 'Menerima notifikasi perubahan status santri (Cuti/Check Out)' },
+    { namaAksi: 'receive_notif_idcard', deskripsi: 'Menerima notifikasi pencetakan ID Card' },
 
     // Master Program
     { namaAksi: 'view_program', deskripsi: 'Melihat daftar program pendidikan' },
