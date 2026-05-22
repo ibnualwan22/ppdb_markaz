@@ -59,6 +59,7 @@ model Santri {
   expiredDufahId  Int?
   isCuti          Boolean                @default(false)
   saldoDufah      Int                    @default(0)
+  isDataVerified  Boolean                @default(false)
   riwayat         RiwayatDufah[]
   transaksi       TransaksiPendaftaran[]
 }

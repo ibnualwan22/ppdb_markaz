@@ -90,7 +90,7 @@ export default async function SantriDashboardPage() {
           <div>
             <h3 className="text-red-500 font-bold text-lg flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               Status Santri: TIDAK AKTIF
             </h3>
@@ -102,12 +102,43 @@ export default async function SantriDashboardPage() {
         </div>
       )}
 
+      {!santri.isDataVerified && (
+        <div className="bg-amber-500/10 border-l-4 border-amber-500 p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-amber-500 font-bold text-lg flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Verifikasi Data Diri Syahadah ⚠️
+            </h3>
+            <p className="text-amber-300 text-sm mt-1">
+              <strong>PENTING:</strong> Harap verifikasi data diri Anda untuk syahadah. Update data hanya bisa dilakukan <strong>SATU KALI</strong>. Pastikan penulisan sudah benar sesuai Kartu Keluarga (KK)!
+            </p>
+          </div>
+          <Link href="/santri/verifikasi-data" className="bg-amber-500 hover:bg-amber-600 text-black font-bold py-2.5 px-6 rounded-xl shadow-md whitespace-nowrap transition-colors">
+            Verifikasi Sekarang
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Kartu Profil Utama */}
         <div className="md:col-span-2 bg-dark-950 border border-dark-800 p-6 rounded-2xl shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-bl-full pointer-events-none" />
 
-          <h2 className="text-lg font-bold text-gold-500 mb-6 border-b border-dark-800 pb-3">Profil Aktif</h2>
+          <div className="flex justify-between items-center mb-6 border-b border-dark-800 pb-3">
+            <h2 className="text-lg font-bold text-gold-500">Profil Aktif</h2>
+            {santri.isDataVerified ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                Terverifikasi
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-1.5 shadow-sm animate-pulse">
+                ⚠️ Belum Validasi
+              </span>
+            )}
+          </div>
 
           <div className="space-y-4">
             <div>
