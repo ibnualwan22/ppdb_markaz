@@ -15,10 +15,13 @@ export async function POST(request: Request) {
 
     const nis = userSession.username;
     const body = await request.json();
-    const { nama, tempatLahir, tanggalLahir, namaOrtu } = body;
+    const { 
+      nama, tempatLahir, tanggalLahir, namaOrtu,
+      provinsi, kabupaten, kecamatan, desa, detailAlamat 
+    } = body;
 
-    if (!nama || !tempatLahir || !tanggalLahir || !namaOrtu) {
-      return NextResponse.json({ error: "Semua kolom data diri wajib diisi" }, { status: 400 });
+    if (!nama || !tempatLahir || !tanggalLahir || !namaOrtu || !provinsi || !kabupaten || !kecamatan || !desa || !detailAlamat) {
+      return NextResponse.json({ error: "Semua kolom data diri dan alamat lengkap wajib diisi" }, { status: 400 });
     }
 
     // 1. Ambil data santri saat ini
@@ -43,6 +46,11 @@ export async function POST(request: Request) {
         tempatLahir,
         tanggalLahir: new Date(tanggalLahir),
         namaOrtu,
+        provinsi,
+        kabupaten,
+        kecamatan,
+        desa,
+        detailAlamat,
         isDataVerified: true
       }
     });

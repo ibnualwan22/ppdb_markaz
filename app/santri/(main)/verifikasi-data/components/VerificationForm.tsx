@@ -9,31 +9,67 @@ interface VerificationFormProps {
     tempatLahir: string | null;
     tanggalLahir: Date | null;
     namaOrtu: string | null;
+    provinsi: string | null;
+    kabupaten: string | null;
+    kecamatan: string | null;
+    desa: string | null;
+    detailAlamat: string | null;
   };
 }
 
 export default function VerificationForm({ initialData }: VerificationFormProps) {
   const router = useRouter();
-  
+
+  // Parse initial date
+  const initialDateObj = initialData.tanggalLahir ? new Date(initialData.tanggalLahir) : null;
+
   // Form states
   const [nama, setNama] = useState(initialData.nama || "");
   const [tempatLahir, setTempatLahir] = useState(initialData.tempatLahir || "");
-  const [tanggalLahir, setTanggalLahir] = useState(
-    initialData.tanggalLahir
-      ? new Date(initialData.tanggalLahir).toISOString().split("T")[0]
-      : ""
-  );
-  const [namaOrtu, setNamaOrtu] = useState(initialData.namaOrtu || "");
   
+  // Date of birth dropdown states
+  const [birthDay, setBirthDay] = useState(initialDateObj ? initialDateObj.getDate().toString() : "");
+  const [birthMonth, setBirthMonth] = useState(initialDateObj ? (initialDateObj.getMonth() + 1).toString() : "");
+  const [birthYear, setBirthYear] = useState(initialDateObj ? initialDateObj.getFullYear().toString() : "");
+
+  // Parent name state
+  const [namaOrtu, setNamaOrtu] = useState(initialData.namaOrtu || "");
+
+  // Address states
+  const [provinsi, setProvinsi] = useState(initialData.provinsi || "");
+  const [kabupaten, setKabupaten] = useState(initialData.kabupaten || "");
+  const [kecamatan, setKecamatan] = useState(initialData.kecamatan || "");
+  const [desa, setDesa] = useState(initialData.desa || "");
+  const [detailAlamat, setDetailAlamat] = useState(initialData.detailAlamat || "");
+
   const [isChecked, setIsChecked] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Helper arrays for date selects
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = [
+    { value: 1, label: "Januari" },
+    { value: 2, label: "Februari" },
+    { value: 3, label: "Maret" },
+    { value: 4, label: "April" },
+    { value: 5, label: "Mei" },
+    { value: 6, label: "Juni" },
+    { value: 7, label: "Juli" },
+    { value: 8, label: "Agustus" },
+    { value: 9, label: "September" },
+    { value: 10, label: "Oktober" },
+    { value: 11, label: "November" },
+    { value: 12, label: "Desember" }
+  ];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 70 }, (_, i) => currentYear - 5 - i); // e.g. from 2021 down to 1952
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nama || !tempatLahir || !tanggalLahir || !namaOrtu) {
-      setErrorMessage("Semua kolom data diri wajib diisi.");
+    if (!nama || !tempatLahir || !birthDay || !birthMonth || !birthYear || !namaOrtu || !provinsi || !kabupaten || !kecamatan || !desa || !detailAlamat) {
+      setErrorMessage("Semua kolom data diri dan alamat lengkap wajib diisi.");
       return;
     }
     if (!isChecked) {
@@ -48,10 +84,22 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
     setIsModalOpen(false);
     setIsSubmitting(true);
     try {
+      const formattedDate = `${birthYear}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`;
+
       const res = await fetch("/api/santri/verifikasi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nama, tempatLahir, tanggalLahir, namaOrtu }),
+        body: JSON.stringify({
+          nama,
+          tempatLahir,
+          tanggalLahir: formattedDate,
+          namaOrtu,
+          provinsi,
+          kabupaten,
+          kecamatan,
+          desa,
+          detailAlamat
+        }),
       });
 
       const json = await res.json();
@@ -92,59 +140,170 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Nama Lengkap */}
-          <div>
-            <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Nama Lengkap (Sesuai KK)</label>
-            <input
-              type="text"
-              value={nama}
-              onChange={(e) => setNama(e.target.value)}
-              className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-              placeholder="CONTOH: MUHAMMAD FULAN AL-FARISI"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Tempat Lahir */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Bagian 1: Data Diri Utama */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-black text-gold-500 uppercase tracking-wider border-b border-dark-800 pb-2">I. Data Diri Utama</h3>
+            
+            {/* Nama Lengkap */}
             <div>
-              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Tempat Lahir (Sesuai KK)</label>
+              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Nama Lengkap (Sesuai KK)</label>
               <input
                 type="text"
-                value={tempatLahir}
-                onChange={(e) => setTempatLahir(e.target.value)}
+                value={nama}
+                onChange={(e) => setNama(e.target.value)}
                 className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                placeholder="CONTOH: SURABAYA"
+                placeholder="CONTOH: MUHAMMAD FULAN AL-FARISI"
                 required
               />
             </div>
 
-            {/* Tanggal Lahir */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Tempat Lahir */}
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Tempat Lahir (Sesuai KK)</label>
+                <input
+                  type="text"
+                  value={tempatLahir}
+                  onChange={(e) => setTempatLahir(e.target.value)}
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
+                  placeholder="CONTOH: SURABAYA"
+                  required
+                />
+              </div>
+
+              {/* Tanggal Lahir (Select Dropdown) */}
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Tanggal Lahir (Sesuai KK)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Dropdown Tanggal */}
+                  <select
+                    value={birthDay}
+                    onChange={(e) => setBirthDay(e.target.value)}
+                    className="bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-2 outline-none font-bold text-sm"
+                    required
+                  >
+                    <option value="" disabled>Tgl</option>
+                    {days.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+
+                  {/* Dropdown Bulan */}
+                  <select
+                    value={birthMonth}
+                    onChange={(e) => setBirthMonth(e.target.value)}
+                    className="bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-2 outline-none font-bold text-sm"
+                    required
+                  >
+                    <option value="" disabled>Bulan</option>
+                    {months.map((m) => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+
+                  {/* Dropdown Tahun */}
+                  <select
+                    value={birthYear}
+                    onChange={(e) => setBirthYear(e.target.value)}
+                    className="bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-2 outline-none font-bold text-sm"
+                    required
+                  >
+                    <option value="" disabled>Tahun</option>
+                    {years.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Nama Orang Tua */}
             <div>
-              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Tanggal Lahir (Sesuai KK)</label>
+              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Nama Ayah Kandung / Wali (Sesuai KK)</label>
               <input
-                type="date"
-                value={tanggalLahir}
-                onChange={(e) => setTanggalLahir(e.target.value)}
-                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm"
+                type="text"
+                value={namaOrtu}
+                onChange={(e) => setNamaOrtu(e.target.value)}
+                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
+                placeholder="CONTOH: AHMAD SUBARJO (BIN AHMAD SUBARJO)"
                 required
               />
+              <p className="text-gray-500 text-[10px] mt-1.5 leading-snug">Nama Ayah kandung sangat penting untuk disematkan sebagai penulisan nasab Bin/Binti di lembar Syahadah.</p>
             </div>
           </div>
 
-          {/* Nama Orang Tua */}
-          <div>
-            <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Nama Ayah Kandung / Wali (Sesuai KK)</label>
-            <input
-              type="text"
-              value={namaOrtu}
-              onChange={(e) => setNamaOrtu(e.target.value)}
-              className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-              placeholder="CONTOH: AHMAD SUBARJO (AKAN TERTULIS BIN AHMAD SUBARJO)"
-              required
-            />
-            <p className="text-gray-500 text-[10px] mt-1.5 leading-snug">Nama Ayah kandung sangat penting untuk disematkan sebagai penulisan nasab Bin/Binti di lembar Syahadah.</p>
+          {/* Bagian 2: Alamat Lengkap */}
+          <div className="space-y-4 pt-4 border-t border-dark-800">
+            <h3 className="text-sm font-black text-gold-500 uppercase tracking-wider border-b border-dark-800 pb-2">II. Alamat Lengkap Sesuai KK</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Provinsi */}
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Provinsi</label>
+                <input
+                  type="text"
+                  value={provinsi}
+                  onChange={(e) => setProvinsi(e.target.value)}
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
+                  placeholder="CONTOH: JAWA TIMUR"
+                  required
+                />
+              </div>
+
+              {/* Kabupaten / Kota */}
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Kabupaten / Kota</label>
+                <input
+                  type="text"
+                  value={kabupaten}
+                  onChange={(e) => setKabupaten(e.target.value)}
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
+                  placeholder="CONTOH: KEDIRI"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Kecamatan */}
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Kecamatan</label>
+                <input
+                  type="text"
+                  value={kecamatan}
+                  onChange={(e) => setKecamatan(e.target.value)}
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
+                  placeholder="CONTOH: PARE"
+                  required
+                />
+              </div>
+
+              {/* Desa / Kelurahan */}
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Desa / Kelurahan</label>
+                <input
+                  type="text"
+                  value={desa}
+                  onChange={(e) => setDesa(e.target.value)}
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
+                  placeholder="CONTOH: TULUNGREJO"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Detail Alamat */}
+            <div>
+              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Detail Jalan / Dusun / RT / RW</label>
+              <textarea
+                value={detailAlamat}
+                onChange={(e) => setDetailAlamat(e.target.value)}
+                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm h-24 resize-none uppercase"
+                placeholder="CONTOH: JL. MAWAR NO. 12, DUSUN SINGOREJO, RT.02/RW.05"
+                required
+              />
+            </div>
           </div>
 
           {/* Checklist Pernyataan */}
@@ -157,7 +316,7 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
                 className="mt-1 accent-gold-500 h-4 w-4 bg-dark-900 rounded border-dark-800"
               />
               <span className="text-xs text-gray-400 group-hover:text-gray-200 transition-colors leading-relaxed">
-                Saya menyatakan bahwa data yang saya masukkan di atas sudah benar dan sesuai dengan <strong className="text-white">Kartu Keluarga (KK)</strong>. Saya memahami bahwa kesalahan penulisan nama atau data pada Syahadah akibat kesalahan saya mengisi form ini di luar tanggung jawab Markaz Arabiyah, dan <strong className="text-white">saya tidak dapat mengubah data ini lagi di kemudian hari.</strong>
+                Saya menyatakan bahwa data dan alamat lengkap yang saya masukkan di atas sudah benar dan sesuai dengan <strong className="text-white">Kartu Keluarga (KK)</strong>. Saya memahami bahwa kesalahan penulisan nama atau data pada Syahadah akibat kesalahan saya mengisi form ini di luar tanggung jawab Markaz Arabiyah, dan <strong className="text-white">saya tidak dapat mengubah data ini lagi di kemudian hari.</strong>
               </span>
             </label>
           </div>
@@ -172,7 +331,7 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
               {isSubmitting ? (
                 <span className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
               ) : (
-                "Simpan & Kunci Data DiriPermanen"
+                "Simpan & Kunci Data Diri Permanen"
               )}
             </button>
             <button
@@ -199,43 +358,49 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
             <div className="text-center space-y-2">
               <h3 className="text-white font-black text-xl">APAKAH ANDA YAKIN? ⚠️</h3>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Anda hanya bisa mengubah data diri ini <strong className="text-red-400">SATU KALI</strong>. Pastikan tidak ada kesalahan ejaan eja satu per satu data di bawah:
+                Anda hanya bisa mengubah data diri ini <strong className="text-red-400">SATU KALI</strong>. Pastikan tidak ada kesalahan ejaan, eja satu per satu data di bawah:
               </p>
             </div>
 
-            <div className="bg-dark-950 p-4 rounded-xl border border-dark-800 space-y-3 text-sm">
+            <div className="bg-dark-950 p-4 rounded-xl border border-dark-800 space-y-3 text-xs max-h-72 overflow-y-auto">
               <div>
-                <span className="text-gray-500 text-xs block font-bold uppercase tracking-wider">Nama Lengkap:</span>
-                <span className="text-white font-black text-base">{nama}</span>
+                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Nama Lengkap:</span>
+                <span className="text-white font-black text-sm uppercase">{nama}</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-gray-500 text-xs block font-bold uppercase tracking-wider">Tempat Lahir:</span>
-                  <span className="text-gray-200 font-bold">{tempatLahir}</span>
+                  <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Tempat Lahir:</span>
+                  <span className="text-gray-200 font-bold uppercase">{tempatLahir}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500 text-xs block font-bold uppercase tracking-wider">Tanggal Lahir:</span>
+                  <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Tanggal Lahir:</span>
                   <span className="text-gray-200 font-bold">
-                    {tanggalLahir ? new Date(tanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ""}
+                    {birthDay} {months.find(m => m.value === Number(birthMonth))?.label} {birthYear}
                   </span>
                 </div>
               </div>
               <div>
-                <span className="text-gray-500 text-xs block font-bold uppercase tracking-wider">Nama Ayah / Wali:</span>
-                <span className="text-white font-bold">{namaOrtu}</span>
+                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Nama Ayah / Wali:</span>
+                <span className="text-white font-bold uppercase">{namaOrtu}</span>
+              </div>
+              <div className="pt-2 border-t border-dark-800">
+                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Alamat Lengkap:</span>
+                <span className="text-gray-200 font-medium block leading-relaxed uppercase">
+                  {detailAlamat}, DESA {desa}, KEC. {kecamatan}, KAB. {kabupaten}, PROV. {provinsi}
+                </span>
               </div>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={handleConfirmSave}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 px-4 rounded-xl transition-all active:scale-95"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 px-4 rounded-xl transition-all active:scale-95 text-sm"
               >
                 Ya, Simpan Permanen!
               </button>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-gray-300 font-bold py-3 px-4 rounded-xl transition-all"
+                className="flex-1 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-gray-300 font-bold py-3 px-4 rounded-xl transition-all text-sm"
               >
                 Periksa Lagi
               </button>

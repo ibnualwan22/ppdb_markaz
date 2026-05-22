@@ -20,6 +20,11 @@ export default async function VerifikasiDataPage() {
       tanggalLahir: true,
       namaOrtu: true,
       isDataVerified: true,
+      provinsi: true,
+      kabupaten: true,
+      kecamatan: true,
+      desa: true,
+      detailAlamat: true,
     },
   });
 
