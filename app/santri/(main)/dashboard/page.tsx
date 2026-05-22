@@ -128,6 +128,37 @@ export default async function SantriDashboardPage() {
                 <p className="text-sm font-bold text-gray-200">{santri.kategori}</p>
               </div>
             </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-dark-800 pt-4 mt-4">
+              <div className="col-span-2 md:col-span-1">
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Tempat, Tanggal Lahir</p>
+                <p className="text-sm font-bold text-gray-200">
+                  {santri.tempatLahir || "-"}, {santri.tanggalLahir ? new Date(santri.tanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">No. WA Santri</p>
+                <p className="text-sm font-bold text-gray-200">{santri.noWaSantri || "-"}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">No. WA Orang Tua</p>
+                <p className="text-sm font-bold text-gray-200">{santri.noWaOrtu || "-"}</p>
+              </div>
+              <div className="col-span-2 md:col-span-3">
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Nama Orang Tua</p>
+                <p className="text-sm font-bold text-gray-200">{santri.namaOrtu || "-"}</p>
+              </div>
+              <div className="col-span-2 md:col-span-3">
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Alamat Lengkap</p>
+                <p className="text-sm font-bold text-gray-200 leading-relaxed">
+                  {santri.detailAlamat ? `${santri.detailAlamat}, ` : ''}
+                  {santri.desa ? `${santri.desa}, ` : ''}
+                  {santri.kecamatan ? `${santri.kecamatan}, ` : ''}
+                  {santri.kabupaten ? `${santri.kabupaten}, ` : ''}
+                  {santri.provinsi || "-"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -220,6 +251,52 @@ export default async function SantriDashboardPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Rincian Absensi */}
+          <div className="mt-6 border-t border-dark-800 pt-6">
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Rincian Absensi (Izin / Sakit / Alpha)</h4>
+            {(() => {
+              const detailAbsen = siakadDataActive.detail_absen_kelas || siakadDataActive.rekap_absen_kelas?.detail || siakadDataActive.absen_harian || siakadDataActive.detail_absen;
+              if (!detailAbsen || detailAbsen.length === 0) {
+                return <p className="text-sm text-gray-600 italic">Belum ada rincian absensi yang tercatat.</p>;
+              }
+              return (
+                <div className="overflow-x-auto rounded-lg border border-dark-700">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-dark-900 text-gold-500/70">
+                        <th className="text-left p-3 font-bold whitespace-nowrap">Tanggal</th>
+                        <th className="text-center p-3 font-bold">Status</th>
+                        <th className="text-left p-3 font-bold">Catatan</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailAbsen.map((abs: any, idx: number) => {
+                        const status = (abs.status || '').toUpperCase();
+                        const statusCls = status === 'HADIR' ? 'bg-green-500/10 text-green-400 border-green-500/30' : 
+                                          status === 'IZIN' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' : 
+                                          status === 'SAKIT' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 
+                                          'bg-red-500/10 text-red-400 border-red-500/30';
+                        return (
+                          <tr key={idx} className="border-t border-dark-800">
+                            <td className="p-3 text-gray-300 font-medium whitespace-nowrap">
+                              {abs.tanggal ? new Date(abs.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                            </td>
+                            <td className="p-3 text-center whitespace-nowrap">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${statusCls}`}>
+                                {status || '-'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-gray-400 text-xs">{abs.catatan || abs.keterangan || '-'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
