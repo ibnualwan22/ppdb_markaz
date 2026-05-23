@@ -73,6 +73,7 @@ export default function MasterSantriPage() {
   const [filterGender, setFilterGender] = useState("SEMUA");
   const [filterKategori, setFilterKategori] = useState("SEMUA");
   const [filterBulanKe, setFilterBulanKe] = useState("SEMUA");
+  const [filterSakan, setFilterSakan] = useState("SEMUA");
   const [loading, setLoading] = useState(true);
 
   // Pagination State
@@ -126,7 +127,7 @@ export default function MasterSantriPage() {
   useEffect(() => {
     setCurrentPage(1); // Reset page on filter change
     muatDataSantri();
-  }, [filterDufah, filterGender, filterKategori, filterBulanKe, keyword]);
+  }, [filterDufah, filterGender, filterKategori, filterBulanKe, filterSakan, keyword]);
 
   const hitungSisaDurasi = (santri: any) => {
     if (santri.kategori === "KSU") return "Tak Terbatas";
@@ -138,8 +139,11 @@ export default function MasterSantriPage() {
     
     if (currentId === 0) return "-";
 
+    const riwayatLunas = santri.riwayat?.filter((r: any) => r.isLunas) || [];
+    const riwayatBelumLunas = santri.riwayat?.find((r: any) => !r.isLunas);
+
     // Cek apakah pendaftaran/aktif terbarunya adalah untuk Duf'ah masa depan
-    const riwayatTerbaru = santri.riwayat?.[0];
+    const riwayatTerbaru = riwayatLunas[0];
     if (riwayatTerbaru && riwayatTerbaru.dufahId > currentId) {
       const startId = riwayatTerbaru.dufahId;
       const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
@@ -147,12 +151,12 @@ export default function MasterSantriPage() {
     }
 
     // Cek apakah santri punya riwayat aktif di bulan saat ini (dan bukan status CHECKED_OUT)
-    const riwayatAktif = santri.riwayat?.find((r: any) => r.dufahId === currentId && r.status !== "CHECKED_OUT");
+    const riwayatAktif = riwayatLunas.find((r: any) => r.dufahId === currentId && r.status !== "CHECKED_OUT");
     
     // Jika tidak aktif bulan ini tapi punya batas durasi di masa depan
     if (!riwayatAktif && santri.batasAktifDufah > currentId) {
       // Cari riwayat pendaftaran terdekat di masa depan
-      const riwayatDepan = santri.riwayat?.find((r: any) => r.dufahId > currentId);
+      const riwayatDepan = riwayatLunas.find((r: any) => r.dufahId > currentId);
       if (riwayatDepan) {
         const startId = riwayatDepan.dufahId;
         const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
@@ -161,7 +165,17 @@ export default function MasterSantriPage() {
     }
 
     const sisa = Math.max(0, (santri.batasAktifDufah || 0) - currentId + 1);
+
+    if (riwayatBelumLunas) {
+      return `${sisa} Bulan (Menunggu Pembayaran)`;
+    }
+
     return `${sisa} Bulan`;
+  };
+
+  const getNamaDufah = (id: number) => {
+    const dufah = daftarDufah.find(d => d.id === id);
+    return dufah ? dufah.nama : (id ? `Duf'ah ${id}` : "-");
   };
 
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
@@ -468,26 +482,51 @@ export default function MasterSantriPage() {
     swalSuccess("Berhasil Disalin!", "Laporan Data Santri Duf'ah siap di-paste di WhatsApp.");
   };
 
+  const uniqueSakan = Array.from(new Set(dataSantri.map(s => s.riwayat?.[0]?.lemari?.kamar?.sakan?.nama).filter(Boolean))).sort();
+
   const dataDitampilkan = dataSantri.filter((santri) => {
     const cocokNama = santri.nama.toLowerCase().includes(keyword.toLowerCase());
     const cocokGender = filterGender === "SEMUA" || santri.gender === filterGender;
     const cocokKategori = filterKategori === "SEMUA" || santri.kategori === filterKategori;
     const cocokBulanKe = filterBulanKe === "SEMUA" || (santri.riwayat?.[0]?.bulanKe?.toString() === filterBulanKe);
-    return cocokNama && cocokGender && cocokKategori && cocokBulanKe;
+    const sakanSantri = santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-";
+    const cocokSakan = filterSakan === "SEMUA" || sakanSantri === filterSakan;
+    return cocokNama && cocokGender && cocokKategori && cocokBulanKe && cocokSakan;
   });
 
   const exportToExcel = () => {
     if (dataDitampilkan.length === 0) return swalError("Tidak ada data untuk diexport!");
-    const dataExport = dataDitampilkan.map((santri, index) => ({
-      No: index + 1,
-      Nama: santri.nama,
-      Sakan: santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
-      Lemari: santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
-      "Sisa Durasi": hitungSisaDurasi(santri),
-      "Bulan Ke": santri.riwayat?.[0]?.bulanKe || "-",
-      Kategori: santri.kategori,
-      Status: santri.isAktif ? "Aktif" : "Keluar"
-    }));
+    const dataExport = dataDitampilkan.map((santri, index) => {
+      let tglLahirVal = "-";
+      if (santri.tanggalLahir) {
+        const d = new Date(santri.tanggalLahir);
+        tglLahirVal = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+      }
+
+      return {
+        No: index + 1,
+        NIS: santri.nis || "-",
+        Nama: santri.nama,
+        Gender: santri.gender === "BANAT" ? "Perempuan" : "Laki-laki",
+        "Tempat Lahir": santri.tempatLahir || "-",
+        "Tanggal Lahir": tglLahirVal,
+        "Nama Ortu": santri.namaOrtu || "-",
+        "No WA Ortu": santri.noWaOrtu || "-",
+        "No WA Santri": santri.noWaSantri || "-",
+        Provinsi: santri.provinsi || "-",
+        Kabupaten: santri.kabupaten || "-",
+        Kecamatan: santri.kecamatan || "-",
+        Desa: santri.desa || "-",
+        "Detail Alamat": santri.detailAlamat || "-",
+        Sakan: santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
+        Lemari: santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
+        "Aktif Sampai Duf'ah": getNamaDufah(santri.batasAktifDufah),
+        "Sisa Durasi": hitungSisaDurasi(santri),
+        "Bulan Ke": santri.riwayat?.[0]?.bulanKe || "-",
+        Kategori: santri.kategori,
+        Status: santri.isAktif ? "Aktif" : "Keluar"
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(dataExport);
     const workbook = XLSX.utils.book_new();
@@ -562,7 +601,7 @@ export default function MasterSantriPage() {
 
         {/* FILTER AREA */}
         <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Periode / Duf&apos;ah</label>
               <select
@@ -620,6 +659,20 @@ export default function MasterSantriPage() {
                 <option value="SEMUA">Semua Bulan</option>
                 {[...Array(12)].map((_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Sakan</label>
+              <select
+                value={filterSakan}
+                onChange={(e) => setFilterSakan(e.target.value)}
+                className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
+              >
+                <option value="SEMUA">Semua Sakan</option>
+                {uniqueSakan.map((sakan: any, idx: number) => (
+                  <option key={idx} value={sakan}>{sakan}</option>
                 ))}
               </select>
             </div>
