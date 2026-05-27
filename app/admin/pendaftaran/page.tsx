@@ -6,6 +6,8 @@ import { Protect } from "@/components/Protect";
 import { swalSuccess, swalError } from "@/app/lib/swal";
 import { usePusher } from "@/app/providers/PusherProvider";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import * as XLSX from 'xlsx';
+import { generateRegistrationPdf, generateRombonganInvoicePdf } from "@/app/lib/generateRegistrationPdf";
 
 const COLORS = ['#22c55e', '#ef4444']; // Green for PAID, Red for PENDING
 
@@ -13,10 +15,22 @@ export default function MejaKeuanganPage() {
   const { data: session } = useSession();
   const [transaksi, setTransaksi] = useState<any[]>([]);
   const [allDufah, setAllDufah] = useState<any[]>([]);
+  const [allRombongan, setAllRombongan] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<any[]>([]);
+  
+  // Rombongan Upload Modal State
+  const [isRombonganModalOpen, setIsRombonganModalOpen] = useState(false);
+  const [rombonganFile, setRombonganFile] = useState<File | null>(null);
+  const [namaRombongan, setNamaRombongan] = useState("");
+  const [isMouSigned, setIsMouSigned] = useState(false);
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [parsedRombonganData, setParsedRombonganData] = useState<any[]>([]);
   const [daftarUlang, setDaftarUlang] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filterScope, setFilterScope] = useState("AKTIF"); // "AKTIF" atau "GLOBAL"
+  const [filterLunas, setFilterLunas] = useState("ALL"); // "ALL", "LUNAS", "BELUM"
+  const [filterKategori, setFilterKategori] = useState("ALL"); // "ALL", "BARU", "LAMA"
 
   const pusher = usePusher();
 
@@ -28,6 +42,8 @@ export default function MejaKeuanganPage() {
         setTransaksi(data.transaksi || []);
         setAllDufah(data.allDufah || []);
         setDaftarUlang(data.daftarUlang || []);
+        setAllRombongan(data.allRombongan || []);
+        setPrograms(data.programs || []);
       }
     } catch (e) {
       console.error(e);
@@ -100,6 +116,158 @@ export default function MejaKeuanganPage() {
     }
   };
 
+  const prosesVerifikasiRombongan = async (id: string) => {
+    if (!confirm("Yakin ingin memverifikasi pelunasan seluruh rombongan ini?")) return;
+    setLoading(true);
+    try {
+      const adminId = (session?.user as any)?.id;
+      const res = await fetch(`/api/admin/keuangan/rombongan/${id}/verifikasi`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        swalSuccess("Berhasil", "Rombongan berhasil diverifikasi lunas.");
+        muatData();
+      } else {
+        swalError("Gagal", data.error || "Gagal memverifikasi");
+      }
+    } catch (e) {
+      swalError("Error", "Terjadi kesalahan server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = (e: any) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setRombonganFile(file);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const bstr = evt.target?.result;
+      const wb = XLSX.read(bstr, { type: 'binary' });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const data = XLSX.utils.sheet_to_json(ws);
+      setParsedRombonganData(data);
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const submitRombongan = async () => {
+    if (!namaRombongan || !selectedProgramId || parsedRombonganData.length === 0) {
+      return swalError("Gagal", "Nama rombongan, program, dan file Excel harus diisi.");
+    }
+    setLoading(true);
+    try {
+      const toTitleCase = (str: string) => {
+        if (!str) return "";
+        return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      };
+
+      const formatWa = (wa: string | number) => {
+        if (!wa) return "";
+        let f = wa.toString().replace(/\D/g, "");
+        if (f.startsWith("0")) f = "62" + f.substring(1);
+        return f;
+      };
+
+      const parseTanggalLahir = (val: any) => {
+        if (!val) return null;
+        
+        if (typeof val === 'number' || (!isNaN(Number(val)) && Number(val) > 20000)) {
+          const date = new Date(Math.round((Number(val) - 25569) * 86400 * 1000));
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const dd = String(date.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+
+        const s = val.toString().trim();
+        const parts = s.split(/[\/\-]/);
+        if (parts.length === 3) {
+           const dd = parts[0].padStart(2, '0');
+           const mm = parts[1].padStart(2, '0');
+           let yyyy = parts[2];
+           if (yyyy.length === 2) yyyy = "20" + yyyy;
+           return `${yyyy}-${mm}-${dd}`;
+        }
+        return s;
+      };
+
+      const santris = parsedRombonganData.map((row: any) => ({
+        nama: toTitleCase(row.Nama || row.nama || ""),
+        gender: row.Gender || row.gender || "BANIN",
+        tempatLahir: toTitleCase(row.TempatLahir || row.tempatLahir || ""),
+        tanggalLahir: parseTanggalLahir(row.TanggalLahir || row.tanggalLahir), 
+        namaOrtu: toTitleCase(row.NamaOrtu || row.namaOrtu || ""),
+        noWaOrtu: formatWa(row.NoWaOrtu || row.noWaOrtu),
+        provinsi: toTitleCase(row.Provinsi || row.provinsi || ""),
+        kabupaten: toTitleCase(row.Kabupaten || row.kabupaten || ""),
+        kecamatan: toTitleCase(row.Kecamatan || row.kecamatan || ""),
+        desa: toTitleCase(row.Desa || row.desa || ""),
+        detailAlamat: row.DetailAlamat || row.detailAlamat || "",
+      })).filter(s => s.nama);
+
+      const res = await fetch('/api/admin/keuangan/rombongan', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          namaRombongan,
+          isMouSigned,
+          programId: selectedProgramId,
+          santris
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        swalSuccess("Berhasil", "Rombongan berhasil diimport.");
+        setIsRombonganModalOpen(false);
+        setRombonganFile(null);
+        setParsedRombonganData([]);
+        setNamaRombongan("");
+        setIsMouSigned(false);
+        muatData();
+      } else {
+        swalError("Gagal", data.error || "Gagal import rombongan");
+      }
+    } catch (e) {
+      swalError("Error", "Terjadi kesalahan server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      {
+        Nama: "Santri Contoh",
+        Gender: "BANIN",
+        TempatLahir: "Batu",
+        TanggalLahir: "20/05/2010",
+        NamaOrtu: "Bapak Contoh",
+        NoWaOrtu: "081234567890",
+        Provinsi: "Jawa Timur",
+        Kabupaten: "Batu",
+        Kecamatan: "Batu",
+        Desa: "Ngaglik",
+        DetailAlamat: "Jl. Contoh No 123"
+      }
+    ]);
+    // Set lebar kolom agar rapi
+    ws["!cols"] = [
+      { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, 
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template_Santri");
+    XLSX.writeFile(wb, "Template_Rombongan_Santri.xlsx");
+  };
+
   const batalkanDaftarUlang = async (id: string) => {
     if (!confirm("Yakin ingin membatalkan pendaftaran ulang santri ini? Data kamar asramanya untuk periode ini akan dilepas.")) return;
     setLoading(true);
@@ -131,6 +299,131 @@ export default function MejaKeuanganPage() {
   const now = new Date();
   const targetDufah = allDufah.find(d => d.tanggalBuka && d.tanggalTutup && now >= new Date(d.tanggalBuka) && now <= new Date(d.tanggalTutup));
 
+  const exportToExcel = () => {
+    let combinedData: any[] = [];
+
+    // Gunakan filteredByScope agar Rombongan juga ikut ter-export
+    const dataToExport = filteredByScope.filter(t =>
+      t.santri.nama.toLowerCase().includes(search.toLowerCase()) ||
+      t.noKwitansi.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Map data Transaksi Online (Bisa Baru / Lama / Rombongan)
+    dataToExport.forEach((t: any) => {
+      const isLama = t.noKwitansi?.includes("RENEW-");
+      const isRombongan = !!t.rombonganId;
+      
+      let kategori = "Baru";
+      if (isLama) kategori = "Lama";
+      if (isRombongan) kategori = "Rombongan";
+      
+      // Filter Kategori (Rombongan kita anggap masuk filter BARU atau ALL)
+      if (filterKategori === "BARU" && kategori === "Lama") return;
+      if (filterKategori === "LAMA" && kategori !== "Lama") return;
+
+      combinedData.push({
+        id: t.id,
+        santri: t.santri,
+        program: t.program,
+        totalTagihan: t.totalTagihan || 0,
+        diskon: t.diskon || 0,
+        statusPembayaran: t.statusPembayaran,
+        noKwitansi: t.noKwitansi || "-",
+        kategori: kategori,
+        isLunas: t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS"
+      });
+    });
+
+    // Map data Daftar Ulang (Offline / Belum bayar via form)
+    if (filterKategori === "ALL" || filterKategori === "LAMA") {
+      filteredDaftarUlang.forEach((d: any) => {
+        combinedData.push({
+          id: d.id,
+          santri: d.santri,
+          program: null,
+          totalTagihan: 0,
+          diskon: 0,
+          statusPembayaran: d.isLunas ? "PAID" : "PENDING",
+          noKwitansi: "-",
+          kategori: "Lama",
+          isLunas: d.isLunas
+        });
+      });
+    }
+
+    // Filter By Lunas
+    if (filterLunas === "LUNAS") {
+      combinedData = combinedData.filter(x => x.isLunas);
+    } else if (filterLunas === "BELUM") {
+      combinedData = combinedData.filter(x => !x.isLunas);
+    }
+
+    // Hitung Total Uang
+    const totalTerkumpul = combinedData
+      .filter(x => x.isLunas)
+      .reduce((acc, curr) => acc + (curr.totalTagihan || 0), 0);
+
+    // Build Export Array
+    const exportArray: any[] = combinedData.map((x, i) => ({
+      "No": i + 1,
+      "No. Kwitansi": x.noKwitansi || "-",
+      "Nama Santri": x.santri?.nama || "-",
+      "Gender": x.santri?.gender || "-",
+      "Kategori": x.kategori,
+      "Program Terpilih": x.program?.nama || "-",
+      "Tempat Lahir": x.santri?.tempatLahir || "-",
+      "Tanggal Lahir": x.santri?.tanggalLahir ? new Date(x.santri.tanggalLahir).toLocaleDateString('id-ID') : "-",
+      "Nama Wali": x.santri?.namaOrtu || "-",
+      "No. WA Wali": x.santri?.noWaOrtu || "-",
+      "No. WA Santri": x.santri?.noWaSantri || "-",
+      "Provinsi": x.santri?.provinsi || "-",
+      "Kabupaten": x.santri?.kabupaten || "-",
+      "Kecamatan": x.santri?.kecamatan || "-",
+      "Desa": x.santri?.desa || "-",
+      "Detail Alamat": x.santri?.detailAlamat || "-",
+      "Total Tagihan": x.totalTagihan || 0,
+      "Diskon": x.diskon || 0,
+      "Status": x.isLunas ? "LUNAS" : "BELUM LUNAS"
+    }));
+
+    // Tambah Baris Kosong & Total
+    exportArray.push({});
+    exportArray.push({
+      "No": "TOTAL UANG TERKUMPUL (DARI STATUS LUNAS):",
+      "No. Kwitansi": totalTerkumpul
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportArray);
+
+    // Mempercantik lebar kolom agar rapi saat dibuka
+    const wscols = [
+      { wch: 5 },  // No
+      { wch: 20 }, // No Kwitansi
+      { wch: 30 }, // Nama Santri
+      { wch: 10 }, // Gender
+      { wch: 15 }, // Kategori
+      { wch: 25 }, // Program
+      { wch: 15 }, // Tempat Lahir
+      { wch: 15 }, // Tgl Lahir
+      { wch: 25 }, // Nama Wali
+      { wch: 18 }, // WA Wali
+      { wch: 18 }, // WA Santri
+      { wch: 18 }, // Provinsi
+      { wch: 18 }, // Kabupaten
+      { wch: 18 }, // Kecamatan
+      { wch: 18 }, // Desa
+      { wch: 40 }, // Detail Alamat
+      { wch: 18 }, // Total Tagihan
+      { wch: 12 }, // Diskon
+      { wch: 15 }  // Status
+    ];
+    ws['!cols'] = wscols;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap Keuangan");
+    XLSX.writeFile(wb, `Data_Keuangan_Santri_${new Date().getTime()}.xlsx`);
+  };
+
   // Filter scope
   const filteredByScope = filterScope === "AKTIF"
     ? transaksi.filter(t => {
@@ -151,6 +444,26 @@ export default function MejaKeuanganPage() {
       ? "Semua Data (Global)"
       : allDufah.find(d => d.id.toString() === filterScope)?.nama || "Duf'ah";
 
+  const filteredRombongan = allRombongan.filter(r => {
+    // 1. Filter Kategori: Rombongan selalu dianggap BARU
+    if (filterKategori === "LAMA") return false;
+
+    // 2. Filter Status Lunas
+    // Rombongan dianggap lunas jika semua transaksinya PAID
+    const isPaid = r.transaksi?.every((t: any) => t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS");
+    const matchesLunas = filterLunas === "ALL"
+      ? true
+      : filterLunas === "LUNAS" ? isPaid : !isPaid;
+
+    const matchesScope = filterScope === "AKTIF"
+      ? activeDufah && r.dufahTujuanId === activeDufah.id
+      : filterScope === "GLOBAL"
+        ? true
+        : r.dufahTujuanId?.toString() === filterScope;
+    const matchesSearch = r.nama.toLowerCase().includes(search.toLowerCase());
+    return matchesScope && matchesSearch && matchesLunas;
+  });
+
   const totalLunas = filteredByScope
     .filter(t => t.statusPembayaran === "PAID")
     .reduce((acc, t) => acc + t.totalTagihan, 0);
@@ -164,14 +477,37 @@ export default function MejaKeuanganPage() {
   const countSudahBayar = filteredByScope.filter(t => t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS").length;
   const countBelumBayar = filteredByScope.filter(t => t.statusPembayaran === "PENDING").length;
 
-  const filteredData = filteredByScope.filter(t =>
-    t.santri.nama.toLowerCase().includes(search.toLowerCase()) ||
-    t.noKwitansi.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredData = filteredByScope.filter(t => {
+    // 1. Text Search Filter
+    const matchesSearch = t.santri.nama.toLowerCase().includes(search.toLowerCase()) || t.noKwitansi.toLowerCase().includes(search.toLowerCase());
+    
+    // 2. Hide Rombongan Children (they are inside modal/rombongan table)
+    const isNotRombonganChild = !t.rombonganId;
+    
+    // 3. Status Lunas Filter
+    const isPaid = t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS";
+    const matchesLunas = filterLunas === "ALL" 
+      ? true 
+      : filterLunas === "LUNAS" ? isPaid : !isPaid;
+      
+    // 4. Kategori Filter (Baru/Lama)
+    const isLama = t.noKwitansi?.includes("RENEW-");
+    const matchesKategori = filterKategori === "ALL"
+      ? true
+      : filterKategori === "BARU" ? !isLama : isLama;
+
+    return matchesSearch && isNotRombonganChild && matchesLunas && matchesKategori;
+  });
 
   const filteredDaftarUlang = daftarUlang.filter(d => {
+    // Filter Kategori: Daftar Ulang selalu LAMA
+    if (filterKategori === "BARU") return false;
+    
+    // Filter Lunas: Daftar Ulang dari DB (yg muncul disini) selalu BELUM LUNAS
+    if (filterLunas === "LUNAS") return false;
+
     // Sembunyikan dari tabel atas jika santri sudah memiliki tagihan perpanjangan online di tabel bawah
-    const hasOnlineInvoice = filteredData.some(t => t.santriId === d.santriId && t.statusPembayaran === "PENDING");
+    const hasOnlineInvoice = filteredByScope.some(t => t.santriId === d.santriId && t.statusPembayaran === "PENDING");
     if (hasOnlineInvoice) return false;
 
     const matchesScope = filterScope === "AKTIF"
@@ -199,30 +535,84 @@ export default function MejaKeuanganPage() {
   return (
     <Protect permission="view_keuangan">
       <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
-        {/* Header & Filter */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gold-500/10 pb-4 gap-4">
+        {/* Header Area */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gold-500/10 pb-4">
           <div>
             <h1 className="text-3xl font-extrabold text-gold-500">Meja Keuangan</h1>
             <p className="text-gray-400 mt-1">Pemantauan dan verifikasi pembayaran</p>
           </div>
-          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            {((session?.user as any)?.permissions?.includes("verify_pendaftaran") || (session?.user as any)?.permissions?.includes("all_access")) && (
+              <button
+                onClick={() => setIsRombonganModalOpen(true)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg transition flex items-center justify-center gap-2 flex-1 md:flex-none"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                Import Rombongan
+              </button>
+            )}
+            <button
+              onClick={exportToExcel}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg transition flex items-center justify-center gap-2 flex-1 md:flex-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export Excel
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="bg-dark-800 p-4 rounded-2xl border border-gold-500/10 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <select 
+              value={filterLunas} 
+              onChange={(e) => setFilterLunas(e.target.value)}
+              className="bg-dark-900 text-gray-200 border border-gold-500/20 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-gold-500/50 cursor-pointer flex-1 md:flex-none"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="LUNAS">Sudah Lunas</option>
+              <option value="BELUM">Belum Lunas</option>
+            </select>
+            
+            <select 
+              value={filterKategori} 
+              onChange={(e) => setFilterKategori(e.target.value)}
+              className="bg-dark-900 text-gray-200 border border-gold-500/20 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-gold-500/50 cursor-pointer flex-1 md:flex-none"
+            >
+              <option value="ALL">Semua Kategori</option>
+              <option value="BARU">Santri Baru</option>
+              <option value="LAMA">Santri Lama (Renew)</option>
+            </select>
+            
             <select 
               value={filterScope} 
               onChange={(e) => setFilterScope(e.target.value)}
-              className="bg-dark-800 text-gold-500 font-bold border border-gold-500/20 px-4 py-2 rounded-xl text-sm outline-none focus:border-gold-500/50 cursor-pointer"
+              className="bg-dark-900 text-gold-500 font-bold border border-gold-500/30 px-4 py-2.5 rounded-xl text-sm outline-none focus:border-gold-500/70 cursor-pointer flex-1 md:flex-none"
             >
-              <option value="AKTIF">Filter: Duf'ah Aktif Saja</option>
-              <option value="GLOBAL">Filter: Semua Data (Global)</option>
+              <option value="AKTIF">Duf'ah Aktif Saja</option>
+              <option value="GLOBAL">Semua Data (Global)</option>
               {allDufah.map(d => (
-                <option key={d.id} value={d.id.toString()}>Filter: {d.nama}</option>
+                <option key={d.id} value={d.id.toString()}>{d.nama}</option>
               ))}
             </select>
+          </div>
+          
+          <div className="w-full lg:w-72 relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input
               type="text"
               placeholder="Cari Nama / Invoice..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full md:w-64 bg-dark-800 text-gray-200 border border-gold-500/20 px-4 py-2 rounded-xl text-sm outline-none focus:border-gold-500/50"
+              className="w-full bg-dark-900 text-gray-200 border border-gold-500/20 pl-9 pr-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/30 placeholder:text-gray-500 transition-all"
             />
           </div>
         </div>
@@ -362,6 +752,86 @@ export default function MejaKeuanganPage() {
           </div>
         )}
 
+        {/* Rombongan Table */}
+        {filteredRombongan.length > 0 && (
+          <div className="bg-dark-800 border border-emerald-500/20 rounded-2xl shadow-lg overflow-hidden mb-8">
+            <div className="p-4 bg-emerald-500/10 border-b border-emerald-500/20 flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-emerald-400">Pendaftaran Rombongan / Batch</h3>
+                <p className="text-xs text-gray-400">Pendaftaran institusi/rombongan (banyak santri sekaligus)</p>
+              </div>
+              <span className="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-500/30">
+                {filteredRombongan.length} Rombongan
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-gray-300">
+                <thead className="text-xs text-gray-400 uppercase bg-dark-900 border-b border-emerald-500/10">
+                  <tr>
+                    <th className="px-4 py-4 text-center w-12">No</th>
+                    <th className="px-4 py-4">Tgl Mendaftar</th>
+                    <th className="px-4 py-4">Nama Rombongan</th>
+                    <th className="px-4 py-4 text-center">Jumlah Santri</th>
+                    <th className="px-4 py-4 text-right">Total Tagihan (Rp)</th>
+                    <th className="px-4 py-4 text-center">Status</th>
+                    <th className="px-4 py-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRombongan.map((r, index) => (
+                    <tr key={r.id} className="border-b border-gray-800 hover:bg-dark-900/50 transition-colors">
+                      <td className="px-4 py-4 text-center font-bold text-gray-400">{index + 1}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-gray-400">{new Date(r.createdAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'})}</td>
+                      <td className="px-4 py-4 font-bold text-white">
+                        {r.nama}
+                        {r.isMouSigned && <span className="ml-2 text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">MoU (Diskon 10%)</span>}
+                      </td>
+                      <td className="px-4 py-4 text-center font-bold text-gold-400">{r.transaksi?.length || 0} Orang</td>
+                      <td className="px-4 py-4 text-right font-mono text-sm">
+                        {new Intl.NumberFormat('id-ID').format(r.totalTagihan)}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {r.statusPembayaran === "PAID" ? (
+                          <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-md text-xs font-bold border border-green-500/30">LUNAS</span>
+                        ) : (
+                          <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-md text-xs font-bold border border-red-500/30">PENDING</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {r.statusPembayaran === "PENDING" && (
+                          <div className="flex gap-2 justify-center">
+                            {((session?.user as any)?.permissions?.includes("verify_pendaftaran") || (session?.user as any)?.permissions?.includes("all_access")) && (
+                              <button
+                                onClick={() => prosesVerifikasiRombongan(r.id)}
+                                disabled={loading}
+                                className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                              >
+                                ✓ Acc
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                generateRombonganInvoicePdf(r).then(() => {
+                                  swalSuccess("Berhasil", "Invoice berhasil diunduh");
+                                }).catch((err) => {
+                                  swalError("Gagal", "Gagal membuat invoice");
+                                });
+                              }}
+                              className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                            >
+                              ↓ Invoice
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Data Table */}
         <div className="bg-dark-800 border border-gold-500/10 rounded-2xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
@@ -457,6 +927,25 @@ export default function MejaKeuanganPage() {
                                 KSU
                               </button>
                             )}
+                            <button
+                              onClick={() => {
+                                generateRegistrationPdf({
+                                  santri: t.santri,
+                                  transaksi: t,
+                                  program: t.program,
+                                  dufah: allDufah.find(d => d.id === t.dufahTujuanId),
+                                  isRenew: t.noKwitansi?.includes("RENEW"),
+                                }).then(() => {
+                                  swalSuccess("Berhasil", "Invoice berhasil diunduh");
+                                }).catch((err) => {
+                                  swalError("Gagal", "Gagal membuat invoice");
+                                });
+                              }}
+                              title="Download Invoice"
+                              className="bg-gold-600 hover:bg-gold-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
+                            >
+                              ↓ Inv
+                            </button>
                           </div>
                         )}
                       </td>
@@ -468,6 +957,96 @@ export default function MejaKeuanganPage() {
           </div>
         </div>
       </div>
+
+        {/* Modal Rombongan */}
+        {isRombonganModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-dark-900 border border-gold-500/30 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl relative">
+              <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-dark-800">
+                <h3 className="text-xl font-bold text-gold-500">Import Pendaftaran Rombongan</h3>
+                <button onClick={() => setIsRombonganModalOpen(false)} className="text-gray-400 hover:text-white transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nama Rombongan / Instansi</label>
+                  <input
+                    type="text"
+                    value={namaRombongan}
+                    onChange={(e) => setNamaRombongan(e.target.value)}
+                    placeholder="Contoh: SMAS Al Izzah Kota Batu"
+                    className="w-full bg-dark-800 text-white border border-gray-700 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Program (Untuk seluruh santri)</label>
+                  <select
+                    value={selectedProgramId}
+                    onChange={(e) => setSelectedProgramId(e.target.value)}
+                    className="w-full bg-dark-800 text-white border border-gray-700 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500"
+                  >
+                    <option value="">-- Pilih Program --</option>
+                    {programs.map(p => (
+                      <option key={p.id} value={p.id}>{p.nama} (Rp {new Intl.NumberFormat('id-ID').format(p.harga)})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-xl border border-gray-700">
+                  <input
+                    type="checkbox"
+                    id="mou"
+                    checked={isMouSigned}
+                    onChange={(e) => setIsMouSigned(e.target.checked)}
+                    className="w-5 h-5 accent-gold-500"
+                  />
+                  <div>
+                    <label htmlFor="mou" className="text-sm font-bold text-white cursor-pointer select-none">Sudah Tanda Tangan MoU</label>
+                    <p className="text-xs text-gray-400">Jika dicentang, akan memotong tagihan sebesar 10% untuk setiap anak.</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">File Data Excel (.xlsx)</label>
+                    <button 
+                      onClick={downloadTemplate}
+                      className="text-xs font-bold text-blue-400 hover:text-blue-300 transition flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      Download Template
+                    </button>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleFileUpload}
+                    className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20"
+                  />
+                  {parsedRombonganData.length > 0 && (
+                    <p className="mt-2 text-xs text-green-400">✓ Berhasil membaca {parsedRombonganData.length} baris data santri.</p>
+                  )}
+                  <p className="mt-2 text-xs text-gray-500 italic">Kolom yang wajib ada di Excel: Nama. Kolom lainnya: Gender, TempatLahir, TanggalLahir, NamaOrtu, NoWaOrtu, Provinsi, Kabupaten, Kecamatan, Desa, DetailAlamat.</p>
+                </div>
+              </div>
+              <div className="p-6 border-t border-gray-800 bg-dark-800 flex justify-end gap-4">
+                <button
+                  onClick={() => setIsRombonganModalOpen(false)}
+                  className="px-6 py-2 rounded-xl text-gray-400 hover:text-white font-bold transition"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={submitRombongan}
+                  disabled={loading || !namaRombongan || !selectedProgramId || parsedRombonganData.length === 0}
+                  className="bg-gold-500 hover:bg-gold-400 text-black px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-gold-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Menyimpan..." : "Simpan & Import"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
     </Protect>
   );
 }

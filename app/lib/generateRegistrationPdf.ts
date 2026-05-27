@@ -96,7 +96,7 @@ export const generateRegistrationPdf = async (data: {
       const dark: [number, number, number] = [20, 20, 20];
       const brown: [number, number, number] = [60, 40, 10];
 
-      const noKwitansi = data.noKwitansi ?? `KWM-${Date.now()}`;
+      const noKwitansi = data.transaksi?.noKwitansi ?? data.noKwitansi ?? `KWM-${Date.now()}`;
       const tanggalInvoice = formatTanggal(new Date());
       const totalTagihan = data.transaksi.totalTagihan as number;
       const diskon = (data.transaksi.diskon ?? 0) as number;
@@ -378,6 +378,241 @@ export const generateRegistrationPdf = async (data: {
       doc.save(`Invoice_${data.isRenew ? "DaftarUlang" : "Pendaftaran"}_${(data.santri.nama ?? "santri").replace(/\s+/g, "_")}.pdf`);
       resolve();
 
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
+};
+
+export const generateRombonganInvoicePdf = async (rombongan: any) => {
+  return new Promise<void>(async (resolve, reject) => {
+    try {
+      const [bgImg, logoWmImg, stampImg, iconLocImg, iconWebImg, iconTelImg, iconIgImg, iconMailImg, qrImg] =
+        await Promise.all([
+          loadImg(INV_BG),
+          loadImg(INV_LOGO_WM),
+          loadImg(INV_STAMP),
+          loadImg(INV_ICON_LOC),
+          loadImg(INV_ICON_WEB),
+          loadImg(INV_ICON_TEL),
+          loadImg(INV_ICON_IG),
+          loadImg(INV_ICON_MAIL),
+          loadImg("/images/invoice-qr.png"),
+        ]);
+
+
+
+      const bgFaded = imgWithOpacity(bgImg, 0.15);
+
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const pageW = 210;
+      const pageH = 297;
+      const marginL = 18;
+      const marginR = 18;
+      const contentW = pageW - marginL - marginR;
+      const gold: [number, number, number] = [212, 175, 55];
+      const dark: [number, number, number] = [20, 20, 20];
+      const brown: [number, number, number] = [60, 40, 10];
+
+      const noKwitansi = rombongan.transaksi?.[0]?.noKwitansi ? `BATCH-${rombongan.transaksi[0].noKwitansi.split('-')[1] ?? Date.now()}` : `KWM-BATCH-${Date.now()}`;
+      const tanggalInvoice = formatTanggal(new Date());
+      const totalTagihan = rombongan.totalTagihan;
+      const terbilangText = terbilang(totalTagihan) + " Rupiah";
+
+      doc.addImage(bgFaded, "PNG", 0, 0, pageW, pageH);
+      doc.addImage(logoWmImg, "PNG", marginL, 8, 20, 20);
+
+      const textX = marginL + 23;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(...dark);
+      doc.text("MARKAZ ARABIYAH", textX, 16);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...brown);
+      doc.text("Berbasis Multiple Intelligences", textX, 21);
+      doc.text("Jl. Cempaka No.32, Pare, Kediri, Jawa Timur", textX, 26);
+
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.8);
+      doc.line(marginL, 31, pageW - marginR, 31);
+
+      let y = 39;
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...dark);
+      doc.text("No Kwitansi", marginL, y);
+      doc.text(":", marginL + 30, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(noKwitansi, marginL + 33, y);
+      doc.setFont("helvetica", "bold");
+      doc.text("Tanggal", pageW / 2 + 8, y);
+      doc.text(":", pageW / 2 + 24, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(tanggalInvoice, pageW / 2 + 27, y);
+
+      y += 8;
+      const labelX = marginL;
+      const sepX = marginL + 38;
+      const valX = marginL + 41;
+
+      const rows: [string, string][] = [
+        ["Tagihan untuk", "Rombongan / Lembaga"],
+        ["Nama Rombongan", rombongan.nama ?? "-"],
+        ["Jumlah Santri", `${rombongan.transaksi?.length ?? 0} Orang`],
+      ];
+
+      doc.setFillColor(253, 250, 240);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.3);
+      const blockH = rows.length * 6 + 6;
+      doc.rect(marginL - 2, y - 5, contentW + 4, blockH, "FD");
+
+      doc.setFontSize(9);
+      for (const [label, val] of rows) {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...brown);
+        doc.text(label, labelX, y);
+        doc.setTextColor(...dark);
+        doc.text(":", sepX, y);
+        doc.setFont("helvetica", "normal");
+        const wrapped = doc.splitTextToSize(val, contentW - 45);
+        doc.text(wrapped, valX, y);
+        y += 5.5 * (wrapped.length > 1 ? wrapped.length * 0.85 : 1);
+      }
+
+      y += 3;
+      doc.setFillColor(245, 235, 200);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.4);
+      doc.rect(marginL - 2, y - 4, contentW + 4, 14, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...brown);
+      doc.text("Sejumlah", labelX, y + 1);
+      doc.setTextColor(...dark);
+      doc.text(":", sepX, y + 1);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...gold);
+      doc.text(formatRupiah(totalTagihan), valX, y + 1);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(...brown);
+      doc.text(`(${terbilangText})`, valX, y + 7);
+      doc.setTextColor(...dark);
+      y += 19;
+
+      const tableBody: any[][] = [];
+      let totalSub = 0;
+      let totalDiskon = 0;
+
+      rombongan.transaksi?.forEach((t: any, i: number) => {
+        const harga = t.nominalProgram || (t.program ? t.program.harga : t.totalTagihan);
+        const diskonSatuan = Math.max(0, harga - t.totalTagihan);
+        totalSub += harga;
+        totalDiskon += diskonSatuan;
+        tableBody.push([
+          { content: `${i + 1}. ${t.santri.nama}\n   Program: ${t.program.nama}`, styles: { halign: "left" } },
+          { content: formatRupiah(harga), styles: { halign: "right" } },
+          { content: diskonSatuan > 0 ? `-${formatRupiah(diskonSatuan)}` : "-", styles: { halign: "right", textColor: diskonSatuan > 0 ? [180, 0, 0] : dark } },
+          { content: formatRupiah(t.totalTagihan), styles: { halign: "right" } },
+        ]);
+      });
+
+      autoTable(doc, {
+        startY: y,
+        theme: "grid",
+        tableWidth: contentW,
+        margin: { left: marginL, right: marginR },
+        headStyles: { fillColor: gold, textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9, halign: "center" },
+        bodyStyles: { fontSize: 9, textColor: dark },
+        alternateRowStyles: { fillColor: [252, 248, 238] },
+        columnStyles: {
+          0: { cellWidth: contentW * 0.45 },
+          1: { cellWidth: contentW * 0.20, halign: "right" },
+          2: { cellWidth: contentW * 0.15, halign: "right" },
+          3: { cellWidth: contentW * 0.20, halign: "right" },
+        },
+        head: [["Daftar Santri & Program", "Biaya", "Diskon", "Total"]],
+        body: tableBody,
+        foot: [[
+          { content: "TOTAL", styles: { fontStyle: "bold", halign: "right", fillColor: [245, 235, 200] as [number, number, number] } },
+          { content: formatRupiah(totalSub), styles: { fontStyle: "bold", halign: "right", fillColor: [245, 235, 200] as [number, number, number] } },
+          { content: totalDiskon > 0 ? `-${formatRupiah(totalDiskon)}` : "-", styles: { fontStyle: "bold", halign: "right", textColor: [180, 0, 0], fillColor: [245, 235, 200] as [number, number, number] } },
+          { content: formatRupiah(totalTagihan), styles: { fontStyle: "bold", halign: "right", textColor: gold, fillColor: [245, 235, 200] as [number, number, number] } },
+        ]],
+      });
+
+      // TTD
+      let finalY = (doc as any).lastAutoTable.finalY + 15;
+      if (finalY > pageH - 50) {
+        doc.addPage();
+        finalY = 20;
+        doc.addImage(bgFaded, "PNG", 0, 0, pageW, pageH);
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...dark);
+      doc.text(`Pare, ${tanggalInvoice}`, pageW - marginR - 35, finalY, { align: "center" });
+      doc.text("Markaz Arabiyah", pageW - marginR - 35, finalY + 5, { align: "center" });
+
+      const stampW = 40;
+      const stampH = 40;
+      doc.addImage(stampImg, "PNG", pageW - marginR - 55, finalY + 2, stampW, stampH);
+      doc.setFont("helvetica", "bold");
+      doc.text("Kharismaning Ulfa Awwalina", pageW - marginR - 35, finalY + 32, { align: "center" });
+
+      // Footer
+      const footerTop = pageH - 35;
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.5);
+      doc.line(marginL, footerTop, pageW - marginR, footerTop);
+
+      const fy0 = footerTop + 6;
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brown);
+      doc.text("Lembaga Markaz Arabiyah Pare", marginL, fy0);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(50, 40, 10);
+
+      const iconSz = 4.5;
+      const iconOffY = -3.5;
+      const cfx = marginL;
+      const contactInfo = [
+        { icon: iconWebImg, text: "www.markazarabiyah.id" },
+        { icon: iconIgImg, text: "@markazarabiyah" },
+        { icon: iconMailImg, text: "markazarabiyah@gmail.com" },
+        { icon: iconTelImg, text: "0812-4241-1181" },
+      ];
+
+      contactInfo.forEach((item, i) => {
+        const cy = fy0 + 5.5 + i * 5;
+        doc.addImage(item.icon, "PNG", cfx, cy + iconOffY, iconSz, iconSz);
+        doc.text(item.text, cfx + iconSz + 1.5, cy);
+      });
+
+      const qrSize = 22;
+      const qrX = pageW / 2 - 25;
+      const qrY = footerTop + 3;
+      doc.addImage(qrImg, "PNG", qrX, qrY, qrSize, qrSize);
+
+      const addrX = pageW / 2 + 5;
+      const addrLines = [
+        "Jalan Cempaka 32, Tegalsari,",
+        "Tulungrejo, Pare, Kediri,",
+        "Jawa Timur, Indonesia",
+      ];
+      doc.addImage(iconLocImg, "PNG", addrX, fy0 + iconOffY + 2.5, iconSz, iconSz);
+      addrLines.forEach((line, i) => {
+        doc.text(line, addrX + iconSz + 1.5, fy0 + i * 5.2);
+      });
+
+      doc.save(`Invoice_Rombongan_${(rombongan.nama ?? "rombongan").replace(/\s+/g, "_")}.pdf`);
+      resolve();
     } catch (err) {
       console.error(err);
       reject(err);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { usePusher } from "../../providers/PusherProvider";
-import { swalConfirm, swalSuccess, swalError, swalNotif } from "../../lib/swal";
+import { swalConfirm, swalSuccess, swalError, swalNotif, swalToast } from "../../lib/swal";
 import { Protect, usePermissions } from "@/components/Protect";
 import Swal from "sweetalert2";
 
@@ -102,33 +102,11 @@ export default function MejaIdCardPage() {
   }, [pusher]);
 
   const submitIdCard = async (idRiwayat: string, namaSantri: string) => {
-    const resConfirm = await Swal.fire({
-      icon: "question",
-      title: "Konfirmasi ID Card",
-      html: `Tandai ID Card untuk <b>${namaSantri}</b> sudah diserahkan?<br><br><small class="text-gray-500">Kosongkan jika ingin nomor otomatis.</small>`,
-      input: "number",
-      inputPlaceholder: "Nomor Custom (Opsional)",
-      showCancelButton: true,
-      confirmButtonText: "Ya, Serahkan",
-      cancelButtonText: "Batal",
-      confirmButtonColor: "#2563eb",
-      cancelButtonColor: "#94a3b8",
-      customClass: {
-        popup: "rounded-2xl",
-        confirmButton: "rounded-xl font-bold",
-        cancelButton: "rounded-xl font-bold",
-        input: "rounded-xl border-gray-300",
-      }
-    });
-
-    if (!resConfirm.isConfirmed) return;
-
-    const customNomor = resConfirm.value ? parseInt(resConfirm.value, 10) : undefined;
-
+    // Langsung submit ke backend tanpa dialog konfirmasi
     const res = await fetch("/api/id-card", {
       method: "PATCH", 
       headers: { "Content-Type": "application/json" }, 
-      body: JSON.stringify({ id: idRiwayat, customNomor }),
+      body: JSON.stringify({ id: idRiwayat }),
     });
     
     if (res.ok) {
@@ -136,7 +114,7 @@ export default function MejaIdCardPage() {
       muatData();
     } else {
       const err = await res.json();
-      swalError("Gagal memproses ID Card", err.error || "Gagal verifikasi");
+      swalError("Gagal", err.error || "Gagal verifikasi");
     }
   };
 

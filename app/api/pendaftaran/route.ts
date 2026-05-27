@@ -170,14 +170,33 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    // Ambil daftar transaksi pending untuk Admin
     const transaksi = await prisma.transaksiPendaftaran.findMany({
       orderBy: { createdAt: "desc" },
       include: {
         santri: true,
         program: true,
-        admin: { select: { nama: true } }
+        admin: { select: { nama: true } },
+        rombongan: true
       }
+    });
+
+    const allRombongan = await prisma.rombongan.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        admin: { select: { nama: true } },
+        dufahTujuan: true,
+        transaksi: {
+          include: {
+            santri: true,
+            program: true
+          }
+        }
+      }
+    });
+
+    const programs = await prisma.program.findMany({
+      where: { isActive: true },
+      orderBy: { nama: 'asc' }
     });
 
     const allDufah = await prisma.dufah.findMany({
@@ -197,7 +216,9 @@ export async function GET() {
     return NextResponse.json({
       transaksi,
       allDufah,
-      daftarUlang
+      daftarUlang,
+      allRombongan,
+      programs
     });
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data transaksi" }, { status: 500 });

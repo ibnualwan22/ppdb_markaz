@@ -73,6 +73,7 @@ model Dufah {
   tanggalTutup         DateTime?
   riwayat              RiwayatDufah[]
   transaksiPendaftaran TransaksiPendaftaran[]
+  Rombongan            Rombongan[]
 }
 
 model RiwayatDufah {
@@ -112,6 +113,7 @@ model User {
   updatedAt             DateTime               @updatedAt
   transaksiDiverifikasi TransaksiPendaftaran[]
   role                  Role                   @relation(fields: [roleId], references: [id])
+  Rombongan             Rombongan[]
 }
 
 model Role {
@@ -166,22 +168,24 @@ model Program {
 }
 
 model TransaksiPendaftaran {
-  id               String    @id @default(uuid())
-  noKwitansi       String    @unique
+  id               String     @id @default(uuid())
+  noKwitansi       String     @unique
   santriId         String
   programId        String
   nominalProgram   Float
   kodeUnik         Int
   totalTagihan     Float
-  statusPembayaran String    @default("PENDING")
+  statusPembayaran String     @default("PENDING")
   diverifikasiOleh String?
-  createdAt        DateTime  @default(now())
+  createdAt        DateTime   @default(now())
   waktuLunas       DateTime?
   dufahTujuanId    Int?
-  admin            User?     @relation(fields: [diverifikasiOleh], references: [id])
-  dufahTujuan      Dufah?    @relation(fields: [dufahTujuanId], references: [id], onDelete: SetNull)
-  program          Program   @relation(fields: [programId], references: [id])
-  santri           Santri    @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  admin            User?      @relation(fields: [diverifikasiOleh], references: [id])
+  dufahTujuan      Dufah?     @relation(fields: [dufahTujuanId], references: [id], onDelete: SetNull)
+  rombonganId      String?
+  rombongan        Rombongan? @relation(fields: [rombonganId], references: [id])
+  program          Program    @relation(fields: [programId], references: [id])
+  santri           Santri     @relation(fields: [santriId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -214,4 +218,21 @@ model Pengajar {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Rombongan {
+  id               String    @id @default(uuid())
+  nama             String
+  isMouSigned      Boolean   @default(false)
+  diskonPersen     Float     @default(0)
+  totalTagihan     Float
+  statusPembayaran String    @default("PENDING")
+  diverifikasiOleh String?
+  waktuLunas       DateTime?
+  createdAt        DateTime  @default(now())
+  dufahTujuanId    Int?
+
+  transaksi   TransaksiPendaftaran[]
+  admin       User?                  @relation(fields: [diverifikasiOleh], references: [id])
+  dufahTujuan Dufah?                 @relation(fields: [dufahTujuanId], references: [id], onDelete: SetNull)
 }

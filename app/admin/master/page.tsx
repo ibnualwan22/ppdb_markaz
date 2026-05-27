@@ -49,6 +49,8 @@ const IconWarning = () => (
 
 export default function MasterLokasiPage() {
   const [dataSakan, setDataSakan] = useState<any[]>([]);
+  const [santriTanpaKamar, setSantriTanpaKamar] = useState<any[]>([]);
+  const [keywordBelumKamar, setKeywordBelumKamar] = useState("");
   const [loading, setLoading] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -71,8 +73,12 @@ export default function MasterLokasiPage() {
 
   const muatData = async () => {
     try {
-      const res = await fetch("/api/sakan");
-      if (res.ok) setDataSakan(await res.json());
+      const [resSakan, resAntrean] = await Promise.all([
+        fetch("/api/sakan"),
+        fetch("/api/asrama/antrean")
+      ]);
+      if (resSakan.ok) setDataSakan(await resSakan.json());
+      if (resAntrean.ok) setSantriTanpaKamar(await resAntrean.json());
     } catch (error) { console.error("Gagal memuat data", error); }
   };
 
@@ -354,6 +360,72 @@ export default function MasterLokasiPage() {
         <IconWarning />
         <p className="text-sm text-yellow-500 font-medium">Jika ada loker warna merah (Bentrok), klik tombol Pindah untuk memindahkan santri.</p>
       </div>
+
+      {/* SANTRI TANPA KAMAR SECTION */}
+      {santriTanpaKamar.length > 0 && (
+        <div className="mb-10 bg-dark-800 rounded-2xl shadow-sm border border-red-500/20 overflow-hidden">
+          <div className="bg-red-900/20 p-4 border-b border-red-500/20 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+              <h2 className="text-xl font-black text-red-500 flex items-center gap-2">
+                <IconWarning /> Santri Belum Punya Kamar
+                <span className="text-sm font-bold bg-red-600 text-white px-2 py-0.5 rounded-full">{santriTanpaKamar.length} Orang</span>
+              </h2>
+              <p className="text-sm text-gray-400 mt-1 font-medium">Santri lunas yang belum dialokasikan ke lemari manapun atau kamarnya terhapus.</p>
+            </div>
+            <input 
+              type="text" 
+              placeholder="Cari nama santri..." 
+              value={keywordBelumKamar} 
+              onChange={(e) => setKeywordBelumKamar(e.target.value)} 
+              className="w-full sm:w-64 bg-dark-900 text-gray-200 border border-red-500/20 px-4 py-2 rounded-xl outline-none focus:border-red-500/50 shadow-inner"
+            />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead className="bg-dark-900 border-b border-red-500/10 text-gray-400 uppercase font-black text-xs">
+                <tr>
+                  <th className="p-3 w-16 text-center">No</th>
+                  <th className="p-3">Nama Santri</th>
+                  <th className="p-3 w-28 text-center">NIS</th>
+                  <th className="p-3 w-32 text-center">Gender</th>
+                  <th className="p-3">Keterangan Asrama (Lama)</th>
+                  <th className="p-3 w-32 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {santriTanpaKamar.filter(s => s.santri.nama.toLowerCase().includes(keywordBelumKamar.toLowerCase())).map((item, i) => (
+                  <tr key={item.id} className="border-b border-red-500/5 hover:bg-dark-900/50 transition-colors">
+                    <td className="p-3 text-center text-gray-500 font-bold">{i + 1}</td>
+                    <td className="p-3">
+                      <p className="font-bold text-gray-200 text-base">{item.santri.nama}</p>
+                      <span className="text-[10px] font-bold bg-dark-900 px-1.5 py-0.5 rounded text-gray-400 border border-gray-800">{item.santri.kategori}</span>
+                    </td>
+                    <td className="p-3 text-center font-bold text-gray-400">{item.santri.nis || '-'}</td>
+                    <td className="p-3 text-center">
+                      {item.santri.gender === 'BANAT' ? (
+                        <span className="text-pink-500 font-bold text-xs bg-pink-500/10 px-2 py-1 rounded border border-pink-500/20">BANAT</span>
+                      ) : (
+                        <span className="text-blue-500 font-bold text-xs bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">BANIN</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span className="text-xs text-gray-400 italic">{item.keteranganSakanLama || '-'}</span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <button 
+                        onClick={() => bukaModalPindah(item.id, item.santri.nama, item.santri.gender)}
+                        className="bg-gold-500 text-black hover:bg-gold-400 px-4 py-1.5 rounded-lg text-xs font-black shadow-md transition-all active:scale-95"
+                      >
+                        Tempatkan
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* BANIN SECTION */}
       {sakanBanin.length > 0 && (

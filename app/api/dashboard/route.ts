@@ -91,7 +91,7 @@ export async function GET() {
         id: true, 
         nama: true, 
         tanggalBuka: true, 
-        riwayat: { select: { santri: { select: { gender: true } } } }
+        riwayat: { select: { isLunas: true, santri: { select: { gender: true } } } }
       },
       orderBy: { id: 'asc' }
     });
@@ -99,13 +99,15 @@ export async function GET() {
     const grafikData = historiDufahRaw.map(d => {
       let totalBanin = 0; let totalBanat = 0;
       d.riwayat.forEach(r => {
-        if (r.santri.gender === 'BANAT') totalBanat++;
-        else totalBanin++;
+        if (r.isLunas) {
+          if (r.santri.gender === 'BANAT') totalBanat++;
+          else totalBanin++;
+        }
       });
       return {
         id: d.id, nama: d.nama,
         tahun: d.tanggalBuka ? new Date(d.tanggalBuka).getFullYear() : new Date().getFullYear(),
-        totalPendaftar: d.riwayat.length, totalBanin, totalBanat
+        totalPendaftar: totalBanin + totalBanat, totalBanin, totalBanat
       };
     });
 

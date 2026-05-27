@@ -14,7 +14,7 @@ export default function AdminDashboardHome() {
   const [filterTahun, setFilterTahun] = useState("ALL");
   const [filterMulai, setFilterMulai] = useState("");
   const [filterAkhir, setFilterAkhir] = useState("");
-  const [filterGender, setFilterGender] = useState("ALL"); 
+  const [filterGender, setFilterGender] = useState("ALL");
 
   const pusher = usePusher();
 
@@ -26,7 +26,7 @@ export default function AdminDashboardHome() {
         const data = await res.json();
         setStats(data.stats); setGrafikData(data.grafikData);
       }
-    } catch (error) {}
+    } catch (error) { }
     if (!isBackground) setLoading(false);
   };
 
@@ -40,7 +40,7 @@ export default function AdminDashboardHome() {
     const handler = () => muatData(true);
     const channel = pusher.subscribe("ppdb-channel");
     channel.bind("data:update", handler);
-    return () => { 
+    return () => {
       channel.unbind("data:update", handler);
       pusher.unsubscribe("ppdb-channel");
     };
@@ -48,7 +48,7 @@ export default function AdminDashboardHome() {
 
   const copyLaporanWA = () => {
     if (!stats) return;
-    
+
     let text = `Assalamualaikum Warahmatullahi Wa Barakatuh.\n\n`;
     text += `Afwan Ustadz dan Ustadzah...\n\n`;
     text += `Kami dari tim Id Card & Asrama izin melaporkan jumlah santri yang sudah Cek in dari hari pertama sampai hari ini dan jumlah santri global.\n\n`;
@@ -93,7 +93,7 @@ export default function AdminDashboardHome() {
   };
 
   const tahunUnik = Array.from(new Set(grafikData.map(g => g.tahun))).sort((a, b) => b - a);
-  
+
   let grafikMurni = grafikData.filter(g => {
     let lolosTahun = filterTahun === "ALL" || g.tahun.toString() === filterTahun;
     let lolosMulai = filterMulai === "" || g.id >= parseInt(filterMulai);
@@ -125,7 +125,7 @@ export default function AdminDashboardHome() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
-      
+
       {/* HEADER & TOMBOL WA */}
       <div className="mb-8 border-b border-gold-500/20 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 relative z-10">
         <div>
@@ -146,15 +146,15 @@ export default function AdminDashboardHome() {
       {/* 3 KARTU STATISTIK */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 relative z-10">
         <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-gold-500 flex flex-col justify-center relative overflow-hidden transition-shadow">
-          <p className="text-gold-500 font-bold text-sm z-10">Total Penghuni Sakan</p>
+          <p className="text-gold-500 font-bold text-sm z-10">Total Santri Global</p>
           <p className="text-4xl font-black text-gold-400 mt-2 z-10">{stats?.totalMasukSakan} <span className="text-lg font-medium text-gray-400">Santri</span></p>
           <div className="absolute -right-4 -bottom-4 text-7xl opacity-5 grayscale">🏢</div>
         </div>
 
         <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-green-600 flex flex-col justify-center relative overflow-hidden transition-shadow">
-          <p className="text-green-500 font-bold text-sm z-10">Selesai ID Card & Check-in</p>
+          <p className="text-green-500 font-bold text-sm z-10">Jumlah Santri Yang Sudah Check In</p>
           <p className="text-4xl font-black text-green-500 mt-2 z-10">{stats?.totalAmbilIdCard} <span className="text-lg font-medium text-green-900">Santri</span></p>
-          
+
           {stats?.totalKSU > 0 && (
             <p className="text-xs font-bold text-purple-400 mt-1 z-10 bg-purple-900/40 inline-block px-2 py-0.5 rounded-md self-start border border-purple-500/30">
               + {stats?.totalKSU} (KSU)
@@ -165,7 +165,7 @@ export default function AdminDashboardHome() {
         </div>
 
         <div className={`p-6 rounded-2xl shadow-sm border-l-4 flex flex-col justify-center relative overflow-hidden transition-shadow ${stats?.selisih > 0 ? 'bg-dark-800 border-y-red-900/50 border-r-red-900/50 border-l-red-500' : 'bg-dark-800 border border-gold-500/10 border-l-gray-600'}`}>
-          <p className={`${stats?.selisih > 0 ? 'text-red-500' : 'text-gray-400'} font-bold text-sm z-10`}>Selisih (Belum ID Card)</p>
+          <p className={`${stats?.selisih > 0 ? 'text-red-500' : 'text-gray-400'} font-bold text-sm z-10`}>Santri Lama Yang Lanjut Tapi Belum Check In</p>
           <p className={`text-4xl font-black mt-2 z-10 ${stats?.selisih > 0 ? 'text-red-500' : 'text-gray-500'}`}>
             {stats?.selisih} <span className="text-lg font-medium opacity-50">Santri</span>
           </p>
@@ -174,12 +174,12 @@ export default function AdminDashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
-        
+
         {/* KOLOM KIRI: GRAFIK */}
         <div className="lg:col-span-2 bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 p-6 flex flex-col">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gold-500/10 pb-4 mb-6 gap-4">
-            <h2 className="text-xl font-bold text-gold-500">📊 Grafik Pendaftar per Duf&apos;ah</h2>
-            
+            <h2 className="text-xl font-bold text-gold-500">Grafik Pendaftar per Duf&apos;ah</h2>
+
             <div className="flex flex-wrap items-center justify-end gap-2 text-sm w-full md:w-auto">
               <select value={filterGender} onChange={(e) => setFilterGender(e.target.value)} className="p-2 border border-dark-900 rounded-lg bg-dark-900 font-bold text-gold-500 outline-none cursor-pointer focus:ring-1 focus:ring-gold-500/50 w-full sm:w-auto shadow-inner">
                 <option value="ALL">Semua Gender</option>
@@ -213,60 +213,60 @@ export default function AdminDashboardHome() {
               <div className="h-[300px] relative" style={{ minWidth: `${Math.max(100, grafikDitampilkan.length * 60)}px` }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={grafikDitampilkan} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis 
-                      dataKey="nama" 
-                      tick={{ fontSize: 10, fill: '#ba9a2f', fontWeight: 600 }} 
-                      axisLine={false} 
-                      tickLine={false} 
+                    <XAxis
+                      dataKey="nama"
+                      tick={{ fontSize: 10, fill: '#ba9a2f', fontWeight: 600 }}
+                      axisLine={false}
+                      tickLine={false}
                     />
-                  <YAxis 
-                    tick={{ fontSize: 10, fill: '#64748b' }} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    domain={[0, 'dataMax + 10']}
-                  />
-                  <Tooltip
-                    cursor={{ fill: '#ffffff10' }}
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        return (
-                          <div className="bg-dark-900 p-3 border border-gold-500/20 shadow-xl rounded-xl">
-                            <p className="font-bold text-gold-400 border-b border-gold-500/10 pb-2 mb-2">
-                              {data.nama} <span className="text-gray-500 text-sm font-medium">({data.tahun})</span>
-                            </p>
-                            {filterGender === "ALL" || filterGender === "BANIN" ? (
-                              <p className="text-blue-400 font-bold text-sm">👨 Banin: {data.totalBanin}</p>
-                            ) : null}
-                            {filterGender === "ALL" || filterGender === "BANAT" ? (
-                              <p className="text-pink-400 font-bold text-sm mt-1">🧕 Banat: {data.totalBanat}</p>
-                            ) : null}
-                            {filterGender === "ALL" && (
-                              <p className="text-gray-300 font-bold border-t border-gray-700 mt-2 pt-2 text-sm">
-                                Total: {data.totalPendaftar} Santri
+                    <YAxis
+                      tick={{ fontSize: 10, fill: '#64748b' }}
+                      axisLine={false}
+                      tickLine={false}
+                      domain={[0, 'dataMax + 10']}
+                    />
+                    <Tooltip
+                      cursor={{ fill: '#ffffff10' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-dark-900 p-3 border border-gold-500/20 shadow-xl rounded-xl">
+                              <p className="font-bold text-gold-400 border-b border-gold-500/10 pb-2 mb-2">
+                                {data.nama} <span className="text-gray-500 text-sm font-medium">({data.tahun})</span>
                               </p>
-                            )}
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  
-                  {/* Rendering logic based on filter */}
-                  {filterGender === "ALL" && (
-                    <>
-                      <Bar dataKey="totalBanin" name="Banin" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} barSize={40} />
-                      <Bar dataKey="totalBanat" name="Banat" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={40} />
-                    </>
-                  )}
-                  {filterGender === "BANIN" && (
-                    <Bar dataKey="totalBanin" name="Banin" fill="#3b82f6" radius={[4, 4, 4, 4]} barSize={40} />
-                  )}
-                  {filterGender === "BANAT" && (
-                    <Bar dataKey="totalBanat" name="Banat" fill="#ec4899" radius={[4, 4, 4, 4]} barSize={40} />
-                  )}
-                </BarChart>
+                              {filterGender === "ALL" || filterGender === "BANIN" ? (
+                                <p className="text-blue-400 font-bold text-sm">👨 Banin: {data.totalBanin}</p>
+                              ) : null}
+                              {filterGender === "ALL" || filterGender === "BANAT" ? (
+                                <p className="text-pink-400 font-bold text-sm mt-1">🧕 Banat: {data.totalBanat}</p>
+                              ) : null}
+                              {filterGender === "ALL" && (
+                                <p className="text-gray-300 font-bold border-t border-gray-700 mt-2 pt-2 text-sm">
+                                  Total: {data.totalPendaftar} Santri
+                                </p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+
+                    {/* Rendering logic based on filter */}
+                    {filterGender === "ALL" && (
+                      <>
+                        <Bar dataKey="totalBanin" name="Banin" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} barSize={40} />
+                        <Bar dataKey="totalBanat" name="Banat" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={40} />
+                      </>
+                    )}
+                    {filterGender === "BANIN" && (
+                      <Bar dataKey="totalBanin" name="Banin" fill="#3b82f6" radius={[4, 4, 4, 4]} barSize={40} />
+                    )}
+                    {filterGender === "BANAT" && (
+                      <Bar dataKey="totalBanat" name="Banat" fill="#ec4899" radius={[4, 4, 4, 4]} barSize={40} />
+                    )}
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             )}
@@ -279,7 +279,7 @@ export default function AdminDashboardHome() {
             <h2 className="text-lg font-bold text-red-500 flex items-center gap-2">🚨 Daftar Selisih</h2>
             <p className="text-xs text-red-400 mt-1 font-medium">Santri yang sudah masuk kamar tapi belum konfirmasi ID Card.</p>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-2">
             {stats?.listBelumIdCard.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-70 p-6 text-center">

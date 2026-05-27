@@ -258,6 +258,21 @@ export default function DashboardMuasisPage() {
   const sakanBanin = filterSakan(filteredDataSakan.filter(s => s.kategori !== "BANAT"));
   const sakanBanat = filterSakan(filteredDataSakan.filter(s => s.kategori === "BANAT"));
 
+  let summaryKapasitas = 0;
+  let summaryTerisi = 0;
+
+  filteredDataSakan.forEach((sakan) => {
+    sakan.kamar.forEach((kamar: any) => {
+      const lemariAktif = kamar.lemari.filter((l: any) => !l.isLocked && !kamar.isLocked && !sakan.isLocked);
+      summaryKapasitas += lemariAktif.length;
+      kamar.lemari.forEach((lemari: any) => {
+        if (lemari.penghuni && lemari.penghuni.length > 0) summaryTerisi++;
+      });
+    });
+  });
+
+  const summaryPersentase = summaryKapasitas === 0 ? 0 : Math.round((summaryTerisi / summaryKapasitas) * 100);
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
@@ -479,7 +494,7 @@ export default function DashboardMuasisPage() {
                                   
                                   <div className="mt-auto">
                                     {isTerisi ? (
-                                      <p className={`font-bold text-xs leading-tight truncate ${isHighlighted ? 'text-yellow-500' : isBelumLunas ? 'text-amber-400' : 'text-gray-300'}`} title={`${dataSantri.nama} (${isBelumLunas ? 'Booking / Belum Lunas' : 'Lunas'})`}>
+                                      <p className={`font-bold text-xs leading-tight break-words whitespace-normal ${isHighlighted ? 'text-yellow-500' : isBelumLunas ? 'text-amber-400' : 'text-gray-300'}`} title={`${dataSantri.nama} (${isBelumLunas ? 'Booking / Belum Lunas' : 'Lunas'})`}>
                                         {dataSantri.nama}
                                       </p>
                                     ) : (
@@ -546,12 +561,49 @@ export default function DashboardMuasisPage() {
           </div>
         </div>
 
-        {/* Keterangan Warna */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-bold bg-dark-800 text-gray-300 p-3 rounded-xl border border-gold-500/10 shadow-sm mt-4">
-          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded border border-gold-500 bg-dark-900"></div> Tersedia</div>
-          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-gray-700 border border-gray-600"></div> Terisi Lunas</div>
-          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-500 flex items-center justify-center font-black">!</div> Booking / Belum Lunas</div>
-          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-yellow-900/20 border border-yellow-500 text-yellow-500 flex items-center justify-center font-black">★</div> Tersorot Pencarian</div>
+        {/* Ringkasan Kapasitas Tiap Sakan */}
+        <div className="bg-dark-800 p-4 rounded-xl border border-gold-500/20 shadow-sm mt-6">
+          <h3 className="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider">Detail Kapasitas Asrama</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-300">
+              <thead className="text-[10px] uppercase bg-dark-900 text-gray-400 border-b border-gray-700">
+                <tr>
+                  <th className="px-3 py-2 font-bold rounded-tl-lg">Nama Sakan</th>
+                  <th className="px-3 py-2 font-bold text-center">Terisi / Kuota</th>
+                  <th className="px-3 py-2 font-bold text-right rounded-tr-lg">Persentase</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDataSakan.map(sakan => {
+                  let kap = 0;
+                  let isi = 0;
+                  sakan.kamar.forEach((kamar: any) => {
+                    const lemariAktif = kamar.lemari.filter((l: any) => !l.isLocked && !kamar.isLocked && !sakan.isLocked);
+                    kap += lemariAktif.length;
+                    kamar.lemari.forEach((lemari: any) => {
+                      if (lemari.penghuni && lemari.penghuni.length > 0) isi++;
+                    });
+                  });
+                  const persentase = kap === 0 ? 0 : Math.round((isi / kap) * 100);
+                  
+                  return (
+                    <tr key={sakan.id} className="border-b border-gray-800 last:border-0 hover:bg-dark-700/50 transition-colors">
+                      <td className="px-3 py-2 font-bold text-gold-500 whitespace-nowrap">{sakan.nama}</td>
+                      <td className="px-3 py-2 text-center font-medium whitespace-nowrap">{isi} <span className="text-gray-500 text-[10px]">/ {kap}</span></td>
+                      <td className="px-3 py-2 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="font-bold text-white text-xs">{persentase}%</span>
+                          <div className="w-16 bg-dark-900 rounded-full h-1.5 hidden sm:block">
+                            <div className="bg-gold-500 h-1.5 rounded-full" style={{ width: `${persentase}%` }}></div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
