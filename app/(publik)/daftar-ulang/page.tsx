@@ -10,6 +10,7 @@ export default function DaftarUlangPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
+  const [targetDufah, setTargetDufah] = useState<any>(null);
 
   // Form Pencarian
   const [identifier, setIdentifier] = useState("");
@@ -42,6 +43,17 @@ export default function DaftarUlangPage() {
   useEffect(() => {
     refreshCaptcha();
     fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => { });
+    fetch("/api/dufah").then(res => res.json()).then(data => {
+      const now = new Date();
+      const target = data.find((df: any) => {
+        if (!df.tanggalBuka || !df.tanggalTutup) return false;
+        return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+      });
+      if (target) {
+        target.namaPeriodeLengkap = target.nama;
+      }
+      setTargetDufah(target || null);
+    }).catch(() => { });
   }, []);
 
   const handleCariData = async (e: React.FormEvent) => {
@@ -145,9 +157,42 @@ export default function DaftarUlangPage() {
         {/* Card Form */}
         <div className="bg-dark-800/80 backdrop-blur-md rounded-3xl p-6 md:p-10 border border-gold-500/20 shadow-2xl relative overflow-hidden">
 
-          {/* STEP 1: PENCARIAN */}
+          {/* STEP 0: PILIH JALUR */}
           {step === 1 && (
             <div className="animate-fadeIn">
+              <h2 className="text-2xl font-bold text-white border-b border-gold-500/10 pb-3 mb-6">Pilih Jalur Daftar Ulang</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  onClick={() => setStep(1.5)}
+                  className="cursor-pointer border-2 border-dark-900 bg-dark-900 hover:border-gold-500/50 hover:bg-dark-800 rounded-2xl p-6 transition-all text-center group"
+                >
+                  <div className="w-16 h-16 bg-gold-500/10 text-gold-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Punya NIS/NIK</h3>
+                  <p className="text-sm text-gray-400">Pernah mendaftar via web ini (Duf'ah 89 ke atas).</p>
+                </div>
+
+                <Link
+                  href="/daftar-ulang/manual"
+                  className="cursor-pointer border-2 border-dark-900 bg-dark-900 hover:border-gold-500/50 hover:bg-dark-800 rounded-2xl p-6 transition-all text-center group block"
+                >
+                  <div className="w-16 h-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Belum Punya NIS</h3>
+                  <p className="text-sm text-gray-400">Santri lama sebelum Web dibuat (Sebelum Duf'ah 89).</p>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 1.5: PENCARIAN (Punya NIS) */}
+          {step === 1.5 && (
+            <div className="animate-fadeIn">
+              <button onClick={() => setStep(1)} className="text-gold-500 font-bold mb-4 flex items-center gap-2 hover:text-gold-400 transition">
+                <span>&larr;</span> Kembali
+              </button>
               <h2 className="text-2xl font-bold text-white border-b border-gold-500/10 pb-3 mb-6">Verifikasi Data Santri</h2>
               <form onSubmit={handleCariData} className="space-y-5">
                 <div>
@@ -163,9 +208,6 @@ export default function DaftarUlangPage() {
                   {loading ? "Mencari Data..." : "Temukan Data Saya"}
                 </button>
               </form>
-              <div className="mt-8 text-center border-t border-dark-900 pt-4">
-                <Link href="/pendaftaran" className="text-gray-400 hover:text-gold-500 text-sm font-semibold transition underline underline-offset-4">Bukan Santri Lama? Daftar Baru di sini.</Link>
-              </div>
             </div>
           )}
 
@@ -194,6 +236,25 @@ export default function DaftarUlangPage() {
               <h2 className="text-xl font-bold text-white border-b border-gold-500/10 pb-3 mt-6">Pilih Program Perpanjangan</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {programs.map(p => {
+                  const tgMulai = p.tanggalMulaiDefault || "10";
+                  const tgTutup = p.tanggalTutupDefault || "06";
+
+                  let displayMulai = tgMulai;
+                  let displayTutup = tgTutup;
+
+                  if (targetDufah && targetDufah.tanggalBuka) {
+                    if (/^\d+$/.test(tgMulai.trim())) {
+                      const d = new Date(targetDufah.tanggalBuka);
+                      d.setMonth(d.getMonth() + 1);
+                      displayMulai = `${tgMulai.trim()} ${d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+                    }
+                    if (/^\d+$/.test(tgTutup.trim())) {
+                      const d = new Date(targetDufah.tanggalBuka);
+                      d.setMonth(d.getMonth() + 1 + p.durasiBulan);
+                      displayTutup = `${tgTutup.trim()} ${d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+                    }
+                  }
+
                   const hargaTampil = isBeliAtribut ? p.harga : p.harga - 100000;
                   return (
                     <div
@@ -205,6 +266,12 @@ export default function DaftarUlangPage() {
                         <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
                         <span className="bg-dark-800 text-gold-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{p.durasiBulan} Bulan</span>
                       </div>
+                      <div className="mb-2">
+                        <span className={`text-xs font-bold px-2 py-1 rounded-md ${targetDufah ? 'bg-dark-800 text-gray-400' : 'bg-red-900/50 text-red-400'}`}>
+                          {targetDufah ? `Periode ${targetDufah.namaPeriodeLengkap || targetDufah.nama}` : "Pendaftaran Sedang Ditutup"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-3">Tgl Program: <strong className="text-gray-300">{displayMulai} - {displayTutup}</strong></p>
                       <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(hargaTampil)}</p>
                       {!isBeliAtribut && (
                         <p className="text-xs text-green-500 font-bold mt-1">Diskon Atribut Santri Lama (-100k)</p>

@@ -199,6 +199,7 @@ export default function MejaKeuanganPage() {
       };
 
       const santris = parsedRombonganData.map((row: any) => ({
+        nis: row.NIS || row.nis || "",
         nama: toTitleCase(row.Nama || row.nama || ""),
         gender: row.Gender || row.gender || "BANIN",
         tempatLahir: toTitleCase(row.TempatLahir || row.tempatLahir || ""),
@@ -245,6 +246,7 @@ export default function MejaKeuanganPage() {
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
       {
+        NIS: "2401001",
         Nama: "Santri Contoh",
         Gender: "BANIN",
         TempatLahir: "Batu",

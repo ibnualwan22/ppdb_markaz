@@ -58,16 +58,30 @@ export async function POST(request: Request) {
       // Process Santris
       for (const s of santris) {
         const parsedTanggalLahir = s.tanggalLahir ? new Date(s.tanggalLahir) : null;
-        let santri = await tx.santri.findFirst({
-          where: {
-            nama: s.nama,
-            tanggalLahir: parsedTanggalLahir
-          }
-        });
+        let santri = null;
+
+        // 1. Coba cari berdasarkan NIS jika diberikan
+        if (s.nis) {
+          santri = await tx.santri.findFirst({
+            where: { nis: s.nis.toString() }
+          });
+        }
+
+        // 2. Jika tidak ketemu by NIS, cari berdasarkan Nama & Tanggal Lahir
+        if (!santri) {
+          santri = await tx.santri.findFirst({
+            where: {
+              nama: s.nama,
+              tanggalLahir: parsedTanggalLahir
+            }
+          });
+        }
 
         if (!santri) {
+          // Buat Santri Baru
           santri = await tx.santri.create({
             data: {
+              nis: s.nis ? s.nis.toString() : null,
               nama: s.nama,
               gender: s.gender || "BANIN",
               tempatLahir: s.tempatLahir,
@@ -84,6 +98,14 @@ export async function POST(request: Request) {
               batasAktifDufah: 0
             }
           });
+        } else {
+          // Santri sudah ada, perbarui kategori ke LAMA jika sebelumnya BARU
+          if (santri.kategori !== "LAMA") {
+            santri = await tx.santri.update({
+              where: { id: santri.id },
+              data: { kategori: "LAMA" }
+            });
+          }
         }
 
         const noKwitansi = generateInvoiceNumber(dufahTujuanId);

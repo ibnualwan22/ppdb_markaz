@@ -111,17 +111,6 @@ export async function POST(
         const startDufah = currentBatas < targetDufahId ? targetDufahId : currentBatas + 1;
         const newBatasAktif = startDufah + transaksi.program.durasiBulan - 1;
 
-        // Update Santri
-        await tx.santri.update({
-          where: { id: transaksi.santriId },
-          data: {
-            nis,
-            batasAktifDufah: newBatasAktif,
-            isAktif: true,
-            kategori: santriDb?.kategori
-          }
-        });
-
         const isBeliAtribut = transaksi.nominalProgram >= transaksi.program.harga;
 
         const cekRiwayat = await tx.riwayatDufah.findUnique({
@@ -130,27 +119,51 @@ export async function POST(
           }
         });
 
+        let newBulanKe = 1;
+        let previousLemariId = null;
+        let kategoriBaru = santriDb?.kategori || "BARU";
+
         if (!cekRiwayat) {
           const lastRiwayatEver = await tx.riwayatDufah.findFirst({
             where: { santriId: transaksi.santriId },
             orderBy: { dufahId: 'desc' }
           });
 
-          let newBulanKe = 1;
-          let previousLemariId = null;
-
           if (lastRiwayatEver) {
-            newBulanKe = (lastRiwayatEver.bulanKe || 1) + 1;
-
             const previousDufah = await tx.dufah.findFirst({
               where: { id: { lt: targetDufahId } },
               orderBy: { id: 'desc' }
             });
 
             if (previousDufah && lastRiwayatEver.dufahId === previousDufah.id) {
-              previousLemariId = lastRiwayatEver.lemariId;
+              // TIDAK TERPUTUS
+              const batasMaksimal = 3;
+              const durasiBerjalan = lastRiwayatEver.bulanKe || 1;
+              if (durasiBerjalan % batasMaksimal !== 0) {
+                 previousLemariId = lastRiwayatEver.lemariId;
+                 newBulanKe = durasiBerjalan + 1;
+              } else {
+                 previousLemariId = null;
+                 newBulanKe = durasiBerjalan + 1;
+              }
+            } else {
+              // TERPUTUS! (Bolong Duf'ah)
+              previousLemariId = null;
+              newBulanKe = 1;
+              kategoriBaru = "BARU";
             }
           }
+
+          // Update Santri dengan kategori yang sudah disesuaikan
+          await tx.santri.update({
+            where: { id: transaksi.santriId },
+            data: {
+              nis,
+              batasAktifDufah: newBatasAktif,
+              isAktif: true,
+              kategori: kategoriBaru
+            }
+          });
 
           await tx.riwayatDufah.create({
             data: {
@@ -159,6 +172,8 @@ export async function POST(
               lemariId: previousLemariId,
               status: previousLemariId ? "ASSIGNED" : "PRE_LIST",
               bulanKe: newBulanKe,
+              isLunas: true,
+              isIdCardTaken: false,
               isDresscodeTaken: !isBeliAtribut,
               isToteBagTaken: !isBeliAtribut,
               isPinTaken: !isBeliAtribut,
@@ -168,6 +183,17 @@ export async function POST(
             }
           });
         } else {
+          // Jika riwayat sudah ada, update Lunas
+          await tx.santri.update({
+            where: { id: transaksi.santriId },
+            data: {
+              nis,
+              batasAktifDufah: newBatasAktif,
+              isAktif: true,
+              kategori: kategoriBaru
+            }
+          });
+
           await tx.riwayatDufah.update({
             where: { id: cekRiwayat.id },
             data: {
