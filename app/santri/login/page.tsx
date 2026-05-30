@@ -1,16 +1,23 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Swal from "sweetalert2";
 
 export default function SantriLoginPage() {
+  const { data: session, status } = useSession();
   const [nis, setNis] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role === "SANTRI") {
+      router.push("/santri/dashboard");
+    }
+  }, [status, session, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

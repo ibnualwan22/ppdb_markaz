@@ -96,7 +96,7 @@ export default async function SantriDashboardPage() {
             </h3>
             <p className="text-red-300 text-sm mt-1">Nomor Induk Santri (NIS) Anda saat ini berstatus tidak aktif. Anda tidak akan mendapatkan penempatan asrama baru sebelum melakukan Daftar Ulang.</p>
           </div>
-          <Link href="/daftar-ulang" className="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md whitespace-nowrap transition-colors">
+          <Link href="/santri/daftar-ulang" className="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md whitespace-nowrap transition-colors">
             Mulai Daftar Ulang
           </Link>
         </div>
