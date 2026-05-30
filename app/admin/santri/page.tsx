@@ -507,6 +507,7 @@ export default function MasterSantriPage() {
         No: index + 1,
         NIS: santri.nis || "-",
         Nama: santri.nama,
+        Program: santri.transaksi?.[0]?.program?.nama || "-",
         Gender: santri.gender === "BANAT" ? "Perempuan" : "Laki-laki",
         "Tempat Lahir": santri.tempatLahir || "-",
         "Tanggal Lahir": tglLahirVal,
@@ -544,6 +545,7 @@ export default function MasterSantriPage() {
     const tableData = dataDitampilkan.map((santri, index) => [
       index + 1,
       santri.nama,
+      santri.transaksi?.[0]?.program?.nama || "-",
       santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
       santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
       hitungSisaDurasi(santri),
@@ -555,15 +557,15 @@ export default function MasterSantriPage() {
 
     autoTable(doc, {
       startY: 50,
-      head: [["No", "Nama", "Sakan", "Lemari", "Sisa Durasi", "Bln", "Kategori", "Status"]],
-      body: tableData.map(row => row.slice(0, 8)), // Extract the actual table fields
+      head: [["No", "Nama", "Program", "Sakan", "Lemari", "Sisa Durasi", "Bln", "Kategori", "Status"]],
+      body: tableData.map(row => row.slice(0, 9)), // Extract the actual table fields
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: [212, 175, 55], textColor: [0, 0, 0] },
       didParseCell: function(data) {
         if (data.section === 'body') {
           const rowIndex = data.row.index;
-          const gender = tableData[rowIndex][8];
+          const gender = tableData[rowIndex][9];
           if (gender === 'BANIN') {
              // Light blue background for Banin
              data.cell.styles.fillColor = [224, 242, 254];
@@ -708,6 +710,7 @@ export default function MasterSantriPage() {
                 <tr>
                   <th className="p-4 text-gold-600 font-bold text-center w-12">No</th>
                   <th className="p-4 text-gold-600 font-bold">Nama Lengkap</th>
+                  <th className="p-4 text-gold-600 font-bold">Program</th>
                   <th className="p-4 text-gold-600 font-bold text-center">Sisa Durasi</th>
                   <th className="p-4 text-gold-600 font-bold text-center">Bulan Ke-</th>
                   <th className="p-4 text-gold-600 font-bold">Kategori</th>
@@ -752,6 +755,16 @@ export default function MasterSantriPage() {
                         <p className="text-[10px] text-gray-500 mt-0.5">
                           Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
                         </p>
+                      </td>
+                      <td className="p-4">
+                        {santri.transaksi && santri.transaksi[0]?.program ? (
+                          <>
+                            <p className="text-sm font-bold text-emerald-400">{santri.transaksi[0].program.nama}</p>
+                            <p className="text-[10px] text-gray-500">Durasi: {santri.transaksi[0].program.durasiBulan} Bulan</p>
+                          </>
+                        ) : (
+                          <span className="text-gray-500 text-sm italic">-</span>
+                        )}
                       </td>
                       <td className="p-4 text-center font-bold text-gold-400">
                         {hitungSisaDurasi(santri)}

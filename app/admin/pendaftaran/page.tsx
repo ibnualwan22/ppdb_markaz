@@ -8,6 +8,7 @@ import { usePusher } from "@/app/providers/PusherProvider";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import * as XLSX from 'xlsx';
 import { generateRegistrationPdf, generateRombonganInvoicePdf } from "@/app/lib/generateRegistrationPdf";
+import Swal from 'sweetalert2';
 
 const COLORS = ['#22c55e', '#ef4444']; // Green for PAID, Red for PENDING
 
@@ -113,6 +114,51 @@ export default function MejaKeuanganPage() {
       swalError("Error", "Terjadi kesalahan server");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const hapusTransaksi = async (id: string, namaSantri: string) => {
+    const isSuperAdmin = (session?.user as any)?.permissions?.includes("all_access");
+    if (!isSuperAdmin) {
+      return swalError("Gagal", "Hanya Super Admin yang dapat menghapus data pendaftaran.");
+    }
+
+    const { value: confirmName } = await Swal.fire({
+      title: 'Hapus Data Pendaftaran?',
+      html: `Data pendaftaran <b>${namaSantri}</b> akan dihapus secara permanen dari sistem.<br><br>Ketik nama santri <b>${namaSantri}</b> untuk melanjutkan:`,
+      input: 'text',
+      inputPlaceholder: namaSantri,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      inputValidator: (value: string) => {
+        if (value !== namaSantri) {
+          return 'Nama yang diketik tidak cocok!';
+        }
+      }
+    });
+
+    if (confirmName === namaSantri) {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/pendaftaran/${id}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        if (res.ok) {
+          swalSuccess("Berhasil", "Data pendaftaran berhasil dihapus.");
+          muatData();
+        } else {
+          swalError("Gagal", data.error || "Gagal menghapus data");
+        }
+      } catch (e) {
+        swalError("Error", "Terjadi kesalahan server");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -882,6 +928,8 @@ export default function MejaKeuanganPage() {
                       <td className="px-4 py-4 text-right font-mono text-sm">
                         {t.statusPembayaran === "KSU_GRATIS" ? (
                           <span className="text-purple-400 font-bold">GRATIS</span>
+                        ) : t.statusPembayaran === "KLAIM_PAKET" ? (
+                          <span className="text-emerald-400 font-bold">KLAIM (Rp 0)</span>
                         ) : (
                           <>
                             {new Intl.NumberFormat('id-ID').format(t.totalTagihan)}
@@ -890,11 +938,13 @@ export default function MejaKeuanganPage() {
                         )}
                       </td>
                       <td className="px-4 py-4 text-center text-xs font-bold text-blue-400">
-                        {t.admin?.nama || "-"}
+                        {t.statusPembayaran === "KLAIM_PAKET" ? "Sistem (Otomatis)" : (t.admin?.nama || "-")}
                       </td>
                       <td className="px-4 py-4 text-center">
                         {t.statusPembayaran === "PAID" ? (
                           <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-md text-xs font-bold border border-green-500/30">LUNAS</span>
+                        ) : t.statusPembayaran === "KLAIM_PAKET" ? (
+                          <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-md text-xs font-bold border border-emerald-500/30">KLAIM PAKET</span>
                         ) : t.statusPembayaran === "KSU_GRATIS" ? (
                           <span className="bg-purple-500/20 text-purple-400 px-2 py-1 rounded-md text-xs font-bold border border-purple-500/30">LUNAS (KSU)</span>
                         ) : (
@@ -947,6 +997,21 @@ export default function MejaKeuanganPage() {
                               className="bg-gold-600 hover:bg-gold-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
                             >
                               ↓ Inv
+                            </button>
+                          </div>
+                        )}
+                        {((session?.user as any)?.permissions?.includes("all_access")) && (
+                          <div className={`flex justify-center ${t.statusPembayaran === "PENDING" ? "mt-2" : ""}`}>
+                            <button
+                              onClick={() => hapusTransaksi(t.id, t.santri.nama)}
+                              disabled={loading}
+                              title="Hapus Data (Super Admin)"
+                              className="bg-red-900/80 hover:bg-red-600 text-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1 border border-red-500/30 w-full justify-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Hapus
                             </button>
                           </div>
                         )}

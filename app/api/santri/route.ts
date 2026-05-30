@@ -36,6 +36,13 @@ export async function GET(request: Request) {
             lemari: { include: { kamar: { include: { sakan: true } } } }
           },
           orderBy: { dufahId: 'desc' }
+        },
+        transaksi: {
+          include: {
+            program: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1
         }
       },
       orderBy: { nama: 'asc' }

@@ -44,13 +44,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Pendaftaran saat ini sedang ditutup. Tidak ada periode Duf'ah yang buka." }, { status: 400 });
     }
 
+    const santri = await prisma.santri.findUnique({ where: { id: santriId } });
+    if (!santri) {
+      return NextResponse.json({ error: "Santri tidak ditemukan" }, { status: 404 });
+    }
+
     const dufahTujuanId = targetDufah.id;
 
-    const kodeUnik = Math.floor(Math.random() * 900) + 100;
-    
-    // Potong 100rb jika tidak beli atribut
-    const nominalProgram = isBeliAtribut ? program.harga : Math.max(0, program.harga - 100000);
+    // Cek apakah santri masih memiliki sisa paket
+    const isKlaimPaket = santri.batasAktifDufah >= dufahTujuanId;
+
+    // Jika klaim paket otomatis 0, jika tidak beli atribut potong 100k
+    const nominalProgram = isKlaimPaket ? 0 : (isBeliAtribut ? program.harga : Math.max(0, program.harga - 100000));
+    const kodeUnik = isKlaimPaket ? 0 : (Math.floor(Math.random() * 900) + 100);
     const totalTagihan = nominalProgram + kodeUnik;
+    
+    const statusPembayaran = isKlaimPaket ? "KLAIM_PAKET" : "PENDING";
+    const waktuLunas = isKlaimPaket ? new Date() : null;
 
     // Acuan kamar sebelumnya tempat dia menetap adalah Duf'ah sebelum dufahTujuan ini
     const dufahLama = await prisma.dufah.findFirst({
@@ -93,7 +103,8 @@ export async function POST(request: Request) {
           nominalProgram,
           kodeUnik,
           totalTagihan,
-          statusPembayaran: "PENDING"
+          statusPembayaran,
+          waktuLunas
         }
       });
 
@@ -111,7 +122,7 @@ export async function POST(request: Request) {
             status: statusBaru,
             isIdCardTaken: false,
             bulanKe: bulanKeBaru,
-            isLunas: false
+            isLunas: isKlaimPaket // Jika klaim, langsung lunas
           }
         });
       }

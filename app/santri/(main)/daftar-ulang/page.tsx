@@ -132,9 +132,29 @@ export default function SantriDaftarUlangPage() {
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-white border-b border-gold-500/10 pb-3 mt-6">Pilih Program Perpanjangan</h2>
+            <h2 className="text-xl font-bold text-white border-b border-gold-500/10 pb-3 mt-6">
+              {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id 
+                ? "Klaim Kuota Paket Anda" 
+                : "Pilih Program Perpanjangan"}
+            </h2>
+            
+            {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id && (
+              <div className="bg-emerald-500/10 border-l-4 border-emerald-500 p-4 mb-4 rounded-r-xl">
+                <p className="text-emerald-400 font-bold text-sm">Anda masih memiliki sisa paket aktif (S/d Duf'ah {santriData.batasAktifDufah}). Silakan pilih program yang akan Anda ambil di Periode {targetDufah.namaPeriodeLengkap || targetDufah.nama}.</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {programs.map(p => {
+              {programs
+                .filter(p => {
+                  const isKlaim = santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id;
+                  if (isKlaim) {
+                    const sisaKuota = santriData.batasAktifDufah - targetDufah.id + 1;
+                    return p.durasiBulan <= 2 && p.durasiBulan <= sisaKuota;
+                  }
+                  return true;
+                })
+                .map(p => {
                 const tgMulai = p.tanggalMulaiDefault || "10";
                 const tgTutup = p.tanggalTutupDefault || "06";
 
@@ -154,12 +174,14 @@ export default function SantriDaftarUlangPage() {
                   }
                 }
 
-                const hargaTampil = isBeliAtribut ? p.harga : p.harga - 100000;
+                const isKlaim = santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id;
+                const hargaTampil = isKlaim ? 0 : (isBeliAtribut ? p.harga : p.harga - 100000);
+                
                 return (
                   <div
                     key={p.id}
                     onClick={() => setProgramId(p.id)}
-                    className={`cursor-pointer border-2 rounded-2xl p-5 transition-all duration-300 ${programId === p.id ? 'border-gold-500 bg-gold-500/5 shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-dark-900 bg-dark-900 hover:border-gold-500/30'}`}
+                    className={`cursor-pointer border-2 rounded-2xl p-5 transition-all duration-300 flex flex-col ${programId === p.id ? 'border-gold-500 bg-gold-500/5 shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-dark-900 bg-dark-900 hover:border-gold-500/30'}`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-extrabold text-lg text-white">{p.nama}</h3>
@@ -170,29 +192,39 @@ export default function SantriDaftarUlangPage() {
                         {targetDufah ? `Periode ${targetDufah.namaPeriodeLengkap || targetDufah.nama}` : "Pendaftaran Sedang Ditutup"}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mb-3">Tgl Program: <strong className="text-gray-300">{displayMulai} - {displayTutup}</strong></p>
-                    <p className="text-2xl font-black text-gold-500 mt-4">Rp {new Intl.NumberFormat('id-ID').format(hargaTampil)}</p>
-                    {!isBeliAtribut && (
-                      <p className="text-xs text-green-500 font-bold mt-1">Diskon Atribut Santri Lama (-100k)</p>
-                    )}
+                    <p className="text-xs text-gray-500 mb-3 flex-grow">Tgl Program: <strong className="text-gray-300">{displayMulai} - {displayTutup}</strong></p>
+                    
+                    <div className="mt-4 pt-4 border-t border-dark-800">
+                      {isKlaim ? (
+                        <p className={`text-sm font-bold inline-block px-3 py-1.5 rounded-lg border transition-colors ${programId === p.id ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-dark-800 text-gray-400 border-dark-700'}`}>✓ Pilih program ini</p>
+                      ) : (
+                        <p className="text-2xl font-black text-gold-500">Rp {new Intl.NumberFormat('id-ID').format(hargaTampil)}</p>
+                      )}
+                      
+                      {!isBeliAtribut && !isKlaim && (
+                        <p className="text-xs text-green-500 font-bold mt-1">Diskon Atribut Santri Lama (-100k)</p>
+                      )}
+                    </div>
                   </div>
                 )
               })}
             </div>
 
-            <div className="mt-6 bg-dark-900 border border-gold-500/30 p-4 rounded-xl flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="beliAtribut"
-                checked={isBeliAtribut}
-                onChange={(e) => setIsBeliAtribut(e.target.checked)}
-                className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer"
-              />
-              <label htmlFor="beliAtribut" className="cursor-pointer text-gray-300">
-                <span className="block font-bold text-white">Beli Atribut Baru (+ Rp 100.000)</span>
-                <span className="text-sm text-gray-400">Centang ini jika Anda ingin membeli ulang perlengkapan (Buku, Seragam, dll) karena rusak atau hilang. Harga akan kembali normal.</span>
-              </label>
-            </div>
+            {!santriData.batasAktifDufah || !targetDufah || santriData.batasAktifDufah < targetDufah.id ? (
+              <div className="mt-6 bg-dark-900 border border-gold-500/30 p-4 rounded-xl flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="beliAtribut"
+                  checked={isBeliAtribut}
+                  onChange={(e) => setIsBeliAtribut(e.target.checked)}
+                  className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer"
+                />
+                <label htmlFor="beliAtribut" className="cursor-pointer text-gray-300">
+                  <span className="block font-bold text-white">Beli Atribut Baru (+ Rp 100.000)</span>
+                  <span className="text-sm text-gray-400">Centang ini jika Anda ingin membeli ulang perlengkapan (Buku, Seragam, dll) karena rusak atau hilang. Harga akan kembali normal.</span>
+                </label>
+              </div>
+            ) : null}
 
             {/* AGREEMENT SECTION */}
             <div className="mt-6 bg-dark-900 border border-gold-500/20 p-4 rounded-xl flex items-start gap-3">
