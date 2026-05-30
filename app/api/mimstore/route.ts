@@ -37,9 +37,45 @@ export async function GET() {
       }
     });
 
+    // Cari transaksi untuk melihat apakah santri ini beli atribut
+    const transaksiList = await prisma.transaksiPendaftaran.findMany({
+      where: {
+        dufahTujuanId: { in: relevantDufahIds },
+        santriId: { in: data.map(d => d.santri.id) },
+        statusPembayaran: { in: ["PAID", "KSU_GRATIS", "KLAIM_PAKET"] }
+      },
+      include: { program: true }
+    });
+
+    const dataWithAtribut = data.map(d => {
+      // Cari transaksi yang berkaitan
+      // Karena bisa jadi ada renew, kita cari yang paling baru (terakhir diverifikasi/lunas)
+      const txs = transaksiList.filter(t => t.santriId === d.santri.id && t.dufahTujuanId === d.dufahId);
+      let isBeliAtribut = true;
+
+      if (txs.length > 0) {
+        // Ambil transaksi terbaru (berdasarkan id tertinggi)
+        const tx = txs.sort((a, b) => b.id.localeCompare(a.id))[0];
+        if (tx.statusPembayaran === "KLAIM_PAKET") {
+          isBeliAtribut = false;
+        } else if (tx.program && tx.nominalProgram < tx.program.harga) {
+          isBeliAtribut = false;
+        }
+      } else {
+        // Jika tidak ada transaksi sama sekali di Duf'ah ini (misal santri yg melanjutkan paket dari bulan sebelumnya)
+        // Maka otomatis mereka TIDAK beli atribut (karena atribut dibeli di bulan pertama pendaftaran paket)
+        isBeliAtribut = false;
+      }
+
+      return {
+        ...d,
+        isBeliAtribut
+      };
+    });
+
     const dufahLabel = dufahAktif.nama;
 
-    return NextResponse.json({ data, dufahNama: dufahLabel });
+    return NextResponse.json({ data: dataWithAtribut, dufahNama: dufahLabel });
   } catch (error) {
     console.error("Error GET /api/mimstore:", error);
     return NextResponse.json({ error: "Gagal memuat data" }, { status: 500 });

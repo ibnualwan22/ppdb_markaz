@@ -222,12 +222,12 @@ export default function MimStorePage() {
       "Sakan":          item.lemari?.kamar?.sakan?.nama || "-",
       "Kamar":          item.lemari?.kamar?.nama || "-",
       "Lemari":         item.lemari?.nomor || "-",
-      "Dresscode":      item.isDresscodeTaken ? "✓" : "✗",
-      "Ukuran DC":      item.ukuranDresscode || "-",
-      "Tote Bag":       item.isToteBagTaken ? "✓" : "✗",
-      "Pin / Dabus":    item.isPinTaken ? "✓" : "✗",
-      "Pechi/Khimar":   item.isSongkokKhimarTaken ? "✓" : "✗",
-      "Ukuran Pechi":   item.ukuranSongkok || "-",
+      "Dresscode":      !item.isBeliAtribut ? "-" : (item.isDresscodeTaken ? "✓" : "✗"),
+      "Ukuran DC":      !item.isBeliAtribut ? "-" : (item.ukuranDresscode || "-"),
+      "Tote Bag":       !item.isBeliAtribut ? "-" : (item.isToteBagTaken ? "✓" : "✗"),
+      "Pin / Dabus":    !item.isBeliAtribut ? "-" : (item.isPinTaken ? "✓" : "✗"),
+      "Pechi/Khimar":   !item.isBeliAtribut ? "-" : (item.isSongkokKhimarTaken ? "✓" : "✗"),
+      "Ukuran Pechi":   !item.isBeliAtribut ? "-" : (item.ukuranSongkok || "-"),
       "Malzamah":       item.isMalzamahTaken ? "✓" : "✗",
       "Ta'birot":       item.isTabirotTaken ? "✓" : "✗",
     }));
@@ -492,47 +492,63 @@ export default function MimStorePage() {
                   </td>
                   {/* Dresscode */}
                   <td className="p-4 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50">
-                        <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                          checked={item.isDresscodeTaken} onChange={e => handleUpdate(item.id, "isDresscodeTaken", e.target.checked)} disabled={!canManageMimstore} />
-                        <span className="text-xs font-bold text-gray-300">DC</span>
-                      </label>
-                      <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner disabled:opacity-80 disabled:cursor-not-allowed"
-                        defaultValue={item.ukuranDresscode || ""} disabled={!canManageMimstore}
-                        onBlur={e => { if (e.target.value !== item.ukuranDresscode) handleUpdate(item.id, "ukuranDresscode", e.target.value); }} />
-                    </div>
+                    {item.isBeliAtribut ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50">
+                          <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                            checked={item.isDresscodeTaken} onChange={e => handleUpdate(item.id, "isDresscodeTaken", e.target.checked)} disabled={!canManageMimstore} />
+                          <span className="text-xs font-bold text-gray-300">DC</span>
+                        </label>
+                        <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner disabled:opacity-80 disabled:cursor-not-allowed"
+                          defaultValue={item.ukuranDresscode || ""} disabled={!canManageMimstore}
+                          onBlur={e => { if (e.target.value !== item.ukuranDresscode) handleUpdate(item.id, "ukuranDresscode", e.target.value); }} />
+                      </div>
+                    ) : (
+                      <span className="text-gray-600 font-medium">-</span>
+                    )}
                   </td>
                   {/* Tote Bag */}
                   <td className="p-4 text-center">
-                    <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 justify-center">
-                      <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                        checked={item.isToteBagTaken} onChange={e => handleUpdate(item.id, "isToteBagTaken", e.target.checked)} disabled={!canManageMimstore} />
-                      <span className="text-xs font-bold text-gray-300">TB</span>
-                    </label>
+                    {item.isBeliAtribut ? (
+                      <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 justify-center">
+                        <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                          checked={item.isToteBagTaken} onChange={e => handleUpdate(item.id, "isToteBagTaken", e.target.checked)} disabled={!canManageMimstore} />
+                        <span className="text-xs font-bold text-gray-300">TB</span>
+                      </label>
+                    ) : (
+                      <span className="text-gray-600 font-medium">-</span>
+                    )}
                   </td>
                   {/* Pin */}
                   <td className="p-4 text-center">
-                    <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 justify-center">
-                      <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                        checked={item.isPinTaken} onChange={e => handleUpdate(item.id, "isPinTaken", e.target.checked)} disabled={!canManageMimstore} />
-                      <span className="text-xs font-bold text-gray-300">Pin</span>
-                    </label>
+                    {item.isBeliAtribut ? (
+                      <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50 justify-center">
+                        <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                          checked={item.isPinTaken} onChange={e => handleUpdate(item.id, "isPinTaken", e.target.checked)} disabled={!canManageMimstore} />
+                        <span className="text-xs font-bold text-gray-300">Pin</span>
+                      </label>
+                    ) : (
+                      <span className="text-gray-600 font-medium">-</span>
+                    )}
                   </td>
                   {/* Songkok / Khimar */}
                   <td className="p-4 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50">
-                        <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
-                          checked={item.isSongkokKhimarTaken} onChange={e => handleUpdate(item.id, "isSongkokKhimarTaken", e.target.checked)} disabled={!canManageMimstore} />
-                        <span className="text-xs font-bold text-gray-300">{item.santri.gender === "BANIN" ? "SK" : "KM"}</span>
-                      </label>
-                      {item.santri.gender === "BANIN" && (
-                        <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner disabled:opacity-80 disabled:cursor-not-allowed"
-                          defaultValue={item.ukuranSongkok || ""} disabled={!canManageMimstore}
-                          onBlur={e => { if (e.target.value !== item.ukuranSongkok) handleUpdate(item.id, "ukuranSongkok", e.target.value); }} />
-                      )}
-                    </div>
+                    {item.isBeliAtribut ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <label className="flex items-center cursor-pointer gap-2 bg-dark-900 px-3 py-1.5 rounded-lg border border-gold-500/20 hover:border-gold-500/50">
+                          <input type="checkbox" className={`w-5 h-5 accent-gold-500 ${canManageMimstore ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}
+                            checked={item.isSongkokKhimarTaken} onChange={e => handleUpdate(item.id, "isSongkokKhimarTaken", e.target.checked)} disabled={!canManageMimstore} />
+                          <span className="text-xs font-bold text-gray-300">{item.santri.gender === "BANIN" ? "SK" : "KM"}</span>
+                        </label>
+                        {item.santri.gender === "BANIN" && (
+                          <input type="text" placeholder="Ukuran" className="w-full max-w-[80px] p-1.5 text-xs text-center border border-dark-900 rounded-lg bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500 shadow-inner disabled:opacity-80 disabled:cursor-not-allowed"
+                            defaultValue={item.ukuranSongkok || ""} disabled={!canManageMimstore}
+                            onBlur={e => { if (e.target.value !== item.ukuranSongkok) handleUpdate(item.id, "ukuranSongkok", e.target.value); }} />
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-600 font-medium">-</span>
+                    )}
                   </td>
                   {/* Malzamah */}
                   <td className="p-4 text-center">
