@@ -62,9 +62,17 @@ export async function GET() {
           isBeliAtribut = false;
         }
       } else {
-        // Jika tidak ada transaksi sama sekali di Duf'ah ini (misal santri yg melanjutkan paket dari bulan sebelumnya)
-        // Maka otomatis mereka TIDAK beli atribut (karena atribut dibeli di bulan pertama pendaftaran paket)
-        isBeliAtribut = false;
+        // Jika tidak ada transaksi sama sekali di Duf'ah ini (misal input manual, atau lanjut paket)
+        if (d.santri.kategori === "LAMA") {
+          // Santri lama yang tidak punya transaksi baru otomatis tidak dapat
+          isBeliAtribut = false;
+        } else if (d.bulanKe > 1) {
+          // Santri (KSU/BARU) yang melanjutkan ke bulan 2 dan seterusnya otomatis tidak dapat
+          isBeliAtribut = false;
+        } else {
+          // Santri BARU di bulan pertamanya (misal diinput manual oleh Admin) wajib dapat
+          isBeliAtribut = true;
+        }
       }
 
       return {

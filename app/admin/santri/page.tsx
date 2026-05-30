@@ -142,28 +142,24 @@ export default function MasterSantriPage() {
     const riwayatLunas = santri.riwayat?.filter((r: any) => r.isLunas) || [];
     const riwayatBelumLunas = santri.riwayat?.find((r: any) => !r.isLunas);
 
-    // Cek apakah pendaftaran/aktif terbarunya adalah untuk Duf'ah masa depan
-    const riwayatTerbaru = riwayatLunas[0];
-    if (riwayatTerbaru && riwayatTerbaru.dufahId > currentId) {
-      const startId = riwayatTerbaru.dufahId;
-      const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
-      return `${durasi} Bulan (Mulai Aktif ${riwayatTerbaru.dufah?.nama || "Duf'ah Depan"})`;
-    }
-
     // Cek apakah santri punya riwayat aktif di bulan saat ini (dan bukan status CHECKED_OUT)
     const riwayatAktif = riwayatLunas.find((r: any) => r.dufahId === currentId && r.status !== "CHECKED_OUT");
     
-    // Jika tidak aktif bulan ini tapi punya batas durasi di masa depan
-    if (!riwayatAktif && santri.batasAktifDufah > currentId) {
+    // Jika TIDAK aktif bulan ini, cek apakah dia punya riwayat di masa depan
+    if (!riwayatAktif) {
       // Cari riwayat pendaftaran terdekat di masa depan
-      const riwayatDepan = riwayatLunas.find((r: any) => r.dufahId > currentId);
+      // Karena riwayat diurutkan DESC (90, 89, 88), kita ambil yang paling kecil tapi > currentId
+      // Atau bisa langsung cari riwayatLunas terbalik, tapi kita pakai array function:
+      const riwayatDepan = [...riwayatLunas].reverse().find((r: any) => r.dufahId > currentId);
+      
       if (riwayatDepan) {
         const startId = riwayatDepan.dufahId;
         const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
-        return `${durasi} Bulan (Mulai Aktif ${riwayatDepan.dufah?.nama || "Duf'ah Depan"})`;
+        return `${durasi} Bulan (Mulai Aktif ${riwayatDepan.dufah?.nama || getNamaDufah(riwayatDepan.dufahId)})`;
       }
     }
 
+    // Jika aktif bulan ini, atau punya batas durasi
     const sisa = Math.max(0, (santri.batasAktifDufah || 0) - currentId + 1);
 
     if (riwayatBelumLunas) {

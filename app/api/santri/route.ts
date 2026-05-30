@@ -27,8 +27,22 @@ export async function GET(request: Request) {
       }
     }
 
+    // BASE FILTER: Hanya muncul jika SUDAH diverifikasi, ATAU punya NIS, ATAU punya Riwayat Kamar
+    // (Untuk menyembunyikan pendaftar baru yang baru sebatas isi form dan belum lunas)
+    const baseFilter = {
+      OR: [
+        { nis: { not: null } },
+        { riwayat: { some: {} } },
+        { transaksi: { some: { statusPembayaran: { in: ["PAID", "KSU_GRATIS", "KLAIM_PAKET"] } } } }
+      ]
+    };
+
+    const finalFilter = {
+      AND: [baseFilter, filterPencarian]
+    };
+
     const dataSantri = await prisma.santri.findMany({
-      where: filterPencarian,
+      where: finalFilter,
       include: {
         riwayat: {
           include: {
