@@ -62,7 +62,24 @@ export async function GET(request: Request) {
       orderBy: { nama: 'asc' }
     });
 
-    return NextResponse.json(dataSantri);
+    const requestedDufahId = (filter !== "AKTIF" && filter !== "ALL") ? parseInt(filter) : null;
+
+    const result = dataSantri.map((santri: any) => {
+      if (santri.riwayat && santri.riwayat.length > 1) {
+        santri.riwayat.sort((a: any, b: any) => {
+          if (requestedDufahId && !isNaN(requestedDufahId)) {
+            if (a.dufahId === requestedDufahId && b.dufahId !== requestedDufahId) return -1;
+            if (a.dufahId !== requestedDufahId && b.dufahId === requestedDufahId) return 1;
+          }
+          if (a.dufah?.isActive && !b.dufah?.isActive) return -1;
+          if (!a.dufah?.isActive && b.dufah?.isActive) return 1;
+          return b.dufahId - a.dufahId; // Descending
+        });
+      }
+      return santri;
+    });
+
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data master santri" }, { status: 500 });
   }

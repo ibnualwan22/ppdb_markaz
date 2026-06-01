@@ -55,8 +55,9 @@ export async function GET(request: Request) {
         detailAlamat: true,
         riwayat: {
           orderBy: { dufahId: "desc" },
-          take: 1,
           select: {
+            dufahId: true,
+            dufah: { select: { isActive: true } },
             lemari: {
               select: {
                 nomor: true,
@@ -80,6 +81,13 @@ export async function GET(request: Request) {
     });
 
     const result = santriList.map((s: any) => {
+      if (s.riwayat && s.riwayat.length > 1) {
+        s.riwayat.sort((a: any, b: any) => {
+          if (a.dufah?.isActive && !b.dufah?.isActive) return -1;
+          if (!a.dufah?.isActive && b.dufah?.isActive) return 1;
+          return b.dufahId - a.dufahId; // Descending
+        });
+      }
       const latestRiwayat = s.riwayat?.[0];
       const sakan = latestRiwayat?.lemari?.kamar?.sakan?.nama || null;
       const kamar = latestRiwayat?.lemari?.kamar?.nama || null;
