@@ -143,17 +143,17 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Bagian 1: Data Diri Utama */}
           <div className="space-y-4">
-            <h3 className="text-sm font-black text-gold-500 uppercase tracking-wider border-b border-dark-800 pb-2">I. Data Diri Utama</h3>
+            <h3 className="text-sm font-black text-gold-500 capitalize tracking-wider border-b border-dark-800 pb-2">I. Data Diri Utama</h3>
             
             {/* Nama Lengkap */}
             <div>
-              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Nama Lengkap (Sesuai KK)</label>
+              <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Nama Lengkap (Sesuai KK)</label>
               <input
                 type="text"
                 value={nama}
                 onChange={(e) => setNama(e.target.value)}
-                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                placeholder="CONTOH: MUHAMMAD FULAN AL-FARISI"
+                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm capitalize"
+                placeholder="Contoh: Muhammad Fulan Al-Farisi"
                 required
               />
             </div>
@@ -161,20 +161,20 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Tempat Lahir */}
               <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Tempat Lahir (Sesuai KK)</label>
+                <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Tempat Lahir (Sesuai KK)</label>
                 <input
                   type="text"
                   value={tempatLahir}
                   onChange={(e) => setTempatLahir(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                  placeholder="CONTOH: SURABAYA"
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm capitalize"
+                  placeholder="Contoh: Surabaya"
                   required
                 />
               </div>
 
               {/* Tanggal Lahir (Select Dropdown) */}
               <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Tanggal Lahir (Sesuai KK)</label>
+                <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Tanggal Lahir (Sesuai KK)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {/* Dropdown Tanggal */}
                   <select
@@ -220,13 +220,13 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
 
             {/* Nama Orang Tua */}
             <div>
-              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Nama Ayah Kandung / Wali (Sesuai KK)</label>
+              <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Nama Ayah Kandung / Wali (Sesuai KK)</label>
               <input
                 type="text"
                 value={namaOrtu}
                 onChange={(e) => setNamaOrtu(e.target.value)}
-                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                placeholder="CONTOH: AHMAD SUBARJO (BIN AHMAD SUBARJO)"
+                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm capitalize"
+                placeholder="Contoh: Ahmad Subarjo (Bin Ahmad Subarjo)"
                 required
               />
               <p className="text-gray-500 text-[10px] mt-1.5 leading-snug">Nama Ayah kandung sangat penting untuk disematkan sebagai penulisan nasab Bin/Binti di lembar Syahadah.</p>
@@ -235,31 +235,31 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
 
           {/* Bagian 2: Alamat Lengkap */}
           <div className="space-y-4 pt-4 border-t border-dark-800">
-            <h3 className="text-sm font-black text-gold-500 uppercase tracking-wider border-b border-dark-800 pb-2">II. Alamat Lengkap Sesuai KK</h3>
+            <h3 className="text-sm font-black text-gold-500 capitalize tracking-wider border-b border-dark-800 pb-2">II. Alamat Lengkap Sesuai KK</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Provinsi */}
               <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Provinsi</label>
+                <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Provinsi</label>
                 <input
                   type="text"
                   value={provinsi}
                   onChange={(e) => setProvinsi(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                  placeholder="CONTOH: JAWA TIMUR"
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm capitalize"
+                  placeholder="Contoh: Jawa Timur"
                   required
                 />
               </div>
 
               {/* Kabupaten / Kota */}
               <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Kabupaten / Kota</label>
+                <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Kabupaten / Kota</label>
                 <input
                   type="text"
                   value={kabupaten}
                   onChange={(e) => setKabupaten(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                  placeholder="CONTOH: KEDIRI"
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm capitalize"
+                  placeholder="Contoh: Kediri"
                   required
                 />
               </div>
@@ -268,26 +268,26 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Kecamatan */}
               <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Kecamatan</label>
+                <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Kecamatan</label>
                 <input
                   type="text"
                   value={kecamatan}
                   onChange={(e) => setKecamatan(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                  placeholder="CONTOH: PARE"
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm capitalize"
+                  placeholder="Contoh: Pare"
                   required
                 />
               </div>
 
               {/* Desa / Kelurahan */}
               <div>
-                <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Desa / Kelurahan</label>
+                <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Desa / Kelurahan</label>
                 <input
                   type="text"
                   value={desa}
                   onChange={(e) => setDesa(e.target.value)}
-                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm uppercase"
-                  placeholder="CONTOH: TULUNGREJO"
+                  className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm capitalize"
+                  placeholder="Contoh: Tulungrejo"
                   required
                 />
               </div>
@@ -295,12 +295,12 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
 
             {/* Detail Alamat */}
             <div>
-              <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Detail Jalan / Dusun / RT / RW</label>
+              <label className="block text-gray-400 text-xs font-bold capitalize tracking-wider mb-2">Detail Jalan / Dusun / RT / RW</label>
               <textarea
                 value={detailAlamat}
                 onChange={(e) => setDetailAlamat(e.target.value)}
-                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm h-24 resize-none uppercase"
-                placeholder="CONTOH: JL. MAWAR NO. 12, DUSUN SINGOREJO, RT.02/RW.05"
+                className="w-full bg-dark-900 border border-dark-800 focus:border-gold-500 text-white rounded-xl py-3 px-4 outline-none font-bold transition-all text-sm h-24 resize-none capitalize"
+                placeholder="Contoh: Jl. Mawar No. 12, Dusun Singorejo, RT.02/RW.05"
                 required
               />
             </div>
@@ -364,28 +364,28 @@ export default function VerificationForm({ initialData }: VerificationFormProps)
 
             <div className="bg-dark-950 p-4 rounded-xl border border-dark-800 space-y-3 text-xs max-h-72 overflow-y-auto">
               <div>
-                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Nama Lengkap:</span>
-                <span className="text-white font-black text-sm uppercase">{nama}</span>
+                <span className="text-gray-500 text-[10px] block font-bold capitalize tracking-wider">Nama Lengkap:</span>
+                <span className="text-white font-black text-sm capitalize">{nama}</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Tempat Lahir:</span>
-                  <span className="text-gray-200 font-bold uppercase">{tempatLahir}</span>
+                  <span className="text-gray-500 text-[10px] block font-bold capitalize tracking-wider">Tempat Lahir:</span>
+                  <span className="text-gray-200 font-bold capitalize">{tempatLahir}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Tanggal Lahir:</span>
+                  <span className="text-gray-500 text-[10px] block font-bold capitalize tracking-wider">Tanggal Lahir:</span>
                   <span className="text-gray-200 font-bold">
                     {birthDay} {months.find(m => m.value === Number(birthMonth))?.label} {birthYear}
                   </span>
                 </div>
               </div>
               <div>
-                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Nama Ayah / Wali:</span>
-                <span className="text-white font-bold uppercase">{namaOrtu}</span>
+                <span className="text-gray-500 text-[10px] block font-bold capitalize tracking-wider">Nama Ayah / Wali:</span>
+                <span className="text-white font-bold capitalize">{namaOrtu}</span>
               </div>
               <div className="pt-2 border-t border-dark-800">
-                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Alamat Lengkap:</span>
-                <span className="text-gray-200 font-medium block leading-relaxed uppercase">
+                <span className="text-gray-500 text-[10px] block font-bold capitalize tracking-wider">Alamat Lengkap:</span>
+                <span className="text-gray-200 font-medium block leading-relaxed capitalize">
                   {detailAlamat}, DESA {desa}, KEC. {kecamatan}, KAB. {kabupaten}, PROV. {provinsi}
                 </span>
               </div>

@@ -38,19 +38,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Data diri Anda sudah terverifikasi sebelumnya dan tidak dapat diubah lagi." }, { status: 400 });
     }
 
+    // Fungsi helper untuk mengubah string menjadi Title Case
+    const toTitleCase = (str: string) => {
+      if (!str) return str;
+      return str.replace(
+        /\w\S*/g,
+        (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
+      );
+    };
+
     // 3. Update data diri dan ubah status verifikasi menjadi true
     const updatedSantri = await prisma.santri.update({
       where: { id: santri.id },
       data: {
-        nama,
-        tempatLahir,
+        nama: toTitleCase(nama),
+        tempatLahir: toTitleCase(tempatLahir),
         tanggalLahir: new Date(tanggalLahir),
-        namaOrtu,
-        provinsi,
-        kabupaten,
-        kecamatan,
-        desa,
-        detailAlamat,
+        namaOrtu: toTitleCase(namaOrtu),
+        provinsi: toTitleCase(provinsi),
+        kabupaten: toTitleCase(kabupaten),
+        kecamatan: toTitleCase(kecamatan),
+        desa: toTitleCase(desa),
+        detailAlamat: toTitleCase(detailAlamat),
         isDataVerified: true
       }
     });
