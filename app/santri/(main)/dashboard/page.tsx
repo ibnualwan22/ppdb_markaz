@@ -64,7 +64,7 @@ export default async function SantriDashboardPage() {
 
   let siakadDataActive: any = null;
   try {
-    const res = await fetch(`https://siakad.markazarabiyah.site/api/santri/${santri.id}/riwayat`, {
+    const res = await fetch(`https://siakad.markazarabiyah.site/api/santri/${santri.nis}/riwayat`, {
       cache: 'no-store'
     });
     if (res.ok) {

@@ -12,14 +12,14 @@ export default async function AkademikPage() {
 
   const santri = await prisma.santri.findUnique({
     where: { nis: session.user.username },
-    select: { id: true, nama: true }
+    select: { id: true, nama: true, nis: true }
   })
 
   if (!santri) return null;
 
   let siakadData: any = [];
   try {
-    const res = await fetch(`https://siakad.markazarabiyah.site/api/santri/${santri.id}/riwayat`, {
+    const res = await fetch(`https://siakad.markazarabiyah.site/api/santri/${santri.nis}/riwayat`, {
       cache: 'no-store'
     });
     if (res.ok) {
