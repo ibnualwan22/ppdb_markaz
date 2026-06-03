@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { PusherProvider } from "../providers/PusherProvider";
 import { signOut, useSession } from "next-auth/react";
@@ -109,6 +109,8 @@ const authItems = [
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [dufahAktifName, setDufahAktifName] = useState<string | null>(null);
+  const [dufahPendaftaranName, setDufahPendaftaranName] = useState<string | null>(null);
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -118,6 +120,25 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     if (userPermissions.includes("all_access")) return true;
     return userPermissions.includes(permission);
   };
+
+  useEffect(() => {
+    fetch('/api/dufah')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const aktif = data.find((d: any) => d.isActive);
+          if (aktif) setDufahAktifName(aktif.nama);
+          
+          const now = new Date();
+          const pendaftaran = data.find((d: any) => {
+            if (!d.tanggalBuka || !d.tanggalTutup) return false;
+            return now >= new Date(d.tanggalBuka) && now <= new Date(d.tanggalTutup);
+          });
+          if (pendaftaran) setDufahPendaftaranName(pendaftaran.nama);
+        }
+      })
+      .catch(err => console.error("Gagal memuat dufah sidebar:", err));
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/admin/") return pathname === "/admin" || pathname === "/admin/";
@@ -167,6 +188,22 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <div className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${desktopCollapsed ? 'h-0 opacity-0' : 'h-auto opacity-100'}`}>
               <h2 className="text-lg font-bold tracking-wide text-gold-500 mt-3">PPDB Markaz Arabiyah</h2>
               <p className="text-xs text-gray-500 mt-1 font-medium">Portal Administrasi</p>
+              {(dufahAktifName || (userPermissions.includes("all_access") && dufahPendaftaranName)) && (
+                <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
+                  {dufahAktifName && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></span>
+                      {dufahAktifName}
+                    </span>
+                  )}
+                  {userPermissions.includes("all_access") && dufahPendaftaranName && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
+                      {dufahPendaftaranName}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <button

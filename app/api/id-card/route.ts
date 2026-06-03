@@ -68,11 +68,47 @@ export async function GET(request: Request) {
       distinct: ['santriId']   // Hanya ambil 1 record terbaru per santri
     });
 
-    const belum = allRiwayat
+    const transaksiList = await prisma.transaksiPendaftaran.findMany({
+      where: {
+        ...(whereDufah && { dufahTujuanId: whereDufah }),
+        santriId: { in: allRiwayat.map(r => r.santri.id) },
+        statusPembayaran: { in: ["PAID", "KSU_GRATIS", "KLAIM_PAKET"] }
+      },
+      include: { program: true }
+    });
+
+    const riwayatWithAtribut = allRiwayat.map(d => {
+      const txs = transaksiList.filter(t => t.santriId === d.santri.id && t.dufahTujuanId === d.dufahId);
+      let isBeliAtribut = true;
+
+      if (txs.length > 0) {
+        const tx = txs.sort((a, b) => b.id.localeCompare(a.id))[0];
+        if (tx.statusPembayaran === "KLAIM_PAKET") {
+          isBeliAtribut = false;
+        } else if (tx.program && tx.nominalProgram < tx.program.harga) {
+          isBeliAtribut = false;
+        }
+      } else {
+        if (d.santri.kategori === "LAMA") {
+          isBeliAtribut = false;
+        } else if (d.bulanKe > 1) {
+          isBeliAtribut = false;
+        } else {
+          isBeliAtribut = true;
+        }
+      }
+
+      return {
+        ...d,
+        isBeliAtribut
+      };
+    });
+
+    const belum = riwayatWithAtribut
       .filter(r => !r.isIdCardTaken)
       .sort((a, b) => a.santri.nama.localeCompare(b.santri.nama));
 
-    const sudah = allRiwayat
+    const sudah = riwayatWithAtribut
       .filter(r => r.isIdCardTaken)
       .sort((a, b) => {
         const timeA = a.waktuAmbilKartu ? a.waktuAmbilKartu.getTime() : 0;

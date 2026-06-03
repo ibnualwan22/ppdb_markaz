@@ -126,16 +126,49 @@ export default function MejaIdCardPage() {
       if (phone.startsWith("0")) phone = "62" + phone.substring(1);
     }
 
+    const namaSantri = item.santri.nama;
+    const nisSantri = item.santri.nis || "Belum ada";
+    const dufahNama = item.dufah.nama;
+    const lokasiSakan = item.lemari.kamar.sakan.nama;
+    const lokasiKamar = item.lemari.kamar.nama;
+    const nomorLemari = item.lemari.nomor;
+    const batasAktif = item.santri.batasAktifDufah ? `Duf'ah ${item.santri.batasAktifDufah}` : dufahNama;
+    const isBeliAtribut = item.isBeliAtribut;
+
     const imageUrl = `${window.location.origin}/digital-card/${item.id}`;
+    const loginUrl = "https://ppdb.markazarabiyah.site/santri/login";
 
-    let pesan = `Assalamualaikum warahmatullahi wabarakatuh,
+    let pesan = `Ahlan wa Sahlan, *${namaSantri}*! 🌙
+Selamat datang di Markaz Arabiyah.
 
-Berikut adalah *Kartu Santri Digital* antum.
-Silakan klik link berikut untuk melihat dan mendownload kartu digital antum:
+Terkait asrama, antum akan ditempatkan di:
+🏢 *${lokasiSakan}*
+🚪 *Kamar ${lokasiKamar}*
+🗄️ *Lemari ${nomorLemari}*
+Masa aktif pendaftaran antum berlaku hingga *${batasAktif}*.
+
+---
+💳 *KARTU SANTRI DIGITAL (E-CARD)*
+Berikut adalah tautan untuk melihat E-Card antum:
 ${imageUrl}
 
-_Catatan: Harap tunjukkan gambar kartu digital ini pada saat verifikasi pengambilan barang di Mims Store._
+*PENTING:* 
+Harap *simpan gambar/screenshot E-Card* tersebut. Kartu ini *WAJIB* ditunjukkan sebagai tanda pengenal saat mengikuti sesi *Tauzi' Fusul* (pembagian kelas)${isBeliAtribut ? " dan untuk proses *pengambilan atribut* di Mims Store" : ""}.
 
+---
+🌐 *PORTAL SANTRI & PENTINGNYA NIS*
+Nomor Induk Santri (NIS) antum adalah: *${nisSantri}*
+
+NIS ini akan menjadi identitas antum selama belajar di sini. Dengan NIS, antum dapat mengakses Portal Santri di:
+🔗 ${loginUrl}
+(Gunakan NIS sebagai Username & Password awal)
+
+Di dalam portal, antum dapat:
+📊 Melihat transparansi kehadiran harian.
+📝 Melihat riwayat nilai akademik (Usbu' dan Nihai).
+🔄 Melakukan proses *Daftar Ulang* secara mandiri dan cepat untuk Duf'ah berikutnya.
+
+Semoga Allah memberkahi perjalanan menuntut ilmu antum di sini.
 Wassalamu'alaikum warahmatullahi wabarakatuh.`;
 
     const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(pesan)}` : `https://wa.me/?text=${encodeURIComponent(pesan)}`;
@@ -334,6 +367,11 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                           <div className="flex flex-wrap items-center gap-1 mt-1">
                             <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded text-white shadow-sm ${item.santri.kategori === 'LAMA' ? 'bg-orange-600' : item.santri.kategori === 'KSU' ? 'bg-purple-700' : 'bg-blue-600'}`}>{item.santri.kategori}</span>
                             {item.dufah && <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-gold-500/20 text-gold-400 border border-gold-500/30">{item.dufah.nama}</span>}
+                            {item.isBeliAtribut ? (
+                              <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-green-500/20 text-green-400 border border-green-500/30">DAPAT ATRIBUT</span>
+                            ) : (
+                              <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-red-500/20 text-red-400 border border-red-500/30">TIDAK ADA ATRIBUT BARU</span>
+                            )}
                           </div>
                         </td>
                         <td className="p-4">
