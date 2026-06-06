@@ -52,6 +52,10 @@ export default async function AkademikPage() {
           <div className="space-y-6">
             {siakadData.map((aka: any, idx: number) => {
               const statusCls = (s: string) => s === 'HADIR' ? 'bg-green-500/10 text-green-400' : s === 'IZIN' ? 'bg-blue-500/10 text-blue-400' : s === 'SAKIT' ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400';
+              const isAkbarnas = aka.akademik?.is_akbarnas;
+              const nilaiAkhirLabel = isAkbarnas ? 'Rata-rata' : 'Nilai Akhir';
+              // Support both field names from new API
+              const akumulatifData = aka.rata_rata_per_usbu || aka.akumulatif_usbu || [];
               return (
               <div key={idx} className="rounded-xl border border-dark-800 overflow-hidden">
                 {/* Header Dufah */}
@@ -61,6 +65,7 @@ export default async function AkademikPage() {
                     <p className="text-gold-400 text-sm font-semibold mt-0.5">{aka.akademik?.program} &bull; {aka.akademik?.kelas}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {isAkbarnas && <span className="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[10px] font-bold uppercase">Akbarnas</span>}
                     {aka.akademik?.is_tasmi && <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 text-[10px] font-bold uppercase">Tasmi&apos;</span>}
                     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${aka.akademik?.status_kelulusan === 'LULUS' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : aka.akademik?.status_kelulusan === 'TIDAK_LULUS' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>{aka.akademik?.status_kelulusan?.replace('_',' ') || 'BERJALAN'}</span>
                   </div>
@@ -74,22 +79,41 @@ export default async function AkademikPage() {
                     <table className="w-full text-sm">
                       <thead><tr className="bg-dark-900 text-gold-500/70">
                         <th className="text-left p-3 font-bold">Mata Pelajaran</th>
+                        <th className="text-center p-3 font-bold">Bobot</th>
                         <th className="text-center p-3 font-bold">Usbu&apos; 1</th>
                         <th className="text-center p-3 font-bold">Usbu&apos; 2</th>
                         <th className="text-center p-3 font-bold">Nihai</th>
-                        <th className="text-center p-3 font-bold">Akhir</th>
+                        <th className="text-center p-3 font-bold">{nilaiAkhirLabel}</th>
                       </tr></thead>
                       <tbody>{aka.nilai_per_mapel.map((n: any, ni: number) => (
-                        <tr key={ni} className={`border-t border-dark-800 ${ni % 2 === 0 ? 'bg-dark-900/50' : ''}`}>
-                          <td className="p-3 text-gray-300 font-medium">{n.mapel}</td>
+                        <tr key={ni} className={`border-t border-dark-800 ${ni % 2 === 0 ? 'bg-dark-900/50' : ''} ${n.masuk_akumulasi === false ? 'opacity-60' : ''}`}>
+                          <td className="p-3 text-gray-300 font-medium">
+                            {n.mapel}
+                            {n.masuk_akumulasi === false && <span className="ml-1.5 text-[9px] text-gray-500 italic">(non-akum)</span>}
+                          </td>
+                          <td className="p-3 text-center text-gray-500 text-xs font-bold">{n.bobot != null ? `${n.bobot}%` : '-'}</td>
                           <td className="p-3 text-center font-bold text-gold-400">{n.nilai_usbu_1 ?? '-'}</td>
                           <td className="p-3 text-center font-bold text-gold-400">{n.nilai_usbu_2 ?? '-'}</td>
                           <td className="p-3 text-center font-bold text-gold-400">{n.nilai_nihai ?? '-'}</td>
-                          <td className="p-3 text-center font-bold text-white">{n.nilai_akhir ?? '-'}</td>
+                          <td className="p-3 text-center font-bold text-white">{n.nilai_akhir != null ? Number(n.nilai_akhir).toFixed(2) : '-'}</td>
                         </tr>
                       ))}</tbody>
                     </table>
                   </div>)}
+
+                  {/* Ringkasan Akumulatif */}
+                  {akumulatifData.length > 0 && (
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {akumulatifData.map((item: any, i: number) => (
+                        <div key={i} className={`p-3 rounded-lg border text-center ${i === akumulatifData.length - 1 ? 'bg-gold-500/10 border-gold-500/30' : 'bg-dark-900 border-dark-800'}`}>
+                          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{item.label || `Usbu' ${item.usbu}`}</p>
+                          <p className={`text-xl font-black ${i === akumulatifData.length - 1 ? 'text-gold-400' : 'text-white'}`}>
+                            {item.rata_rata_nilai != null ? Number(item.rata_rata_nilai).toFixed(2) : '-'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Kartu Rekap Keseluruhan */}

@@ -224,7 +224,10 @@ export default async function SantriDashboardPage() {
         <div className="bg-dark-950 border border-dark-800 p-6 rounded-2xl shadow-sm">
           <div className="flex justify-between items-center mb-6 border-b border-dark-800 pb-3">
             <div>
-              <h2 className="text-lg font-bold text-gold-500">Akademik {siakadDataActive.dufah}</h2>
+              <h2 className="text-lg font-bold text-gold-500 flex items-center gap-2">
+                Akademik {siakadDataActive.dufah}
+                {siakadDataActive.akademik?.is_akbarnas && <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[10px] font-bold uppercase">Akbarnas</span>}
+              </h2>
               <p className="text-gray-400 text-sm mt-0.5">{siakadDataActive.akademik?.program} &bull; {siakadDataActive.akademik?.kelas}</p>
             </div>
             <Link href="/santri/akademik" className="px-4 py-2 bg-dark-900 hover:bg-dark-800 text-gray-300 rounded-lg text-sm font-bold border border-dark-700 transition-colors">
@@ -232,24 +235,46 @@ export default async function SantriDashboardPage() {
             </Link>
           </div>
 
+          {/* Ringkasan Akumulatif */}
+          {(() => {
+            const akumulatifData = siakadDataActive.rata_rata_per_usbu || siakadDataActive.akumulatif_usbu || [];
+            return akumulatifData.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                {akumulatifData.map((item: any, i: number) => (
+                  <div key={i} className={`p-3 rounded-lg border text-center ${i === akumulatifData.length - 1 ? 'bg-gold-500/10 border-gold-500/30' : 'bg-dark-900 border-dark-800'}`}>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{item.label || `Usbu' ${item.usbu}`}</p>
+                    <p className={`text-xl font-black ${i === akumulatifData.length - 1 ? 'text-gold-400' : 'text-white'}`}>
+                      {item.rata_rata_nilai != null ? Number(item.rata_rata_nilai).toFixed(2) : '-'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null;
+          })()}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tabel Nilai Singkat */}
             <div>
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Nilai Akhir Ujian</h4>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                {siakadDataActive.akademik?.is_akbarnas ? 'Rata-rata Ujian' : 'Nilai Akhir Ujian'}
+              </h4>
               {(!siakadDataActive.nilai_per_mapel || siakadDataActive.nilai_per_mapel.length === 0) ? <p className="text-sm text-gray-600 italic">Belum ada nilai.</p> : (
                 <div className="overflow-x-auto rounded-lg border border-dark-700">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-dark-900 text-gold-500/70">
                         <th className="text-left p-3 font-bold">Mata Pelajaran</th>
-                        <th className="text-center p-3 font-bold">Nilai Akhir</th>
+                        <th className="text-center p-3 font-bold">{siakadDataActive.akademik?.is_akbarnas ? 'Rata-rata' : 'Nilai Akhir'}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {siakadDataActive.nilai_per_mapel.map((n: any, ni: number) => (
-                        <tr key={ni} className="border-t border-dark-800">
-                          <td className="p-3 text-gray-300 font-medium">{n.mapel}</td>
-                          <td className="p-3 text-center font-bold text-white">{n.nilai_akhir ?? '-'}</td>
+                        <tr key={ni} className={`border-t border-dark-800 ${n.masuk_akumulasi === false ? 'opacity-60' : ''}`}>
+                          <td className="p-3 text-gray-300 font-medium">
+                            {n.mapel}
+                            {n.masuk_akumulasi === false && <span className="ml-1.5 text-[9px] text-gray-500 italic">(non-akum)</span>}
+                          </td>
+                          <td className="p-3 text-center font-bold text-white">{n.nilai_akhir != null ? Number(n.nilai_akhir).toFixed(2) : '-'}</td>
                         </tr>
                       ))}
                     </tbody>

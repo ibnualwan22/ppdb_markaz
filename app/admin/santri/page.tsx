@@ -408,9 +408,12 @@ export default function MasterSantriPage() {
   const nextDufah = daftarDufah.find(d => d.id === nextDufahId);
 
   // Cek apakah ada santri yang sudah terdata di kamar untuk dufah berikutnya
+  // Syarat: batasAktifDufah menjangkau dufah berikutnya AND riwayat terakhirnya punya lemariId
   const santriDufahBerikutnya = dataSantri.filter(s => {
-    const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
-    return riwayatNext?.lemariId; // Hanya yang sudah punya kamar
+    const isLanjut = s.batasAktifDufah >= nextDufahId;
+    const riwayatTerakhir = s.riwayat?.[0];
+    const punyaKamar = riwayatTerakhir?.lemariId;
+    return isLanjut && punyaKamar;
   });
   const adaSantriDufahBerikutnya = santriDufahBerikutnya.length > 0;
 
@@ -419,8 +422,9 @@ export default function MasterSantriPage() {
     const struktur: any = { BANIN: {}, BANAT: {} };
 
     santriDufahBerikutnya.forEach(s => {
-      const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
-      const lemari = riwayatNext?.lemari;
+      // Gunakan riwayat terakhir sebagai acuan kamar karena akan terbawa ke dufah berikutnya
+      const riwayatTerakhir = s.riwayat?.[0];
+      const lemari = riwayatTerakhir?.lemari;
       if (!lemari) return;
 
       const sakanNama = lemari.kamar.sakan.nama;

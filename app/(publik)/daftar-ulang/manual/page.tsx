@@ -493,7 +493,7 @@ export default function DaftarUlangManualPage() {
                 />
                 <label htmlFor="beliAtribut" className="cursor-pointer text-gray-300">
                   <span className="block font-bold text-white">Beli Atribut Baru (+ Rp 100.000)</span>
-                  <span className="text-sm text-gray-400">Centang ini jika Anda ingin membeli ulang perlengkapan (Buku, Seragam, dll) karena rusak atau hilang. Harga akan kembali normal.</span>
+                  <span className="text-sm text-gray-400">Centang ini jika Anda ingin membeli ulang perlengkapan (Kopiah/Khimar, Seragam,Dabus,Tote Bag) karena rusak atau hilang. Harga akan kembali normal.</span>
                 </label>
               </div>
 

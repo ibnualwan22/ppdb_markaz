@@ -32,6 +32,13 @@ export async function PATCH(
         where: { santriId: id, dufahId: dufahAktif.id },
         data: { status: "CHECKED_OUT" }
       });
+    } else if (isAktif === true && dufahAktif) {
+      // Jika diaktifkan kembali, kembalikan ke antrean (PRE_LIST) dan kosongkan kamarnya
+      // agar asrama bisa menempatkannya ulang.
+      await prisma.riwayatDufah.updateMany({
+        where: { santriId: id, dufahId: dufahAktif.id, status: "CHECKED_OUT" },
+        data: { status: "PRE_LIST", lemariId: null }
+      });
     }
 
     // KIRIM NOTIFIKASI JIKA CHECK OUT
