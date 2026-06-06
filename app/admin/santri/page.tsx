@@ -408,12 +408,20 @@ export default function MasterSantriPage() {
   const nextDufah = daftarDufah.find(d => d.id === nextDufahId);
 
   // Cek apakah ada santri yang sudah terdata di kamar untuk dufah berikutnya
-  // Syarat: batasAktifDufah menjangkau dufah berikutnya AND riwayat terakhirnya punya lemariId
+  // Syarat: punya riwayat duf'ah depan ATAU batasAktifDufah menjangkau dufah berikutnya
   const santriDufahBerikutnya = dataSantri.filter(s => {
-    const isLanjut = s.batasAktifDufah >= nextDufahId;
-    const riwayatTerakhir = s.riwayat?.[0];
-    const punyaKamar = riwayatTerakhir?.lemariId;
-    return isLanjut && punyaKamar;
+    const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+    
+    if (riwayatNext) {
+      // Jika sudah melakukan pendaftaran (meskipun belum bayar lunas), riwayat depan sudah terbentuk
+      return !!riwayatNext.lemariId;
+    } else {
+      // Jika belum ada riwayat depan (misal perpanjangan manual / multi-bulan), cek batas aktif
+      const isLanjut = s.batasAktifDufah >= nextDufahId;
+      const riwayatTerakhir = s.riwayat?.[0];
+      const punyaKamar = !!riwayatTerakhir?.lemariId;
+      return isLanjut && punyaKamar;
+    }
   });
   const adaSantriDufahBerikutnya = santriDufahBerikutnya.length > 0;
 
@@ -422,9 +430,10 @@ export default function MasterSantriPage() {
     const struktur: any = { BANIN: {}, BANAT: {} };
 
     santriDufahBerikutnya.forEach(s => {
-      // Gunakan riwayat terakhir sebagai acuan kamar karena akan terbawa ke dufah berikutnya
-      const riwayatTerakhir = s.riwayat?.[0];
-      const lemari = riwayatTerakhir?.lemari;
+      // Prioritaskan riwayat depan jika ada (karena menampung mutasi), jika tidak gunakan riwayat terakhir
+      const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+      const riwayatAcuan = riwayatNext || s.riwayat?.[0];
+      const lemari = riwayatAcuan?.lemari;
       if (!lemari) return;
 
       const sakanNama = lemari.kamar.sakan.nama;
