@@ -91,19 +91,42 @@ export async function GET() {
         id: true, 
         nama: true, 
         tanggalBuka: true, 
-        riwayat: { select: { isLunas: true, santri: { select: { gender: true } } } }
+        riwayat: { select: { santriId: true, isLunas: true, santri: { select: { gender: true } } } }
       },
       orderBy: { id: 'asc' }
     });
 
+    // Ambil data batas aktif santri untuk mengakomodasi input manual (yang belum dibuatkan riwayat)
+    const allSantriAktif = await prisma.santri.findMany({
+      where: { isAktif: true },
+      select: { id: true, gender: true, batasAktifDufah: true, riwayat: { select: { dufahId: true } } }
+    });
+
     const grafikData = historiDufahRaw.map(d => {
       let totalBanin = 0; let totalBanat = 0;
+      
+      // 1. Hitung dari RiwayatDufah yang eksplisit (Pendaftaran Lunas / Rollover)
       d.riwayat.forEach(r => {
         if (r.isLunas) {
           if (r.santri.gender === 'BANAT') totalBanat++;
           else totalBanin++;
         }
       });
+
+      // 2. Tambahkan Santri yang diperpanjang manual (batasAktif >= d.id) 
+      // tetapi BELUM punya RiwayatDufah eksplisit di dufah d ini.
+      allSantriAktif.forEach(s => {
+        if (s.batasAktifDufah >= d.id) {
+          const punyaRiwayatEksplisit = s.riwayat.some(r => r.dufahId === d.id);
+          const punyaRiwayatLama = s.riwayat.some(r => r.dufahId < d.id);
+          
+          if (!punyaRiwayatEksplisit && punyaRiwayatLama) {
+            if (s.gender === 'BANAT') totalBanat++;
+            else totalBanin++;
+          }
+        }
+      });
+
       return {
         id: d.id, nama: d.nama,
         tahun: d.tanggalBuka ? new Date(d.tanggalBuka).getFullYear() : new Date().getFullYear(),

@@ -408,20 +408,22 @@ export default function MasterSantriPage() {
   const nextDufah = daftarDufah.find(d => d.id === nextDufahId);
 
   // Cek apakah ada santri yang sudah terdata di kamar untuk dufah berikutnya
-  // Syarat: punya riwayat duf'ah depan ATAU batasAktifDufah menjangkau dufah berikutnya
+  // Syarat:
+  // 1. Data Pasti: batasAktifDufah sudah mencapai dufah berikutnya (mencakup Lunas Verifikasi & Input Manual)
+  // 2. Jika sudah ada riwayat untuk dufah depan, pastikan statusnya isLunas (bukan sekadar booking belum bayar)
   const santriDufahBerikutnya = dataSantri.filter(s => {
-    const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+    const isLanjut = s.batasAktifDufah >= nextDufahId;
     
-    if (riwayatNext) {
-      // Jika sudah melakukan pendaftaran (meskipun belum bayar lunas), riwayat depan sudah terbentuk
-      return !!riwayatNext.lemariId;
-    } else {
-      // Jika belum ada riwayat depan (misal perpanjangan manual / multi-bulan), cek batas aktif
-      const isLanjut = s.batasAktifDufah >= nextDufahId;
-      const riwayatTerakhir = s.riwayat?.[0];
-      const punyaKamar = !!riwayatTerakhir?.lemariId;
-      return isLanjut && punyaKamar;
-    }
+    // Cari kamar acuan: Prioritaskan riwayat depan, jika tidak ada pakai riwayat terakhir
+    const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+    const riwayatAcuan = riwayatNext || s.riwayat?.[0];
+    const punyaKamar = !!riwayatAcuan?.lemariId;
+
+    // Jika riwayat depan sudah ter-generate (karena submit form), pastikan sudah dibayar (isLunas: true).
+    // Jika belum ter-generate (misal karena input manual durasi), kita anggap valid (true) selama isLanjut terpenuhi.
+    const isLunasPendaftaran = riwayatNext ? riwayatNext.isLunas : true;
+
+    return isLanjut && punyaKamar && isLunasPendaftaran;
   });
   const adaSantriDufahBerikutnya = santriDufahBerikutnya.length > 0;
 
@@ -430,7 +432,7 @@ export default function MasterSantriPage() {
     const struktur: any = { BANIN: {}, BANAT: {} };
 
     santriDufahBerikutnya.forEach(s => {
-      // Prioritaskan riwayat depan jika ada (karena menampung mutasi), jika tidak gunakan riwayat terakhir
+      // Prioritaskan riwayat depan jika ada, jika tidak gunakan riwayat terakhir
       const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
       const riwayatAcuan = riwayatNext || s.riwayat?.[0];
       const lemari = riwayatAcuan?.lemari;
