@@ -402,6 +402,88 @@ export default function MasterSantriPage() {
     }
   };
 
+  // Hitung dufah berikutnya
+  const dufahAktif = daftarDufah.find(d => d.isActive);
+  const nextDufahId = dufahAktif ? dufahAktif.id + 1 : 0;
+  const nextDufah = daftarDufah.find(d => d.id === nextDufahId);
+
+  // Cek apakah ada santri yang sudah terdata di kamar untuk dufah berikutnya
+  const santriDufahBerikutnya = dataSantri.filter(s => {
+    const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+    return riwayatNext?.lemariId; // Hanya yang sudah punya kamar
+  });
+  const adaSantriDufahBerikutnya = santriDufahBerikutnya.length > 0;
+
+  // Copy Laporan WA Duf'ah Berikutnya
+  const copyLaporanWADufahBerikutnya = () => {
+    const struktur: any = { BANIN: {}, BANAT: {} };
+
+    santriDufahBerikutnya.forEach(s => {
+      const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+      const lemari = riwayatNext?.lemari;
+      if (!lemari) return;
+
+      const sakanNama = lemari.kamar.sakan.nama;
+      const kamarNama = lemari.kamar.nama;
+      const gender = s.gender === "BANAT" ? "BANAT" : "BANIN";
+
+      if (!struktur[gender][sakanNama]) struktur[gender][sakanNama] = {};
+      if (!struktur[gender][sakanNama][kamarNama]) struktur[gender][sakanNama][kamarNama] = [];
+
+      const ket = s.kategori === "KSU" ? " (KSU)" : s.kategori === "LAMA" ? " (Lama)" : s.kategori === "BARU" ? " (Baru)" : "";
+      const ustadz = s.kategori === "KSU" ? "U. " : "";
+
+      struktur[gender][sakanNama][kamarNama].push({
+        nomor: lemari.nomor,
+        nama: `${ustadz}${s.nama}${ket}`,
+        nomorSort: lemari.nomor
+      });
+    });
+
+    const namaDufah = nextDufah?.nama || `Duf'ah ${nextDufahId}`;
+    let text = `*📂DATA SANTRI ${namaDufah.toUpperCase()}*\n`;
+    text += `_Total: ${santriDufahBerikutnya.length} santri_\n\n`;
+
+    // BANIN
+    const sakanBanin = Object.keys(struktur.BANIN).sort();
+    if (sakanBanin.length > 0) {
+      text += `*🏘️SAKAN BANIN*\n`;
+      sakanBanin.forEach(sakanNama => {
+        text += `🏠 *${sakanNama.toUpperCase()}*\n`;
+        const kamars = Object.keys(struktur.BANIN[sakanNama]).sort();
+        kamars.forEach(kamarNama => {
+          const santriList = struktur.BANIN[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
+          text += `\`Kamar ${kamarNama}\` (${santriList.length} santri)\n`;
+          santriList.forEach((s: any) => {
+            text += `* ${s.nomor}_ ${s.nama}\n`;
+          });
+          text += `\n`;
+        });
+      });
+    }
+
+    // BANAT
+    const sakanBanat = Object.keys(struktur.BANAT).sort();
+    if (sakanBanat.length > 0) {
+      text += `*🏘️SAKAN BANAT*\n`;
+      sakanBanat.forEach(sakanNama => {
+        text += `🏠 *${sakanNama.toUpperCase()}*\n`;
+        const kamars = Object.keys(struktur.BANAT[sakanNama]).sort();
+        kamars.forEach(kamarNama => {
+          const santriList = struktur.BANAT[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
+          text += `\`Kamar ${kamarNama}\` (${santriList.length} santri)\n`;
+          santriList.forEach((s: any) => {
+            text += `* ${s.nomor}_ ${s.nama}\n`;
+          });
+          text += `\n`;
+        });
+      });
+    }
+
+    navigator.clipboard.writeText(text);
+    swalSuccess("Berhasil Disalin!", `Laporan ${namaDufah} (${santriDufahBerikutnya.length} santri) siap di-paste di WhatsApp.`);
+  };
+
   // Copy Laporan WA Duf'ah
   const copyLaporanWADufah = () => {
     // Group santri by gender > sakan > kamar
@@ -594,6 +676,12 @@ export default function MasterSantriPage() {
             <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] text-sm flex items-center gap-1 transition-all active:scale-95">
               <IconClipboard /> Laporan WA
             </button>
+            {adaSantriDufahBerikutnya && (
+              <button onClick={copyLaporanWADufahBerikutnya} className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.3)] text-sm flex items-center gap-1.5 transition-all active:scale-95 animate-pulse hover:animate-none">
+                <IconClipboard /> Laporan {nextDufah?.nama || `Duf'ah ${nextDufahId}`}
+                <span className="bg-black/20 text-[10px] px-1.5 py-0.5 rounded-md font-bold">{santriDufahBerikutnya.length}</span>
+              </button>
+            )}
           </div>
         </div>
 
