@@ -175,10 +175,10 @@ export default function MasterSantriPage() {
     if (santri.kategori === "KSU") return "Tak Terbatas";
     if (santri.isCuti) return `${santri.saldoDufah || 0} Bulan (Cuti)`;
     if (!santri.isAktif) return "0 Bulan";
-    
+
     const dufahAktif = daftarDufah.find(d => d.isActive);
     const currentId = dufahAktif ? dufahAktif.id : 0;
-    
+
     if (currentId === 0) return "-";
 
     const riwayatLunas = santri.riwayat?.filter((r: any) => r.isLunas) || [];
@@ -186,14 +186,14 @@ export default function MasterSantriPage() {
 
     // Cek apakah santri punya riwayat aktif di bulan saat ini (dan bukan status CHECKED_OUT)
     const riwayatAktif = riwayatLunas.find((r: any) => r.dufahId === currentId && r.status !== "CHECKED_OUT");
-    
+
     // Jika TIDAK aktif bulan ini, cek apakah dia punya riwayat di masa depan
     if (!riwayatAktif) {
       // Cari riwayat pendaftaran terdekat di masa depan
       // Karena riwayat diurutkan DESC (90, 89, 88), kita ambil yang paling kecil tapi > currentId
       // Atau bisa langsung cari riwayatLunas terbalik, tapi kita pakai array function:
       const riwayatDepan = [...riwayatLunas].reverse().find((r: any) => r.dufahId > currentId);
-      
+
       if (riwayatDepan) {
         const startId = riwayatDepan.dufahId;
         const durasi = Math.max(0, santri.batasAktifDufah - startId + 1);
@@ -218,7 +218,7 @@ export default function MasterSantriPage() {
 
   const toggleStatusAktif = async (id: string, nama: string, statusSaatIni: boolean) => {
     const aksi = statusSaatIni ? "MENGELUARKAN (Check Out)" : "MENGAKTIFKAN KEMBALI";
-    
+
     const result = await swalConfirm(
       `Yakin ingin ${aksi}?`,
       `Aksi ini untuk santri bernama ${nama}`
@@ -241,11 +241,11 @@ export default function MasterSantriPage() {
 
   const toggleCuti = async (id: string, nama: string, statusCutiSaatIni: boolean) => {
     const aksi = statusCutiSaatIni ? "MENGAKHIRI CUTI & MENGAKTIFKAN" : "MENGAJUKAN CUTI";
-    
+
     const result = await swalConfirm(
       `Yakin ingin ${aksi}?`,
-      statusCutiSaatIni 
-        ? `Cuti ${nama} akan dicabut dan sisa masa aktif akan ditambahkan kembali.` 
+      statusCutiSaatIni
+        ? `Cuti ${nama} akan dicabut dan sisa masa aktif akan ditambahkan kembali.`
         : `Sisa masa aktif ${nama} akan disimpan sebagai saldo (maksimal 6 bulan).`
     );
     if (!result.isConfirmed) return;
@@ -281,13 +281,13 @@ export default function MasterSantriPage() {
     const res = await fetch(`/api/santri/${editModal.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        nama: editNama, 
-        kategori: editKategori, 
-        gender: editGender, 
+      body: JSON.stringify({
+        nama: editNama,
+        kategori: editKategori,
+        gender: editGender,
         riwayatId: editRiwayatId,
-        bulanKe: editBulanKe, 
-        nomorIdCard: editNomorIdCard 
+        bulanKe: editBulanKe,
+        nomorIdCard: editNomorIdCard
       })
     });
     setEditLoading(false);
@@ -330,7 +330,7 @@ export default function MasterSantriPage() {
 
   const simpanLengkapiData = async () => {
     if (!lengkapiModal || !lengkapiTglLahir) return swalError("Tanggal lahir wajib diisi!");
-    
+
     const parts = lengkapiTglLahir.split('/');
     if (parts.length !== 3) return swalError("Format tanggal salah! Gunakan format DD/MM/YYYY");
     const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -339,7 +339,7 @@ export default function MasterSantriPage() {
     const res = await fetch(`/api/santri/${lengkapiModal.id}/lengkapi-data`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         tanggalLahir: formattedDate,
         tambahanDurasi: parseInt(lengkapiDurasi, 10)
       })
@@ -392,7 +392,7 @@ export default function MasterSantriPage() {
   const bukaBiodataModal = (santri: any) => {
     setBiodataTerpilih(santri);
     setIsEditBiodata(false);
-    
+
     let tglLahirVal = "";
     if (santri.tanggalLahir) {
       const d = new Date(santri.tanggalLahir);
@@ -429,7 +429,7 @@ export default function MasterSantriPage() {
     const res = await fetch(`/api/santri/${biodataTerpilih.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         ...editBioData,
         tanggalLahir: finalTglLahir
       })
@@ -461,7 +461,7 @@ export default function MasterSantriPage() {
 
       // Filter Santri Duf'ah Berikutnya:
       // 1. Santri yang batasAktifDufah >= nextDufahId (Lunas / Input Manual) DAN punya kamar
-      // 2. ATAU santri yang sudah punya RiwayatDufah di dufah depan (sudah konfirmasi/daftar ulang) walaupun belum bayar
+      // 2. ATAU santri yang sudah punya RiwayatDufah di dufah depan (sudah konfirmasi/daftar ulang) walaupun Belum Lunas
       const santriLanjut = allData.filter((s: any) => {
         const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
         const riwayatAcuan = riwayatNext || s.riwayat?.[0];
@@ -470,7 +470,7 @@ export default function MasterSantriPage() {
         // JALUR 1: Masa aktif mencakup dufah berikutnya (Lunas / Manual)
         const isAktifLanjut = s.batasAktifDufah >= nextDufahId && punyaKamar;
 
-        // JALUR 2: Sudah submit form daftar ulang (punya riwayat di dufah depan) walaupun belum bayar
+        // JALUR 2: Sudah submit form daftar ulang (punya riwayat di dufah depan) walaupun Belum Lunas
         const sudahKonfirmasi = !!riwayatNext && punyaKamar;
 
         return isAktifLanjut || sudahKonfirmasi;
@@ -521,7 +521,7 @@ export default function MasterSantriPage() {
       const namaDufah = nextDufah?.nama || `Duf'ah ${nextDufahId}`;
       let text = `*📂DATA SANTRI ${namaDufah.toUpperCase()}*\n`;
       text += `_Total: ${santriLanjut.length} santri_\n`;
-      text += `_✅ Lunas: ${totalLunas} | ⏳ Belum Bayar: ${totalBelumBayar}_\n\n`;
+      text += `_✅ Lunas: ${totalLunas} | ⏳ Belum Lunas: ${totalBelumBayar}_\n\n`;
 
       // BANIN
       const sakanBanin = Object.keys(struktur.BANIN).sort();
@@ -559,7 +559,7 @@ export default function MasterSantriPage() {
         });
       }
 
-      text += `\n_Keterangan: ✅ = Lunas | ⏳ = Belum Bayar_`;
+      text += `\n_Keterangan: ✅ = Lunas | ⏳ = Belum Lunas_`;
 
       navigator.clipboard.writeText(text);
       swalSuccess("Berhasil Disalin!", `Laporan ${namaDufah} (${santriLanjut.length} santri) siap di-paste di WhatsApp.`);
@@ -574,77 +574,104 @@ export default function MasterSantriPage() {
     setExportLoading(true);
     try {
       const allData = await fetchExportData();
+
+      const currentFilterDufahId = (filterDufah !== "AKTIF" && filterDufah !== "ALL") ? parseInt(filterDufah) : null;
+      const dufahNameHeader = currentFilterDufahId
+        ? getNamaDufah(currentFilterDufahId)
+        : "DUF'AH AKTIF";
+
       const santriAssigned = allData.filter((s: any) => {
         const riwayatAktif = s.riwayat?.[0];
         return riwayatAktif?.lemari;
       });
 
-    // Build structure: gender > sakan > kamar > santri[]
-    const struktur: any = { BANIN: {}, BANAT: {} };
+      if (santriAssigned.length === 0) {
+        setExportLoading(false);
+        return swalError(`Belum ada santri yang memiliki riwayat kamar untuk laporan ini.`);
+      }
 
-    santriAssigned.forEach(s => {
-      const riwayat = s.riwayat[0];
-      const lemari = riwayat.lemari;
-      if (!lemari) return;
+      // Build structure: gender > sakan > kamar > santri[]
+      const struktur: any = { BANIN: {}, BANAT: {} };
 
-      const sakanNama = lemari.kamar.sakan.nama;
-      const kamarNama = lemari.kamar.nama;
-      const gender = s.gender === "BANAT" ? "BANAT" : "BANIN";
+      let totalLunas = 0;
+      let totalBelumBayar = 0;
 
-      if (!struktur[gender][sakanNama]) struktur[gender][sakanNama] = {};
-      if (!struktur[gender][sakanNama][kamarNama]) struktur[gender][sakanNama][kamarNama] = [];
+      santriAssigned.forEach((s: any) => {
+        const riwayatAktif = s.riwayat[0];
+        const lemari = riwayatAktif.lemari;
+        if (!lemari) return;
 
-      const ket = s.kategori === "KSU" ? " (KSU)" : s.kategori === "LAMA" ? " (Lama)" : s.kategori === "BARU" ? " (Baru)" : "";
-      const ustadz = s.kategori === "KSU" ? "U. " : "";
+        const sakanNama = lemari.kamar.sakan.nama;
+        const kamarNama = lemari.kamar.nama;
+        const gender = s.gender === "BANAT" ? "BANAT" : "BANIN";
 
-      struktur[gender][sakanNama][kamarNama].push({
-        nomor: lemari.nomor,
-        nama: `${ustadz}${s.nama}${ket}`,
-        nomorSort: lemari.nomor
-      });
-    });
+        if (!struktur[gender][sakanNama]) struktur[gender][sakanNama] = {};
+        if (!struktur[gender][sakanNama][kamarNama]) struktur[gender][sakanNama][kamarNama] = [];
 
-    // Generate text
-    let text = `*📂DATA SANTRI  DUF'AH*\n\n`;
+        // Tentukan status lunas berdasarkan batasAktifDufah (untuk manual) atau riwayatAktif.isLunas
+        const targetDufahLunas = currentFilterDufahId || riwayatAktif.dufahId;
+        const isLunas = s.batasAktifDufah >= targetDufahLunas || riwayatAktif.isLunas;
 
-    // BANIN
-    const sakanBanin = Object.keys(struktur.BANIN).sort();
-    if (sakanBanin.length > 0) {
-      text += `*🏘️SAKAN BANIN*\n`;
-      sakanBanin.forEach(sakanNama => {
-        text += `🏠 *${sakanNama.toUpperCase()}*\n`;
-        const kamars = Object.keys(struktur.BANIN[sakanNama]).sort();
-        kamars.forEach(kamarNama => {
-          text += `\`Kamar ${kamarNama}\`\n`;
-          const santriList = struktur.BANIN[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
-          santriList.forEach((s: any) => {
-            text += `* ${s.nomor}_ ${s.nama}\n`;
-          });
-          text += `\n`;
+        if (isLunas) totalLunas++;
+        else totalBelumBayar++;
+
+        const statusBayar = isLunas ? "✅" : "⏳";
+        const ket = s.kategori === "KSU" ? " (KSU)" : s.kategori === "LAMA" ? " (Lama)" : s.kategori === "BARU" ? " (Baru)" : "";
+        const ustadz = s.kategori === "KSU" ? "U. " : "";
+
+        struktur[gender][sakanNama][kamarNama].push({
+          nomor: lemari.nomor,
+          nama: `${statusBayar} ${ustadz}${s.nama}${ket}`,
+          nomorSort: lemari.nomor,
+          isLunas
         });
       });
-    }
 
-    // BANAT
-    const sakanBanat = Object.keys(struktur.BANAT).sort();
-    if (sakanBanat.length > 0) {
-      text += `*🏘️SAKAN BANAT*\n`;
-      sakanBanat.forEach(sakanNama => {
-        text += `🏠 *${sakanNama.toUpperCase()}*\n`;
-        const kamars = Object.keys(struktur.BANAT[sakanNama]).sort();
-        kamars.forEach(kamarNama => {
-          text += `\`Kamar ${kamarNama}\`\n`;
-          const santriList = struktur.BANAT[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
-          santriList.forEach((s: any) => {
-            text += `* ${s.nomor}_ ${s.nama}\n`;
+      // Generate text
+      let text = `*📂DATA SANTRI ${dufahNameHeader.toUpperCase()}*\n`;
+      text += `_Total: ${santriAssigned.length} santri_\n`;
+      text += `_✅ Lunas: ${totalLunas} | ⏳ Belum Lunas: ${totalBelumBayar}_\n\n`;
+
+      // BANIN
+      const sakanBanin = Object.keys(struktur.BANIN).sort();
+      if (sakanBanin.length > 0) {
+        text += `*🏘️SAKAN BANIN*\n`;
+        sakanBanin.forEach(sakanNama => {
+          text += `🏠 *${sakanNama.toUpperCase()}*\n`;
+          const kamars = Object.keys(struktur.BANIN[sakanNama]).sort();
+          kamars.forEach(kamarNama => {
+            text += `\`Kamar ${kamarNama}\`\n`;
+            const santriList = struktur.BANIN[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
+            santriList.forEach((s: any) => {
+              text += `* ${s.nomor}_ ${s.nama}\n`;
+            });
+            text += `\n`;
           });
-          text += `\n`;
         });
-      });
-    }
+      }
 
-    navigator.clipboard.writeText(text);
-    swalSuccess("Berhasil Disalin!", "Laporan Data Santri Duf'ah siap di-paste di WhatsApp.");
+      // BANAT
+      const sakanBanat = Object.keys(struktur.BANAT).sort();
+      if (sakanBanat.length > 0) {
+        text += `*🏘️SAKAN BANAT*\n`;
+        sakanBanat.forEach(sakanNama => {
+          text += `🏠 *${sakanNama.toUpperCase()}*\n`;
+          const kamars = Object.keys(struktur.BANAT[sakanNama]).sort();
+          kamars.forEach(kamarNama => {
+            text += `\`Kamar ${kamarNama}\`\n`;
+            const santriList = struktur.BANAT[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
+            santriList.forEach((s: any) => {
+              text += `* ${s.nomor}_ ${s.nama}\n`;
+            });
+            text += `\n`;
+          });
+        });
+      }
+
+      text += `\n_Keterangan: ✅ = Lunas | ⏳ = Belum Lunas_`;
+
+      navigator.clipboard.writeText(text);
+      swalSuccess("Berhasil Disalin!", "Laporan Data Santri Duf'ah siap di-paste di WhatsApp.");
     } catch (error) {
       swalError("Gagal memuat data untuk laporan.");
     }
@@ -732,14 +759,14 @@ export default function MasterSantriPage() {
         theme: "grid",
         styles: { fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [212, 175, 55], textColor: [0, 0, 0] },
-        didParseCell: function(data) {
+        didParseCell: function (data) {
           if (data.section === 'body') {
             const rowIndex = data.row.index;
             const gender = tableData[rowIndex][9];
             if (gender === 'BANIN') {
-               data.cell.styles.fillColor = [224, 242, 254];
+              data.cell.styles.fillColor = [224, 242, 254];
             } else if (gender === 'BANAT') {
-               data.cell.styles.fillColor = [252, 231, 243];
+              data.cell.styles.fillColor = [252, 231, 243];
             }
           }
         }
@@ -919,142 +946,142 @@ export default function MasterSantriPage() {
                   dataDitampilkan.map((santri, i) => {
                     const index = (currentPage - 1) * itemsPerPage + i;
                     return (
-                        <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
-                          <td className="p-4 text-center">
-                        <span className="bg-dark-900 border border-gold-500/20 text-gold-500 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
-                          {index + 1}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-500 line-through' : 'text-gray-200'}`}>
-                          {santri.nama} {santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
-                        </p>
-                        <p className="text-xs text-gold-500 font-mono mt-1 font-bold">
-                          NIS: {santri.nis || "Belum ada"}
-                        </p>
-                        <p className="text-[10px] text-gray-500 mt-0.5">
-                          Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
-                        </p>
-                      </td>
-                      <td className="p-4">
-                        {santri.transaksi && santri.transaksi[0]?.program ? (
-                          <>
-                            <p className="text-sm font-bold text-emerald-400">{santri.transaksi[0].program.nama}</p>
-                            <p className="text-[10px] text-gray-500">Durasi: {santri.transaksi[0].program.durasiBulan} Bulan</p>
-                          </>
-                        ) : (
-                          <span className="text-gray-500 text-sm italic">-</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-center font-bold text-gold-400">
-                        {hitungSisaDurasi(santri)}
-                        {canEditMasaAktif && (
-                          <button
-                            onClick={() => editMasaAktif(santri)}
-                            className="ml-1.5 text-gray-500 hover:text-gold-500 transition inline-flex items-center"
-                            title="Edit Masa Aktif"
-                          >
-                            <IconEdit />
-                          </button>
-                        )}
-                      </td>
-                      <td className="p-4 text-center font-bold text-gold-400">
-                        {santri.riwayat?.[0]?.bulanKe || '-'}
-                      </td>
-                      <td className="p-4">
-                        <span className={`px-3 py-1 text-xs font-bold rounded-lg shadow-sm text-white ${santri.kategori === 'KSU' ? 'bg-purple-900/80' : santri.kategori === 'LAMA' ? 'bg-orange-800' : 'bg-green-800'}`}>
-                          {santri.kategori}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        {santri.isCuti ? (
-                          <span className="px-3 py-1 bg-gray-900/20 text-gray-400 border border-gray-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
-                            <IconDocument /> Cuti
+                      <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
+                        <td className="p-4 text-center">
+                          <span className="bg-dark-900 border border-gold-500/20 text-gold-500 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
+                            {index + 1}
                           </span>
-                        ) : santri.isAktif ? (
-                          <span className="px-3 py-1 bg-green-900/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
-                            <IconCheck /> Aktif
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 bg-red-900/20 text-red-500 border border-red-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
-                            <IconX /> Keluar
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex justify-center gap-1.5 flex-wrap">
-                          <button
-                            onClick={() => setRiwayatTerpilih(santri)}
-                            className="bg-dark-900 text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gold-500/20 flex items-center gap-1"
-                          >
-                            <IconDocument /> Riwayat
-                          </button>
-                          <button
-                            onClick={() => bukaBiodataModal(santri)}
-                            className="bg-dark-900 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition text-xs font-bold border border-blue-500/20 flex items-center gap-1"
-                          >
-                            <IconDocument /> Biodata
-                          </button>
-
-                          {canManageSantri && !santri.nis && (
-                            <button
-                              onClick={() => {
-                                setLengkapiModal(santri);
-                                setLengkapiTglLahir("");
-                                setLengkapiDurasi("0");
-                              }}
-                              className="bg-dark-900 text-gold-500 hover:text-black px-3 py-1.5 rounded-lg hover:bg-gold-500 transition text-xs font-bold border border-gold-500 flex items-center gap-1 shadow-[0_0_10px_rgba(212,175,55,0.2)]"
-                            >
-                              <IconEdit /> Lengkapi Data & NIS
-                            </button>
-                          )}
-
-                          {canManageSantri && (
-                            <button
-                              onClick={() => bukaEditModal(santri)}
-                              className="bg-dark-900 text-gray-400 hover:text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gray-700 flex items-center gap-1"
-                            >
-                              <IconEdit /> Edit
-                            </button>
-                          )}
-
-                          {canManageSantri && (
+                        </td>
+                        <td className="p-4">
+                          <p className={`font-bold text-lg flex items-center gap-2 ${!santri.isAktif ? 'text-red-500 line-through' : 'text-gray-200'}`}>
+                            {santri.nama} {santri.gender === 'BANAT' ? <IconFemale /> : <IconMale />}
+                          </p>
+                          <p className="text-xs text-gold-500 font-mono mt-1 font-bold">
+                            NIS: {santri.nis || "Belum ada"}
+                          </p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">
+                            Terdaftar: {new Date(santri.createdAt).toLocaleDateString('id-ID')}
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          {santri.transaksi && santri.transaksi[0]?.program ? (
                             <>
-                            {/* Hanya tampilkan tombol Check Out/Aktifkan jika TIDAK SEDANG CUTI */}
-                            {!santri.isCuti && (
-                              <button
-                                onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
-                                className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
-                              >
-                                {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
-                              </button>
-                            )}
-
-                            {/* Hanya tampilkan tombol Cuti jika Aktif atau sedang Cuti (Bukan Check Out) */}
-                            {(santri.isAktif || santri.isCuti) && (
-                              <button
-                                onClick={() => toggleCuti(santri.id, santri.nama, santri.isCuti)}
-                                className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isCuti ? 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20' : 'bg-dark-900 text-gray-400 border-gray-700 hover:bg-gray-800'}`}
-                              >
-                                {santri.isCuti ? <><IconCheck /> Selesai Cuti</> : <><IconDocument /> Cuti</>}
-                              </button>
-                            )}
+                              <p className="text-sm font-bold text-emerald-400">{santri.transaksi[0].program.nama}</p>
+                              <p className="text-[10px] text-gray-500">Durasi: {santri.transaksi[0].program.durasiBulan} Bulan</p>
                             </>
+                          ) : (
+                            <span className="text-gray-500 text-sm italic">-</span>
                           )}
-
-                          {isSuperAdmin && (
+                        </td>
+                        <td className="p-4 text-center font-bold text-gold-400">
+                          {hitungSisaDurasi(santri)}
+                          {canEditMasaAktif && (
                             <button
-                              onClick={() => hapusSantri(santri.id, santri.nama)}
-                              className="bg-dark-900 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-900/20 transition text-xs font-bold border border-red-900/50 flex items-center gap-1"
+                              onClick={() => editMasaAktif(santri)}
+                              className="ml-1.5 text-gray-500 hover:text-gold-500 transition inline-flex items-center"
+                              title="Edit Masa Aktif"
                             >
-                              <IconTrash /> Hapus
+                              <IconEdit />
                             </button>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                        </td>
+                        <td className="p-4 text-center font-bold text-gold-400">
+                          {santri.riwayat?.[0]?.bulanKe || '-'}
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-3 py-1 text-xs font-bold rounded-lg shadow-sm text-white ${santri.kategori === 'KSU' ? 'bg-purple-900/80' : santri.kategori === 'LAMA' ? 'bg-orange-800' : 'bg-green-800'}`}>
+                            {santri.kategori}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          {santri.isCuti ? (
+                            <span className="px-3 py-1 bg-gray-900/20 text-gray-400 border border-gray-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                              <IconDocument /> Cuti
+                            </span>
+                          ) : santri.isAktif ? (
+                            <span className="px-3 py-1 bg-green-900/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                              <IconCheck /> Aktif
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-red-900/20 text-red-500 border border-red-500/30 rounded-lg text-sm font-bold inline-flex items-center gap-1">
+                              <IconX /> Keluar
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex justify-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => setRiwayatTerpilih(santri)}
+                              className="bg-dark-900 text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gold-500/20 flex items-center gap-1"
+                            >
+                              <IconDocument /> Riwayat
+                            </button>
+                            <button
+                              onClick={() => bukaBiodataModal(santri)}
+                              className="bg-dark-900 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition text-xs font-bold border border-blue-500/20 flex items-center gap-1"
+                            >
+                              <IconDocument /> Biodata
+                            </button>
+
+                            {canManageSantri && !santri.nis && (
+                              <button
+                                onClick={() => {
+                                  setLengkapiModal(santri);
+                                  setLengkapiTglLahir("");
+                                  setLengkapiDurasi("0");
+                                }}
+                                className="bg-dark-900 text-gold-500 hover:text-black px-3 py-1.5 rounded-lg hover:bg-gold-500 transition text-xs font-bold border border-gold-500 flex items-center gap-1 shadow-[0_0_10px_rgba(212,175,55,0.2)]"
+                              >
+                                <IconEdit /> Lengkapi Data & NIS
+                              </button>
+                            )}
+
+                            {canManageSantri && (
+                              <button
+                                onClick={() => bukaEditModal(santri)}
+                                className="bg-dark-900 text-gray-400 hover:text-gold-500 px-3 py-1.5 rounded-lg hover:bg-gold-500/10 transition text-xs font-bold border border-gray-700 flex items-center gap-1"
+                              >
+                                <IconEdit /> Edit
+                              </button>
+                            )}
+
+                            {canManageSantri && (
+                              <>
+                                {/* Hanya tampilkan tombol Check Out/Aktifkan jika TIDAK SEDANG CUTI */}
+                                {!santri.isCuti && (
+                                  <button
+                                    onClick={() => toggleStatusAktif(santri.id, santri.nama, santri.isAktif)}
+                                    className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isAktif ? 'bg-dark-900 text-red-500 border-red-900/50 hover:bg-red-900/20' : 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20'}`}
+                                  >
+                                    {santri.isAktif ? <><IconDoor /> Check Out</> : <><IconCheck /> Aktifkan</>}
+                                  </button>
+                                )}
+
+                                {/* Hanya tampilkan tombol Cuti jika Aktif atau sedang Cuti (Bukan Check Out) */}
+                                {(santri.isAktif || santri.isCuti) && (
+                                  <button
+                                    onClick={() => toggleCuti(santri.id, santri.nama, santri.isCuti)}
+                                    className={`px-3 py-1.5 rounded-lg transition text-xs font-bold border flex items-center gap-1 ${santri.isCuti ? 'bg-dark-900 text-green-500 border-green-900/50 hover:bg-green-900/20' : 'bg-dark-900 text-gray-400 border-gray-700 hover:bg-gray-800'}`}
+                                  >
+                                    {santri.isCuti ? <><IconCheck /> Selesai Cuti</> : <><IconDocument /> Cuti</>}
+                                  </button>
+                                )}
+                              </>
+                            )}
+
+                            {isSuperAdmin && (
+                              <button
+                                onClick={() => hapusSantri(santri.id, santri.nama)}
+                                className="bg-dark-900 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-900/20 transition text-xs font-bold border border-red-900/50 flex items-center gap-1"
+                              >
+                                <IconTrash /> Hapus
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1065,25 +1092,25 @@ export default function MasterSantriPage() {
             <div className="p-4 border-t border-gold-500/20 bg-dark-900 flex flex-col md:flex-row justify-between items-center gap-4">
               <span className="text-sm text-gray-400 font-medium">Halaman {currentPage} dari {totalPages}</span>
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => muatDataSantri(Math.max(1, currentPage - 1))} 
-                  disabled={currentPage === 1 || loading} 
+                <button
+                  onClick={() => muatDataSantri(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1 || loading}
                   className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
                 >
                   Prev
                 </button>
-                
+
                 <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
                   {[...Array(totalPages)].map((_, i) => {
                     if (
-                      i === 0 || 
-                      i === totalPages - 1 || 
+                      i === 0 ||
+                      i === totalPages - 1 ||
                       (i >= currentPage - 2 && i <= currentPage)
                     ) {
                       return (
-                        <button 
-                          key={i + 1} 
-                          onClick={() => muatDataSantri(i + 1)} 
+                        <button
+                          key={i + 1}
+                          onClick={() => muatDataSantri(i + 1)}
                           disabled={loading}
                           className={`w-10 h-10 rounded-lg font-bold border transition shrink-0 ${currentPage === i + 1 ? 'bg-gold-500 text-black border-gold-500 shadow-sm' : 'bg-dark-800 text-gray-400 border-gray-700 hover:border-gold-500/50'}`}
                         >
@@ -1091,7 +1118,7 @@ export default function MasterSantriPage() {
                         </button>
                       );
                     } else if (
-                      (i === 1 && currentPage > 3) || 
+                      (i === 1 && currentPage > 3) ||
                       (i === totalPages - 2 && currentPage < totalPages - 2)
                     ) {
                       return <span key={`ellipsis-${i}`} className="w-10 h-10 flex items-center justify-center text-gray-500 shrink-0">...</span>;
@@ -1100,9 +1127,9 @@ export default function MasterSantriPage() {
                   })}
                 </div>
 
-                <button 
-                  onClick={() => muatDataSantri(Math.min(totalPages, currentPage + 1))} 
-                  disabled={currentPage === totalPages || loading} 
+                <button
+                  onClick={() => muatDataSantri(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages || loading}
                   className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
                 >
                   Next
@@ -1266,16 +1293,16 @@ export default function MasterSantriPage() {
                     <div><span className="text-gray-500 block mb-1">Jenis Kelamin</span><strong className="text-gray-200">{biodataTerpilih.gender}</strong></div>
                     <div><span className="text-gray-500 block mb-1">NIS</span><strong className="text-gold-400 font-mono">{biodataTerpilih.nis || "-"}</strong></div>
                     <div><span className="text-gray-500 block mb-1">NIK</span><strong className="text-gray-200 font-mono">{biodataTerpilih.nik || "-"}</strong></div>
-                    
+
                     {isEditBiodata ? (
                       <>
                         <div>
                           <span className="text-gray-500 block mb-1">Tempat Lahir</span>
-                          <input type="text" value={editBioData.tempatLahir} onChange={e => setEditBioData({...editBioData, tempatLahir: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          <input type="text" value={editBioData.tempatLahir} onChange={e => setEditBioData({ ...editBioData, tempatLahir: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                         </div>
                         <div>
                           <span className="text-gray-500 block mb-1">Tanggal Lahir</span>
-                          <input type="text" placeholder="DD/MM/YYYY" value={editBioData.tanggalLahir} onChange={e => setEditBioData({...editBioData, tanggalLahir: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          <input type="text" placeholder="DD/MM/YYYY" value={editBioData.tanggalLahir} onChange={e => setEditBioData({ ...editBioData, tanggalLahir: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                         </div>
                       </>
                     ) : (
@@ -1294,36 +1321,36 @@ export default function MasterSantriPage() {
                       <>
                         <div>
                           <span className="text-gray-500 block mb-1">Nama Orang Tua/Wali</span>
-                          <input type="text" value={editBioData.namaOrtu} onChange={e => setEditBioData({...editBioData, namaOrtu: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          <input type="text" value={editBioData.namaOrtu} onChange={e => setEditBioData({ ...editBioData, namaOrtu: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                         </div>
                         <div>
                           <span className="text-gray-500 block mb-1">No. WA Orang Tua</span>
-                          <input type="text" value={editBioData.noWaOrtu} onChange={e => setEditBioData({...editBioData, noWaOrtu: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          <input type="text" value={editBioData.noWaOrtu} onChange={e => setEditBioData({ ...editBioData, noWaOrtu: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                         </div>
                         <div>
                           <span className="text-gray-500 block mb-1">No. WA Santri</span>
-                          <input type="text" value={editBioData.noWaSantri} onChange={e => setEditBioData({...editBioData, noWaSantri: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                          <input type="text" value={editBioData.noWaSantri} onChange={e => setEditBioData({ ...editBioData, noWaSantri: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                         </div>
                         <div className="col-span-2 grid grid-cols-2 gap-4 mt-2 border-t border-dark-700 pt-3">
                           <div>
                             <span className="text-gray-500 block mb-1">Provinsi</span>
-                            <input type="text" value={editBioData.provinsi} onChange={e => setEditBioData({...editBioData, provinsi: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                            <input type="text" value={editBioData.provinsi} onChange={e => setEditBioData({ ...editBioData, provinsi: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                           </div>
                           <div>
                             <span className="text-gray-500 block mb-1">Kabupaten</span>
-                            <input type="text" value={editBioData.kabupaten} onChange={e => setEditBioData({...editBioData, kabupaten: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                            <input type="text" value={editBioData.kabupaten} onChange={e => setEditBioData({ ...editBioData, kabupaten: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                           </div>
                           <div>
                             <span className="text-gray-500 block mb-1">Kecamatan</span>
-                            <input type="text" value={editBioData.kecamatan} onChange={e => setEditBioData({...editBioData, kecamatan: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                            <input type="text" value={editBioData.kecamatan} onChange={e => setEditBioData({ ...editBioData, kecamatan: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                           </div>
                           <div>
                             <span className="text-gray-500 block mb-1">Desa</span>
-                            <input type="text" value={editBioData.desa} onChange={e => setEditBioData({...editBioData, desa: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
+                            <input type="text" value={editBioData.desa} onChange={e => setEditBioData({ ...editBioData, desa: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" />
                           </div>
                           <div className="col-span-2">
                             <span className="text-gray-500 block mb-1">Alamat Lengkap</span>
-                            <textarea value={editBioData.detailAlamat} onChange={e => setEditBioData({...editBioData, detailAlamat: e.target.value})} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" rows={2}></textarea>
+                            <textarea value={editBioData.detailAlamat} onChange={e => setEditBioData({ ...editBioData, detailAlamat: e.target.value })} className="w-full p-2 bg-dark-800 border border-dark-700 text-gray-200 rounded outline-none focus:border-gold-500/50" rows={2}></textarea>
                           </div>
                         </div>
                       </>

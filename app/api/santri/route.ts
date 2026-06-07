@@ -21,7 +21,12 @@ export async function GET(request: Request) {
     let filterPencarian: any = {};
 
     if (filter === "AKTIF") {
-      filterPencarian = { isAktif: true };
+      filterPencarian = {
+        OR: [
+          { isAktif: true },
+          { riwayat: { some: { dufah: { isActive: true } } } }
+        ]
+      };
     } else if (filter === "ALL") {
       filterPencarian = {};
     } else {

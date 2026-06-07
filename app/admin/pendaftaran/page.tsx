@@ -382,7 +382,7 @@ export default function MejaKeuanganPage() {
       });
     });
 
-    // Map data Daftar Ulang (Offline / Belum bayar via form)
+    // Map data Daftar Ulang (Offline / Belum Lunas via form)
     if (filterKategori === "ALL" || filterKategori === "LAMA") {
       filteredDaftarUlang.forEach((d: any) => {
         combinedData.push({
@@ -570,7 +570,7 @@ export default function MejaKeuanganPage() {
   // Data for Charts
   const pieData = [
     { name: 'Sudah Bayar', value: totalLunas },
-    { name: 'Belum Bayar', value: totalPending }
+    { name: 'Belum Lunas', value: totalPending }
   ];
 
   const barData = allDufah.map(d => {
@@ -676,7 +676,7 @@ export default function MejaKeuanganPage() {
             <p className="text-2xl font-black text-green-400">{countSudahBayar} <span className="text-sm font-normal text-gray-500">Orang</span></p>
           </div>
           <div className="bg-dark-800 border border-red-500/20 p-5 rounded-2xl shadow-lg relative overflow-hidden">
-            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Total Belum Bayar</p>
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Total Belum Lunas</p>
             <p className="text-2xl font-black text-red-400">{countBelumBayar} <span className="text-sm font-normal text-gray-500">Orang</span></p>
           </div>
         </div>

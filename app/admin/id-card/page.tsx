@@ -118,6 +118,25 @@ export default function MejaIdCardPage() {
     }
   };
 
+  const cancelIdCard = async (idRiwayat: string, namaSantri: string) => {
+    const confirm = await swalConfirm("Batalkan Penyerahan?", `Yakin ingin membatalkan status penyerahan kartu untuk ${namaSantri}?`);
+    if (!confirm) return;
+
+    const res = await fetch("/api/id-card", {
+      method: "PATCH", 
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ id: idRiwayat, action: "cancel" }),
+    });
+    
+    if (res.ok) {
+      swalSuccess("Dibatalkan", `Status kartu ${namaSantri} dikembalikan ke Menunggu.`);
+      muatData();
+    } else {
+      const err = await res.json();
+      swalError("Gagal", err.error || "Gagal membatalkan");
+    }
+  };
+
   const sendWhatsAppCard = (item: any) => {
     // Formatting Phone Number to start with 62
     let phone = item.santri.noWaSantri || item.santri.noWaOrtu || "";
@@ -395,7 +414,16 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                               canManageIdCard ? (
                                 <button onClick={() => submitIdCard(item.id, item.santri.nama)} className="bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Serahkan Kartu</button>
                               ) : <span className="text-gray-500 font-medium text-sm italic">Menunggu diserahkan</span>
-                            ) : <span className="text-gray-500 font-medium text-sm italic">Selesai</span>}
+                            ) : (
+                              <div className="flex flex-col items-center justify-center gap-1">
+                                <span className="text-gray-500 font-medium text-sm italic">Selesai</span>
+                                {canManageIdCard && (
+                                  <button onClick={() => cancelIdCard(item.id, item.santri.nama)} className="text-xs text-red-500 hover:text-red-400 underline transition">
+                                    Batal Serahkan
+                                  </button>
+                                )}
+                              </div>
+                            )}
 
                             <button onClick={() => window.open(`/digital-card/${item.id}`, "_blank")} className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 p-2.5 rounded-xl shadow-sm transition active:scale-95" title="Preview Kartu">
                               <IconEye />

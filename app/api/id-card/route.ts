@@ -124,12 +124,24 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { id } = await request.json(); 
+    const { id, action } = await request.json(); 
 
     // Gunakan Transaction untuk mencegah Race Condition saat pembuatan nomor urut
     const updated = await prisma.$transaction(async (tx) => {
       const riwayatCurrent = await tx.riwayatDufah.findUnique({ where: { id } });
       if (!riwayatCurrent) throw new Error("Data riwayat tidak ditemukan");
+
+      if (action === "cancel") {
+        return await tx.riwayatDufah.update({
+          where: { id },
+          data: { 
+            isIdCardTaken: false,
+            waktuAmbilKartu: null,
+            nomorIdCard: null
+          },
+          include: { santri: { select: { nama: true } } }
+        });
+      }
 
       // Cari nomor ID Card tertinggi di Duf'ah yang sama
       const maxData = await tx.riwayatDufah.aggregate({
@@ -152,16 +164,29 @@ export async function PATCH(request: Request) {
 
     emitDataUpdate("id-card");
     
+    const session = await getServerSession(authOptions);
+    const u = session?.user as any;
+    const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
+
+    if (action === "cancel") {
+      await logActivity({
+        aksi: "UPDATE",
+        modul: "ID Card",
+        deskripsi: `Membatalkan penyerahan ID Card untuk santri a.n ${updated.santri.nama}`,
+        namaUser: pelaku,
+        userId: u?.id,
+        targetId: updated.santriId,
+      });
+
+      return NextResponse.json({ message: "Penyerahan ID Card dibatalkan", data: updated });
+    }
+    
     await sendGlobalNotification(
       "ID Card Diserahkan 💳",
       `[No. ${updated.nomorIdCard}] ID Card santri a.n ${updated.santri.nama} telah dicetak dan diserahkan.`,
       "receive_notif_idcard",
       "/admin/id-card"
     );
-
-    const session = await getServerSession(authOptions);
-    const u = session?.user as any;
-    const pelaku = u ? `${u.name} (@${u.username})` : "Admin";
 
     await logActivity({
       aksi: "UPDATE",
@@ -175,6 +200,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "ID Card berhasil diserahkan", data: updated });
   } catch (error) {
     console.error("Error in PATCH /api/id-card:", error);
-    return NextResponse.json({ error: "Gagal verifikasi" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal memproses data" }, { status: 500 });
   }
 }
