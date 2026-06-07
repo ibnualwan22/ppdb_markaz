@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { swalConfirm, swalSuccess, swalError, swalDanger } from "../../lib/swal";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -63,21 +63,26 @@ const IconFemale = () => (
 export default function MasterSantriPage() {
   const [dataSantri, setDataSantri] = useState<any[]>([]);
   const [daftarDufah, setDaftarDufah] = useState<any[]>([]);
+  const [sakanList, setSakanList] = useState<string[]>([]);
   const { hasAccess } = usePermissions();
   const canManageSantri = hasAccess("manage_santri");
   const isSuperAdmin = hasAccess("all_access");
   const canEditMasaAktif = hasAccess("edit_masa_aktif") || isSuperAdmin;
 
   const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [filterDufah, setFilterDufah] = useState("AKTIF");
   const [filterGender, setFilterGender] = useState("SEMUA");
   const [filterKategori, setFilterKategori] = useState("SEMUA");
   const [filterBulanKe, setFilterBulanKe] = useState("SEMUA");
   const [filterSakan, setFilterSakan] = useState("SEMUA");
   const [loading, setLoading] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
 
-  // Pagination State
+  // Server-Side Pagination State
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 50;
 
   const [riwayatTerpilih, setRiwayatTerpilih] = useState<any | null>(null);
@@ -109,25 +114,62 @@ export default function MasterSantriPage() {
     if (res.ok) setDaftarDufah(await res.json());
   };
 
-  const muatDataSantri = async () => {
+  // Helper: Build query string dari semua filter aktif
+  const buildQueryString = (page: number, mode?: string) => {
+    const params = new URLSearchParams();
+    params.set("filter", filterDufah);
+    params.set("page", page.toString());
+    params.set("limit", itemsPerPage.toString());
+    if (debouncedKeyword) params.set("search", debouncedKeyword);
+    if (filterGender !== "SEMUA") params.set("gender", filterGender);
+    if (filterKategori !== "SEMUA") params.set("kategori", filterKategori);
+    if (filterBulanKe !== "SEMUA") params.set("bulanKe", filterBulanKe);
+    if (filterSakan !== "SEMUA") params.set("sakan", filterSakan);
+    if (mode) params.set("mode", mode);
+    return params.toString();
+  };
+
+  const muatDataSantri = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/santri?filter=${filterDufah}`);
-      if (res.ok) setDataSantri(await res.json());
+      const qs = buildQueryString(page);
+      const res = await fetch(`/api/santri?${qs}`);
+      if (res.ok) {
+        const json = await res.json();
+        setDataSantri(json.data);
+        setTotalItems(json.meta.totalItems);
+        setTotalPages(json.meta.totalPages);
+        setCurrentPage(json.meta.currentPage);
+        if (json.sakanList) setSakanList(json.sakanList);
+      }
     } catch (error) {
       console.error("Gagal memuat master santri", error);
     }
     setLoading(false);
   };
 
+  // Fetch data mentah untuk Export (tanpa pagination)
+  const fetchExportData = async (): Promise<any[]> => {
+    const qs = buildQueryString(1, "export");
+    const res = await fetch(`/api/santri?${qs}`);
+    if (res.ok) return await res.json();
+    return [];
+  };
+
+  // Debounce pencarian nama (400ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedKeyword(keyword), 400);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
   useEffect(() => {
     muatDaftarDufah();
   }, []);
 
   useEffect(() => {
-    setCurrentPage(1); // Reset page on filter change
-    muatDataSantri();
-  }, [filterDufah, filterGender, filterKategori, filterBulanKe, filterSakan, keyword]);
+    setCurrentPage(1);
+    muatDataSantri(1);
+  }, [filterDufah, filterGender, filterKategori, filterBulanKe, filterSakan, debouncedKeyword]);
 
   const hitungSisaDurasi = (santri: any) => {
     if (santri.kategori === "KSU") return "Tak Terbatas";
@@ -407,105 +449,135 @@ export default function MasterSantriPage() {
   const nextDufahId = dufahAktif ? dufahAktif.id + 1 : 0;
   const nextDufah = daftarDufah.find(d => d.id === nextDufahId);
 
-  // Cek apakah ada santri yang sudah terdata di kamar untuk dufah berikutnya
-  // Syarat:
-  // 1. Data Pasti: batasAktifDufah sudah mencapai dufah berikutnya (mencakup Lunas Verifikasi & Input Manual)
-  // 2. Jika sudah ada riwayat untuk dufah depan, pastikan statusnya isLunas (bukan sekadar booking belum bayar)
-  const santriDufahBerikutnya = dataSantri.filter(s => {
-    const isLanjut = s.batasAktifDufah >= nextDufahId;
-    
-    // Cari kamar acuan: Prioritaskan riwayat depan, jika tidak ada pakai riwayat terakhir
-    const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
-    const riwayatAcuan = riwayatNext || s.riwayat?.[0];
-    const punyaKamar = !!riwayatAcuan?.lemariId;
+  // Tombol Laporan Duf'ah Berikutnya: Tampilkan jika ada Duf'ah berikutnya terdaftar
+  const adaSantriDufahBerikutnya = !!nextDufah;
 
-    // Jika riwayat depan sudah ter-generate (karena submit form), pastikan sudah dibayar (isLunas: true).
-    // Jika belum ter-generate (misal karena input manual durasi), kita anggap valid (true) selama isLanjut terpenuhi.
-    const isLunasPendaftaran = riwayatNext ? riwayatNext.isLunas : true;
+  // Copy Laporan WA Duf'ah Berikutnya (Fetch data lengkap dari server)
+  const copyLaporanWADufahBerikutnya = async () => {
+    setExportLoading(true);
+    try {
+      // Ambil SEMUA santri aktif dari server (tanpa pagination)
+      const allData = await fetchExportData();
 
-    return isLanjut && punyaKamar && isLunasPendaftaran;
-  });
-  const adaSantriDufahBerikutnya = santriDufahBerikutnya.length > 0;
+      // Filter Santri Duf'ah Berikutnya:
+      // 1. Santri yang batasAktifDufah >= nextDufahId (Lunas / Input Manual) DAN punya kamar
+      // 2. ATAU santri yang sudah punya RiwayatDufah di dufah depan (sudah konfirmasi/daftar ulang) walaupun belum bayar
+      const santriLanjut = allData.filter((s: any) => {
+        const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+        const riwayatAcuan = riwayatNext || s.riwayat?.[0];
+        const punyaKamar = !!riwayatAcuan?.lemariId;
 
-  // Copy Laporan WA Duf'ah Berikutnya
-  const copyLaporanWADufahBerikutnya = () => {
-    const struktur: any = { BANIN: {}, BANAT: {} };
+        // JALUR 1: Masa aktif mencakup dufah berikutnya (Lunas / Manual)
+        const isAktifLanjut = s.batasAktifDufah >= nextDufahId && punyaKamar;
 
-    santriDufahBerikutnya.forEach(s => {
-      // Prioritaskan riwayat depan jika ada, jika tidak gunakan riwayat terakhir
-      const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
-      const riwayatAcuan = riwayatNext || s.riwayat?.[0];
-      const lemari = riwayatAcuan?.lemari;
-      if (!lemari) return;
+        // JALUR 2: Sudah submit form daftar ulang (punya riwayat di dufah depan) walaupun belum bayar
+        const sudahKonfirmasi = !!riwayatNext && punyaKamar;
 
-      const sakanNama = lemari.kamar.sakan.nama;
-      const kamarNama = lemari.kamar.nama;
-      const gender = s.gender === "BANAT" ? "BANAT" : "BANIN";
-
-      if (!struktur[gender][sakanNama]) struktur[gender][sakanNama] = {};
-      if (!struktur[gender][sakanNama][kamarNama]) struktur[gender][sakanNama][kamarNama] = [];
-
-      const ket = s.kategori === "KSU" ? " (KSU)" : s.kategori === "LAMA" ? " (Lama)" : s.kategori === "BARU" ? " (Baru)" : "";
-      const ustadz = s.kategori === "KSU" ? "U. " : "";
-
-      struktur[gender][sakanNama][kamarNama].push({
-        nomor: lemari.nomor,
-        nama: `${ustadz}${s.nama}${ket}`,
-        nomorSort: lemari.nomor
+        return isAktifLanjut || sudahKonfirmasi;
       });
-    });
 
-    const namaDufah = nextDufah?.nama || `Duf'ah ${nextDufahId}`;
-    let text = `*📂DATA SANTRI ${namaDufah.toUpperCase()}*\n`;
-    text += `_Total: ${santriDufahBerikutnya.length} santri_\n\n`;
+      if (santriLanjut.length === 0) {
+        setExportLoading(false);
+        return swalError("Belum ada santri yang terdaftar untuk Duf'ah berikutnya.");
+      }
 
-    // BANIN
-    const sakanBanin = Object.keys(struktur.BANIN).sort();
-    if (sakanBanin.length > 0) {
-      text += `*🏘️SAKAN BANIN*\n`;
-      sakanBanin.forEach(sakanNama => {
-        text += `🏠 *${sakanNama.toUpperCase()}*\n`;
-        const kamars = Object.keys(struktur.BANIN[sakanNama]).sort();
-        kamars.forEach(kamarNama => {
-          const santriList = struktur.BANIN[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
-          text += `\`Kamar ${kamarNama}\` (${santriList.length} santri)\n`;
-          santriList.forEach((s: any) => {
-            text += `* ${s.nomor}_ ${s.nama}\n`;
-          });
-          text += `\n`;
+      const struktur: any = { BANIN: {}, BANAT: {} };
+
+      santriLanjut.forEach((s: any) => {
+        const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+        const riwayatAcuan = riwayatNext || s.riwayat?.[0];
+        const lemari = riwayatAcuan?.lemari;
+        if (!lemari) return;
+
+        const sakanNama = lemari.kamar.sakan.nama;
+        const kamarNama = lemari.kamar.nama;
+        const gender = s.gender === "BANAT" ? "BANAT" : "BANIN";
+
+        if (!struktur[gender][sakanNama]) struktur[gender][sakanNama] = {};
+        if (!struktur[gender][sakanNama][kamarNama]) struktur[gender][sakanNama][kamarNama] = [];
+
+        // Tentukan status pembayaran
+        const isLunas = s.batasAktifDufah >= nextDufahId || (riwayatNext && riwayatNext.isLunas);
+        const statusBayar = isLunas ? "✅" : "⏳";
+
+        const ket = s.kategori === "KSU" ? " (KSU)" : s.kategori === "LAMA" ? " (Lama)" : s.kategori === "BARU" ? " (Baru)" : "";
+        const ustadz = s.kategori === "KSU" ? "U. " : "";
+
+        struktur[gender][sakanNama][kamarNama].push({
+          nomor: lemari.nomor,
+          nama: `${statusBayar} ${ustadz}${s.nama}${ket}`,
+          nomorSort: lemari.nomor,
+          isLunas
         });
       });
-    }
 
-    // BANAT
-    const sakanBanat = Object.keys(struktur.BANAT).sort();
-    if (sakanBanat.length > 0) {
-      text += `*🏘️SAKAN BANAT*\n`;
-      sakanBanat.forEach(sakanNama => {
-        text += `🏠 *${sakanNama.toUpperCase()}*\n`;
-        const kamars = Object.keys(struktur.BANAT[sakanNama]).sort();
-        kamars.forEach(kamarNama => {
-          const santriList = struktur.BANAT[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
-          text += `\`Kamar ${kamarNama}\` (${santriList.length} santri)\n`;
-          santriList.forEach((s: any) => {
-            text += `* ${s.nomor}_ ${s.nama}\n`;
+      // Hitung statistik
+      const totalLunas = santriLanjut.filter((s: any) => {
+        const riwayatNext = s.riwayat?.find((r: any) => r.dufahId === nextDufahId);
+        return s.batasAktifDufah >= nextDufahId || (riwayatNext && riwayatNext.isLunas);
+      }).length;
+      const totalBelumBayar = santriLanjut.length - totalLunas;
+
+      const namaDufah = nextDufah?.nama || `Duf'ah ${nextDufahId}`;
+      let text = `*📂DATA SANTRI ${namaDufah.toUpperCase()}*\n`;
+      text += `_Total: ${santriLanjut.length} santri_\n`;
+      text += `_✅ Lunas: ${totalLunas} | ⏳ Belum Bayar: ${totalBelumBayar}_\n\n`;
+
+      // BANIN
+      const sakanBanin = Object.keys(struktur.BANIN).sort();
+      if (sakanBanin.length > 0) {
+        text += `*🏘️SAKAN BANIN*\n`;
+        sakanBanin.forEach(sakanNama => {
+          text += `🏠 *${sakanNama.toUpperCase()}*\n`;
+          const kamars = Object.keys(struktur.BANIN[sakanNama]).sort();
+          kamars.forEach(kamarNama => {
+            const santriList = struktur.BANIN[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
+            text += `\`Kamar ${kamarNama}\` (${santriList.length} santri)\n`;
+            santriList.forEach((s: any) => {
+              text += `* ${s.nomor}_ ${s.nama}\n`;
+            });
+            text += `\n`;
           });
-          text += `\n`;
         });
-      });
-    }
+      }
 
-    navigator.clipboard.writeText(text);
-    swalSuccess("Berhasil Disalin!", `Laporan ${namaDufah} (${santriDufahBerikutnya.length} santri) siap di-paste di WhatsApp.`);
+      // BANAT
+      const sakanBanat = Object.keys(struktur.BANAT).sort();
+      if (sakanBanat.length > 0) {
+        text += `*🏘️SAKAN BANAT*\n`;
+        sakanBanat.forEach(sakanNama => {
+          text += `🏠 *${sakanNama.toUpperCase()}*\n`;
+          const kamars = Object.keys(struktur.BANAT[sakanNama]).sort();
+          kamars.forEach(kamarNama => {
+            const santriList = struktur.BANAT[sakanNama][kamarNama].sort((a: any, b: any) => a.nomorSort.localeCompare(b.nomorSort));
+            text += `\`Kamar ${kamarNama}\` (${santriList.length} santri)\n`;
+            santriList.forEach((s: any) => {
+              text += `* ${s.nomor}_ ${s.nama}\n`;
+            });
+            text += `\n`;
+          });
+        });
+      }
+
+      text += `\n_Keterangan: ✅ = Lunas | ⏳ = Belum Bayar_`;
+
+      navigator.clipboard.writeText(text);
+      swalSuccess("Berhasil Disalin!", `Laporan ${namaDufah} (${santriLanjut.length} santri) siap di-paste di WhatsApp.`);
+    } catch (error) {
+      swalError("Gagal memuat data untuk laporan.");
+    }
+    setExportLoading(false);
   };
 
   // Copy Laporan WA Duf'ah
-  const copyLaporanWADufah = () => {
-    // Group santri by gender > sakan > kamar
-    const santriAssigned = dataSantri.filter(s => {
-      const riwayatAktif = s.riwayat?.[0];
-      return riwayatAktif?.lemari;
-    });
+  const copyLaporanWADufah = async () => {
+    setExportLoading(true);
+    try {
+      const allData = await fetchExportData();
+      const santriAssigned = allData.filter((s: any) => {
+        const riwayatAktif = s.riwayat?.[0];
+        return riwayatAktif?.lemari;
+      });
 
     // Build structure: gender > sakan > kamar > santri[]
     const struktur: any = { BANIN: {}, BANAT: {} };
@@ -573,104 +645,111 @@ export default function MasterSantriPage() {
 
     navigator.clipboard.writeText(text);
     swalSuccess("Berhasil Disalin!", "Laporan Data Santri Duf'ah siap di-paste di WhatsApp.");
+    } catch (error) {
+      swalError("Gagal memuat data untuk laporan.");
+    }
+    setExportLoading(false);
   };
 
-  const uniqueSakan = Array.from(new Set(dataSantri.map(s => s.riwayat?.[0]?.lemari?.kamar?.sakan?.nama).filter(Boolean))).sort();
+  // Data sudah difilter dari server, langsung pakai dataSantri
+  const dataDitampilkan = dataSantri;
 
-  const dataDitampilkan = dataSantri.filter((santri) => {
-    const cocokNama = santri.nama.toLowerCase().includes(keyword.toLowerCase());
-    const cocokGender = filterGender === "SEMUA" || santri.gender === filterGender;
-    const cocokKategori = filterKategori === "SEMUA" || santri.kategori === filterKategori;
-    const cocokBulanKe = filterBulanKe === "SEMUA" || (santri.riwayat?.[0]?.bulanKe?.toString() === filterBulanKe);
-    const sakanSantri = santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-";
-    const cocokSakan = filterSakan === "SEMUA" || sakanSantri === filterSakan;
-    return cocokNama && cocokGender && cocokKategori && cocokBulanKe && cocokSakan;
-  });
+  const exportToExcel = async () => {
+    setExportLoading(true);
+    try {
+      const allData = await fetchExportData();
+      if (allData.length === 0) { setExportLoading(false); return swalError("Tidak ada data untuk diexport!"); }
+      const dataExport = allData.map((santri: any, index: number) => {
+        let tglLahirVal = "-";
+        if (santri.tanggalLahir) {
+          const d = new Date(santri.tanggalLahir);
+          tglLahirVal = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+        }
 
-  const exportToExcel = () => {
-    if (dataDitampilkan.length === 0) return swalError("Tidak ada data untuk diexport!");
-    const dataExport = dataDitampilkan.map((santri, index) => {
-      let tglLahirVal = "-";
-      if (santri.tanggalLahir) {
-        const d = new Date(santri.tanggalLahir);
-        tglLahirVal = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-      }
+        return {
+          No: index + 1,
+          NIS: santri.nis || "-",
+          Nama: santri.nama,
+          Program: santri.transaksi?.[0]?.program?.nama || "-",
+          Gender: santri.gender === "BANAT" ? "Perempuan" : "Laki-laki",
+          "Tempat Lahir": santri.tempatLahir || "-",
+          "Tanggal Lahir": tglLahirVal,
+          "Nama Ortu": santri.namaOrtu || "-",
+          "No WA Ortu": santri.noWaOrtu || "-",
+          "No WA Santri": santri.noWaSantri || "-",
+          Provinsi: santri.provinsi || "-",
+          Kabupaten: santri.kabupaten || "-",
+          Kecamatan: santri.kecamatan || "-",
+          Desa: santri.desa || "-",
+          "Detail Alamat": santri.detailAlamat || "-",
+          Sakan: santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
+          Lemari: santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
+          "Aktif Sampai Duf'ah": getNamaDufah(santri.batasAktifDufah),
+          "Sisa Durasi": hitungSisaDurasi(santri),
+          "Bulan Ke": santri.riwayat?.[0]?.bulanKe || "-",
+          Kategori: santri.kategori,
+          Status: santri.isAktif ? "Aktif" : "Keluar"
+        };
+      });
 
-      return {
-        No: index + 1,
-        NIS: santri.nis || "-",
-        Nama: santri.nama,
-        Program: santri.transaksi?.[0]?.program?.nama || "-",
-        Gender: santri.gender === "BANAT" ? "Perempuan" : "Laki-laki",
-        "Tempat Lahir": santri.tempatLahir || "-",
-        "Tanggal Lahir": tglLahirVal,
-        "Nama Ortu": santri.namaOrtu || "-",
-        "No WA Ortu": santri.noWaOrtu || "-",
-        "No WA Santri": santri.noWaSantri || "-",
-        Provinsi: santri.provinsi || "-",
-        Kabupaten: santri.kabupaten || "-",
-        Kecamatan: santri.kecamatan || "-",
-        Desa: santri.desa || "-",
-        "Detail Alamat": santri.detailAlamat || "-",
-        Sakan: santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
-        Lemari: santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
-        "Aktif Sampai Duf'ah": getNamaDufah(santri.batasAktifDufah),
-        "Sisa Durasi": hitungSisaDurasi(santri),
-        "Bulan Ke": santri.riwayat?.[0]?.bulanKe || "-",
-        Kategori: santri.kategori,
-        Status: santri.isAktif ? "Aktif" : "Keluar"
-      };
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(dataExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Santri");
-    XLSX.writeFile(workbook, `Master_Santri_${new Date().toISOString().split('T')[0]}.xlsx`);
+      const worksheet = XLSX.utils.json_to_sheet(dataExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Santri");
+      XLSX.writeFile(workbook, `Master_Santri_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      swalError("Gagal memuat data untuk export.");
+    }
+    setExportLoading(false);
   };
 
-  const exportToPDF = () => {
-    if (dataDitampilkan.length === 0) return swalError("Tidak ada data untuk diexport!");
-    const doc = new jsPDF("p", "pt", "a4");
+  const exportToPDF = async () => {
+    setExportLoading(true);
+    try {
+      const allData = await fetchExportData();
+      if (allData.length === 0) { setExportLoading(false); return swalError("Tidak ada data untuk diexport!"); }
+      const doc = new jsPDF("p", "pt", "a4");
 
-    doc.setFontSize(14);
-    doc.text("Data Master Santri Markaz", 40, 40);
+      doc.setFontSize(14);
+      doc.text("Data Master Santri Markaz", 40, 40);
 
-    const tableData = dataDitampilkan.map((santri, index) => [
-      index + 1,
-      santri.nama,
-      santri.transaksi?.[0]?.program?.nama || "-",
-      santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
-      santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
-      hitungSisaDurasi(santri),
-      santri.riwayat?.[0]?.bulanKe || "-",
-      santri.kategori,
-      santri.isAktif ? "Aktif" : "Keluar",
-      santri.gender // For styling purposes
-    ]);
+      const tableData = allData.map((santri: any, index: number) => [
+        index + 1,
+        santri.nama,
+        santri.transaksi?.[0]?.program?.nama || "-",
+        santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
+        santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
+        hitungSisaDurasi(santri),
+        santri.riwayat?.[0]?.bulanKe || "-",
+        santri.kategori,
+        santri.isAktif ? "Aktif" : "Keluar",
+        santri.gender
+      ]);
 
-    autoTable(doc, {
-      startY: 50,
-      head: [["No", "Nama", "Program", "Sakan", "Lemari", "Sisa Durasi", "Bln", "Kategori", "Status"]],
-      body: tableData.map(row => row.slice(0, 9)), // Extract the actual table fields
-      theme: "grid",
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [212, 175, 55], textColor: [0, 0, 0] },
-      didParseCell: function(data) {
-        if (data.section === 'body') {
-          const rowIndex = data.row.index;
-          const gender = tableData[rowIndex][9];
-          if (gender === 'BANIN') {
-             // Light blue background for Banin
-             data.cell.styles.fillColor = [224, 242, 254];
-          } else if (gender === 'BANAT') {
-             // Light pink background for Banat
-             data.cell.styles.fillColor = [252, 231, 243];
+      autoTable(doc, {
+        startY: 50,
+        head: [["No", "Nama", "Program", "Sakan", "Lemari", "Sisa Durasi", "Bln", "Kategori", "Status"]],
+        body: tableData.map(row => row.slice(0, 9)),
+        theme: "grid",
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [212, 175, 55], textColor: [0, 0, 0] },
+        didParseCell: function(data) {
+          if (data.section === 'body') {
+            const rowIndex = data.row.index;
+            const gender = tableData[rowIndex][9];
+            if (gender === 'BANIN') {
+               data.cell.styles.fillColor = [224, 242, 254];
+            } else if (gender === 'BANAT') {
+               data.cell.styles.fillColor = [252, 231, 243];
+            }
           }
         }
-      }
-    });
+      });
 
-    doc.save(`Master_Santri_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`Master_Santri_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      swalError("Gagal memuat data untuk export.");
+    }
+    setExportLoading(false);
   };
 
   return (
@@ -682,19 +761,18 @@ export default function MasterSantriPage() {
             <p className="text-gray-400 mt-1 font-medium">Kelola status aktif, Check Out, edit data, dan riwayat penempatan asrama.</p>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={exportToExcel} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
+            <button onClick={exportToExcel} disabled={exportLoading} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95 disabled:opacity-50">
               <IconDocument /> Excel
             </button>
-            <button onClick={exportToPDF} className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95">
+            <button onClick={exportToPDF} disabled={exportLoading} className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-4 rounded-xl shadow-sm text-sm flex items-center gap-1 transition-all active:scale-95 disabled:opacity-50">
               <IconDocument /> PDF
             </button>
-            <button onClick={copyLaporanWADufah} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] text-sm flex items-center gap-1 transition-all active:scale-95">
+            <button onClick={copyLaporanWADufah} disabled={exportLoading} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] text-sm flex items-center gap-1 transition-all active:scale-95 disabled:opacity-50">
               <IconClipboard /> Laporan WA
             </button>
             {adaSantriDufahBerikutnya && (
-              <button onClick={copyLaporanWADufahBerikutnya} className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.3)] text-sm flex items-center gap-1.5 transition-all active:scale-95 animate-pulse hover:animate-none">
+              <button onClick={copyLaporanWADufahBerikutnya} disabled={exportLoading} className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.3)] text-sm flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50">
                 <IconClipboard /> Laporan {nextDufah?.nama || `Duf'ah ${nextDufahId}`}
-                <span className="bg-black/20 text-[10px] px-1.5 py-0.5 rounded-md font-bold">{santriDufahBerikutnya.length}</span>
               </button>
             )}
           </div>
@@ -772,7 +850,7 @@ export default function MasterSantriPage() {
                 className="w-full p-3 border border-dark-900 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 bg-dark-900 font-bold text-gold-500 shadow-inner cursor-pointer text-sm"
               >
                 <option value="SEMUA">Semua Sakan</option>
-                {uniqueSakan.map((sakan: any, idx: number) => (
+                {sakanList.map((sakan: string, idx: number) => (
                   <option key={idx} value={sakan}>{sakan}</option>
                 ))}
               </select>
@@ -797,8 +875,14 @@ export default function MasterSantriPage() {
         {/* Counter */}
         <div className="mb-4 flex items-center gap-3">
           <span className="bg-dark-800 text-gold-500 font-bold text-sm px-3 py-1.5 rounded-xl border border-gold-500/20">
-            Total: {dataDitampilkan.length} santri
+            Total: {totalItems} santri {totalPages > 1 && `(Hal. ${currentPage}/${totalPages})`}
           </span>
+          {exportLoading && (
+            <span className="text-gray-400 text-sm flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin"></div>
+              Memproses data...
+            </span>
+          )}
         </div>
 
         {/* TABEL MASTER SANTRI */}
@@ -832,12 +916,9 @@ export default function MasterSantriPage() {
                     <td colSpan={7} className="p-10 text-center text-gray-500 font-medium">Tidak ada santri ditemukan pada filter ini.</td>
                   </tr>
                 ) : (
-                  (() => {
-                    const totalPages = Math.ceil(dataDitampilkan.length / itemsPerPage);
-                    const currentData = dataDitampilkan.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                    return currentData.map((santri, i) => {
-                      const index = (currentPage - 1) * itemsPerPage + i;
-                      return (
+                  dataDitampilkan.map((santri, i) => {
+                    const index = (currentPage - 1) * itemsPerPage + i;
+                    return (
                         <tr key={santri.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${!santri.isAktif ? 'bg-red-900/10 opacity-75' : ''}`}>
                           <td className="p-4 text-center">
                         <span className="bg-dark-900 border border-gold-500/20 text-gold-500 font-bold text-xs w-7 h-7 rounded-full inline-flex items-center justify-center">
@@ -973,38 +1054,37 @@ export default function MasterSantriPage() {
                       </td>
                     </tr>
                   );
-                })})()
+                })
                 )}
               </tbody>
             </table>
           </div>
 
           {/* PAGINATION UI */}
-          {Math.ceil(dataDitampilkan.length / itemsPerPage) > 1 && (
+          {totalPages > 1 && (
             <div className="p-4 border-t border-gold-500/20 bg-dark-900 flex flex-col md:flex-row justify-between items-center gap-4">
-              <span className="text-sm text-gray-400 font-medium">Halaman {currentPage} dari {Math.ceil(dataDitampilkan.length / itemsPerPage)}</span>
+              <span className="text-sm text-gray-400 font-medium">Halaman {currentPage} dari {totalPages}</span>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} 
-                  disabled={currentPage === 1} 
+                  onClick={() => muatDataSantri(Math.max(1, currentPage - 1))} 
+                  disabled={currentPage === 1 || loading} 
                   className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
                 >
                   Prev
                 </button>
                 
                 <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
-                  {[...Array(Math.ceil(dataDitampilkan.length / itemsPerPage))].map((_, i) => {
-                    // Basic windowed pagination display for many pages
-                    const total = Math.ceil(dataDitampilkan.length / itemsPerPage);
+                  {[...Array(totalPages)].map((_, i) => {
                     if (
                       i === 0 || 
-                      i === total - 1 || 
+                      i === totalPages - 1 || 
                       (i >= currentPage - 2 && i <= currentPage)
                     ) {
                       return (
                         <button 
                           key={i + 1} 
-                          onClick={() => setCurrentPage(i + 1)} 
+                          onClick={() => muatDataSantri(i + 1)} 
+                          disabled={loading}
                           className={`w-10 h-10 rounded-lg font-bold border transition shrink-0 ${currentPage === i + 1 ? 'bg-gold-500 text-black border-gold-500 shadow-sm' : 'bg-dark-800 text-gray-400 border-gray-700 hover:border-gold-500/50'}`}
                         >
                           {i + 1}
@@ -1012,7 +1092,7 @@ export default function MasterSantriPage() {
                       );
                     } else if (
                       (i === 1 && currentPage > 3) || 
-                      (i === total - 2 && currentPage < total - 2)
+                      (i === totalPages - 2 && currentPage < totalPages - 2)
                     ) {
                       return <span key={`ellipsis-${i}`} className="w-10 h-10 flex items-center justify-center text-gray-500 shrink-0">...</span>;
                     }
@@ -1021,8 +1101,8 @@ export default function MasterSantriPage() {
                 </div>
 
                 <button 
-                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(dataDitampilkan.length / itemsPerPage), prev + 1))} 
-                  disabled={currentPage === Math.ceil(dataDitampilkan.length / itemsPerPage)} 
+                  onClick={() => muatDataSantri(Math.min(totalPages, currentPage + 1))} 
+                  disabled={currentPage === totalPages || loading} 
                   className="px-4 py-2 bg-dark-800 text-gold-500 rounded-lg border border-gold-500/20 hover:bg-gold-500/10 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition"
                 >
                   Next

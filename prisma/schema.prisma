@@ -62,6 +62,11 @@ model Santri {
   isDataVerified  Boolean                @default(false)
   riwayat         RiwayatDufah[]
   transaksi       TransaksiPendaftaran[]
+
+  @@index([isAktif])
+  @@index([kategori])
+  @@index([batasAktifDufah])
+  @@index([nama])
 }
 
 model Dufah {
@@ -101,6 +106,8 @@ model RiwayatDufah {
   santri               Santri    @relation(fields: [santriId], references: [id], onDelete: Cascade)
 
   @@unique([santriId, dufahId])
+  @@index([dufahId])
+  @@index([status])
 }
 
 model User {
