@@ -18,7 +18,7 @@ export default function MejaKeuanganPage() {
   const [allDufah, setAllDufah] = useState<any[]>([]);
   const [allRombongan, setAllRombongan] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
-  
+
   // Rombongan Upload Modal State
   const [isRombonganModalOpen, setIsRombonganModalOpen] = useState(false);
   const [rombonganFile, setRombonganFile] = useState<File | null>(null);
@@ -223,7 +223,7 @@ export default function MejaKeuanganPage() {
 
       const parseTanggalLahir = (val: any) => {
         if (!val) return null;
-        
+
         if (typeof val === 'number' || (!isNaN(Number(val)) && Number(val) > 20000)) {
           const date = new Date(Math.round((Number(val) - 25569) * 86400 * 1000));
           const yyyy = date.getFullYear();
@@ -235,11 +235,11 @@ export default function MejaKeuanganPage() {
         const s = val.toString().trim();
         const parts = s.split(/[\/\-]/);
         if (parts.length === 3) {
-           const dd = parts[0].padStart(2, '0');
-           const mm = parts[1].padStart(2, '0');
-           let yyyy = parts[2];
-           if (yyyy.length === 2) yyyy = "20" + yyyy;
-           return `${yyyy}-${mm}-${dd}`;
+          const dd = parts[0].padStart(2, '0');
+          const mm = parts[1].padStart(2, '0');
+          let yyyy = parts[2];
+          if (yyyy.length === 2) yyyy = "20" + yyyy;
+          return `${yyyy}-${mm}-${dd}`;
         }
         return s;
       };
@@ -249,7 +249,7 @@ export default function MejaKeuanganPage() {
         nama: toTitleCase(row.Nama || row.nama || ""),
         gender: row.Gender || row.gender || "BANIN",
         tempatLahir: toTitleCase(row.TempatLahir || row.tempatLahir || ""),
-        tanggalLahir: parseTanggalLahir(row.TanggalLahir || row.tanggalLahir), 
+        tanggalLahir: parseTanggalLahir(row.TanggalLahir || row.tanggalLahir),
         namaOrtu: toTitleCase(row.NamaOrtu || row.namaOrtu || ""),
         noWaOrtu: formatWa(row.NoWaOrtu || row.noWaOrtu),
         provinsi: toTitleCase(row.Provinsi || row.provinsi || ""),
@@ -308,7 +308,7 @@ export default function MejaKeuanganPage() {
     ]);
     // Set lebar kolom agar rapi
     ws["!cols"] = [
-      { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, 
+      { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
       { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
     ];
     const wb = XLSX.utils.book_new();
@@ -360,11 +360,11 @@ export default function MejaKeuanganPage() {
     dataToExport.forEach((t: any) => {
       const isLama = t.noKwitansi?.includes("RENEW-");
       const isRombongan = !!t.rombonganId;
-      
+
       let kategori = "Baru";
       if (isLama) kategori = "Lama";
       if (isRombongan) kategori = "Rombongan";
-      
+
       // Filter Kategori (Rombongan kita anggap masuk filter BARU atau ALL)
       if (filterKategori === "BARU" && kategori === "Lama") return;
       if (filterKategori === "LAMA" && kategori !== "Lama") return;
@@ -475,18 +475,18 @@ export default function MejaKeuanganPage() {
   // Filter scope
   const filteredByScope = filterScope === "AKTIF"
     ? transaksi.filter(t => {
-        const matchesActive = activeDufah && (t.dufahTujuanId === activeDufah.id || t.noKwitansi.includes(`-${activeDufah.id}-`) || t.noKwitansi.includes(`RENEW-${activeDufah.id}-`));
-        const matchesTarget = targetDufah && (t.dufahTujuanId === targetDufah.id || t.noKwitansi.includes(`-${targetDufah.id}-`) || t.noKwitansi.includes(`RENEW-${targetDufah.id}-`));
-        return matchesActive || matchesTarget;
-      })
+      const matchesActive = activeDufah && (t.dufahTujuanId === activeDufah.id || t.noKwitansi.includes(`-${activeDufah.id}-`) || t.noKwitansi.includes(`RENEW-${activeDufah.id}-`));
+      const matchesTarget = targetDufah && (t.dufahTujuanId === targetDufah.id || t.noKwitansi.includes(`-${targetDufah.id}-`) || t.noKwitansi.includes(`RENEW-${targetDufah.id}-`));
+      return matchesActive || matchesTarget;
+    })
     : filterScope === "GLOBAL"
       ? transaksi
       : transaksi.filter(t => {
-          const dufahIdStr = filterScope;
-          return t.dufahTujuanId?.toString() === dufahIdStr || t.noKwitansi.includes(`-${dufahIdStr}-`) || t.noKwitansi.includes(`RENEW-${dufahIdStr}-`);
-        });
+        const dufahIdStr = filterScope;
+        return t.dufahTujuanId?.toString() === dufahIdStr || t.noKwitansi.includes(`-${dufahIdStr}-`) || t.noKwitansi.includes(`RENEW-${dufahIdStr}-`);
+      });
 
-  const selectedDufahLabel = filterScope === "AKTIF" 
+  const selectedDufahLabel = filterScope === "AKTIF"
     ? (activeDufah?.nama || targetDufah?.nama || "Duf'ah Aktif")
     : filterScope === "GLOBAL"
       ? "Semua Data (Global)"
@@ -528,16 +528,16 @@ export default function MejaKeuanganPage() {
   const filteredData = filteredByScope.filter(t => {
     // 1. Text Search Filter
     const matchesSearch = t.santri.nama.toLowerCase().includes(search.toLowerCase()) || t.noKwitansi.toLowerCase().includes(search.toLowerCase());
-    
+
     // 2. Hide Rombongan Children (they are inside modal/rombongan table)
     const isNotRombonganChild = !t.rombonganId;
-    
+
     // 3. Status Lunas Filter
     const isPaid = t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS";
-    const matchesLunas = filterLunas === "ALL" 
-      ? true 
+    const matchesLunas = filterLunas === "ALL"
+      ? true
       : filterLunas === "LUNAS" ? isPaid : !isPaid;
-      
+
     // 4. Kategori Filter (Baru/Lama)
     const isLama = t.noKwitansi?.includes("RENEW-");
     const matchesKategori = filterKategori === "ALL"
@@ -550,11 +550,11 @@ export default function MejaKeuanganPage() {
   const filteredDaftarUlang = daftarUlang.filter(d => {
     // Filter Kategori: Daftar Ulang selalu LAMA
     if (filterKategori === "BARU") return false;
-    
+
     // Filter Lunas: Daftar Ulang dari DB (yg muncul disini) selalu BELUM LUNAS
     if (filterLunas === "LUNAS") return false;
 
-    // Sembunyikan dari tabel atas jika santri sudah memiliki tagihan perpanjangan online di tabel bawah
+    // Sembunyikan dari tabel atas jika santri sudah memiliki tagihan Daftar Ulang online di tabel bawah
     const hasOnlineInvoice = filteredByScope.some(t => t.santriId === d.santriId && t.statusPembayaran === "PENDING");
     if (hasOnlineInvoice) return false;
 
@@ -616,8 +616,8 @@ export default function MejaKeuanganPage() {
         {/* Filter Bar */}
         <div className="bg-dark-800 p-4 rounded-2xl border border-gold-500/10 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            <select 
-              value={filterLunas} 
+            <select
+              value={filterLunas}
               onChange={(e) => setFilterLunas(e.target.value)}
               className="bg-dark-900 text-gray-200 border border-gold-500/20 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-gold-500/50 cursor-pointer flex-1 md:flex-none"
             >
@@ -625,9 +625,9 @@ export default function MejaKeuanganPage() {
               <option value="LUNAS">Sudah Lunas</option>
               <option value="BELUM">Belum Lunas</option>
             </select>
-            
-            <select 
-              value={filterKategori} 
+
+            <select
+              value={filterKategori}
               onChange={(e) => setFilterKategori(e.target.value)}
               className="bg-dark-900 text-gray-200 border border-gold-500/20 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-gold-500/50 cursor-pointer flex-1 md:flex-none"
             >
@@ -635,9 +635,9 @@ export default function MejaKeuanganPage() {
               <option value="BARU">Santri Baru</option>
               <option value="LAMA">Santri Lama (Renew)</option>
             </select>
-            
-            <select 
-              value={filterScope} 
+
+            <select
+              value={filterScope}
               onChange={(e) => setFilterScope(e.target.value)}
               className="bg-dark-900 text-gold-500 font-bold border border-gold-500/30 px-4 py-2.5 rounded-xl text-sm outline-none focus:border-gold-500/70 cursor-pointer flex-1 md:flex-none"
             >
@@ -648,7 +648,7 @@ export default function MejaKeuanganPage() {
               ))}
             </select>
           </div>
-          
+
           <div className="w-full lg:w-72 relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -829,7 +829,7 @@ export default function MejaKeuanganPage() {
                   {filteredRombongan.map((r, index) => (
                     <tr key={r.id} className="border-b border-gray-800 hover:bg-dark-900/50 transition-colors">
                       <td className="px-4 py-4 text-center font-bold text-gray-400">{index + 1}</td>
-                      <td className="px-4 py-4 text-xs font-mono text-gray-400">{new Date(r.createdAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'})}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-gray-400">{new Date(r.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-4 font-bold text-white">
                         {r.nama}
                         {r.isMouSigned && <span className="ml-2 text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">MoU (Diskon 10%)</span>}
@@ -905,7 +905,7 @@ export default function MejaKeuanganPage() {
                   filteredData.map((t, index) => (
                     <tr key={t.id} className="border-b border-gray-800 hover:bg-dark-900/50 transition-colors">
                       <td className="px-4 py-4 text-center font-bold text-gray-400">{index + 1}</td>
-                      <td className="px-4 py-4 text-xs font-mono text-gray-400">{new Date(t.createdAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'})}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-gray-400">{new Date(t.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-4 font-bold text-white">
                         {t.santri.nama}
                         <div className="text-[10px] text-gray-500 font-mono mt-1">{t.noKwitansi}</div>
@@ -1025,94 +1025,94 @@ export default function MejaKeuanganPage() {
         </div>
       </div>
 
-        {/* Modal Rombongan */}
-        {isRombonganModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-dark-900 border border-gold-500/30 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl relative">
-              <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-dark-800">
-                <h3 className="text-xl font-bold text-gold-500">Import Pendaftaran Rombongan</h3>
-                <button onClick={() => setIsRombonganModalOpen(false)} className="text-gray-400 hover:text-white transition">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+      {/* Modal Rombongan */}
+      {isRombonganModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-dark-900 border border-gold-500/30 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl relative">
+            <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-dark-800">
+              <h3 className="text-xl font-bold text-gold-500">Import Pendaftaran Rombongan</h3>
+              <button onClick={() => setIsRombonganModalOpen(false)} className="text-gray-400 hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nama Rombongan / Instansi</label>
+                <input
+                  type="text"
+                  value={namaRombongan}
+                  onChange={(e) => setNamaRombongan(e.target.value)}
+                  placeholder="Contoh: SMAS Al Izzah Kota Batu"
+                  className="w-full bg-dark-800 text-white border border-gray-700 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500"
+                />
               </div>
-              <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Program (Untuk seluruh santri)</label>
+                <select
+                  value={selectedProgramId}
+                  onChange={(e) => setSelectedProgramId(e.target.value)}
+                  className="w-full bg-dark-800 text-white border border-gray-700 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500"
+                >
+                  <option value="">-- Pilih Program --</option>
+                  {programs.map(p => (
+                    <option key={p.id} value={p.id}>{p.nama} (Rp {new Intl.NumberFormat('id-ID').format(p.harga)})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-xl border border-gray-700">
+                <input
+                  type="checkbox"
+                  id="mou"
+                  checked={isMouSigned}
+                  onChange={(e) => setIsMouSigned(e.target.checked)}
+                  className="w-5 h-5 accent-gold-500"
+                />
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nama Rombongan / Instansi</label>
-                  <input
-                    type="text"
-                    value={namaRombongan}
-                    onChange={(e) => setNamaRombongan(e.target.value)}
-                    placeholder="Contoh: SMAS Al Izzah Kota Batu"
-                    className="w-full bg-dark-800 text-white border border-gray-700 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500"
-                  />
+                  <label htmlFor="mou" className="text-sm font-bold text-white cursor-pointer select-none">Sudah Tanda Tangan MoU</label>
+                  <p className="text-xs text-gray-400">Jika dicentang, akan memotong tagihan sebesar 10% untuk setiap anak.</p>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Program (Untuk seluruh santri)</label>
-                  <select
-                    value={selectedProgramId}
-                    onChange={(e) => setSelectedProgramId(e.target.value)}
-                    className="w-full bg-dark-800 text-white border border-gray-700 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500"
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">File Data Excel (.xlsx)</label>
+                  <button
+                    onClick={downloadTemplate}
+                    className="text-xs font-bold text-blue-400 hover:text-blue-300 transition flex items-center gap-1"
                   >
-                    <option value="">-- Pilih Program --</option>
-                    {programs.map(p => (
-                      <option key={p.id} value={p.id}>{p.nama} (Rp {new Intl.NumberFormat('id-ID').format(p.harga)})</option>
-                    ))}
-                  </select>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Download Template
+                  </button>
                 </div>
-                <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-xl border border-gray-700">
-                  <input
-                    type="checkbox"
-                    id="mou"
-                    checked={isMouSigned}
-                    onChange={(e) => setIsMouSigned(e.target.checked)}
-                    className="w-5 h-5 accent-gold-500"
-                  />
-                  <div>
-                    <label htmlFor="mou" className="text-sm font-bold text-white cursor-pointer select-none">Sudah Tanda Tangan MoU</label>
-                    <p className="text-xs text-gray-400">Jika dicentang, akan memotong tagihan sebesar 10% untuk setiap anak.</p>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">File Data Excel (.xlsx)</label>
-                    <button 
-                      onClick={downloadTemplate}
-                      className="text-xs font-bold text-blue-400 hover:text-blue-300 transition flex items-center gap-1"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                      Download Template
-                    </button>
-                  </div>
-                  <input
-                    type="file"
-                    accept=".xlsx, .xls"
-                    onChange={handleFileUpload}
-                    className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20"
-                  />
-                  {parsedRombonganData.length > 0 && (
-                    <p className="mt-2 text-xs text-green-400">✓ Berhasil membaca {parsedRombonganData.length} baris data santri.</p>
-                  )}
-                  <p className="mt-2 text-xs text-gray-500 italic">Kolom yang wajib ada di Excel: Nama. Kolom lainnya: Gender, TempatLahir, TanggalLahir, NamaOrtu, NoWaOrtu, Provinsi, Kabupaten, Kecamatan, Desa, DetailAlamat.</p>
-                </div>
-              </div>
-              <div className="p-6 border-t border-gray-800 bg-dark-800 flex justify-end gap-4">
-                <button
-                  onClick={() => setIsRombonganModalOpen(false)}
-                  className="px-6 py-2 rounded-xl text-gray-400 hover:text-white font-bold transition"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={submitRombongan}
-                  disabled={loading || !namaRombongan || !selectedProgramId || parsedRombonganData.length === 0}
-                  className="bg-gold-500 hover:bg-gold-400 text-black px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-gold-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Menyimpan..." : "Simpan & Import"}
-                </button>
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileUpload}
+                  className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20"
+                />
+                {parsedRombonganData.length > 0 && (
+                  <p className="mt-2 text-xs text-green-400">✓ Berhasil membaca {parsedRombonganData.length} baris data santri.</p>
+                )}
+                <p className="mt-2 text-xs text-gray-500 italic">Kolom yang wajib ada di Excel: Nama. Kolom lainnya: Gender, TempatLahir, TanggalLahir, NamaOrtu, NoWaOrtu, Provinsi, Kabupaten, Kecamatan, Desa, DetailAlamat.</p>
               </div>
             </div>
+            <div className="p-6 border-t border-gray-800 bg-dark-800 flex justify-end gap-4">
+              <button
+                onClick={() => setIsRombonganModalOpen(false)}
+                className="px-6 py-2 rounded-xl text-gray-400 hover:text-white font-bold transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={submitRombongan}
+                disabled={loading || !namaRombongan || !selectedProgramId || parsedRombonganData.length === 0}
+                className="bg-gold-500 hover:bg-gold-400 text-black px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-gold-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Menyimpan..." : "Simpan & Import"}
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
     </Protect>
   );

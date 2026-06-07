@@ -110,7 +110,7 @@ export default function SantriDaftarUlangPage() {
     <div className="animate-fadeIn pb-10">
       <div className="mb-8">
         <h1 className="text-2xl font-black text-white">Daftar <span className="text-gold-500">Ulang</span></h1>
-        <p className="text-gray-400 text-sm mt-1">Perpanjangan Program Markaz Arabiyah</p>
+        <p className="text-gray-400 text-sm mt-1">Daftar Ulang Program Markaz Arabiyah</p>
       </div>
 
       <div className="bg-dark-950 border border-dark-800 p-6 md:p-8 rounded-2xl shadow-sm">
@@ -135,7 +135,7 @@ export default function SantriDaftarUlangPage() {
             <h2 className="text-xl font-bold text-white border-b border-gold-500/10 pb-3 mt-6">
               {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id
                 ? "Klaim Kuota Paket Anda"
-                : "Pilih Program Perpanjangan"}
+                : "Pilih Program Daftar Ulang"}
             </h2>
 
             {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id && (
@@ -292,7 +292,7 @@ export default function SantriDaftarUlangPage() {
                 <label htmlFor="agreement" className="cursor-pointer text-xs text-gray-400 leading-relaxed"><span className="font-bold text-gray-200">Saya setuju</span> untuk tidak merefund atau mengalihkan pembayaran.</label>
               </div>
               <button onClick={handleRenew} disabled={loading || !isAgreed || !targetDufah} className="w-full bg-gradient-to-r from-gold-600 to-gold-400 text-black font-extrabold py-3 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50 text-sm">
-                {loading ? "Memproses..." : targetDufah ? "Selesaikan Perpanjangan →" : "Pendaftaran Ditutup"}
+                {loading ? "Memproses..." : targetDufah ? "Selesaikan Daftar Ulang →" : "Pendaftaran Ditutup"}
               </button>
             </div>
           </div>

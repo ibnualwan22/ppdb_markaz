@@ -145,7 +145,7 @@ export default function DaftarUlangPage() {
         <div className="text-center mb-10">
           <Image src="/images/logo.png" alt="Logo Markaz" width={80} height={80} className="mx-auto drop-shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
           <h1 className="text-3xl md:text-4xl font-extrabold text-gold-500 mt-4 tracking-wide">Daftar Ulang Santri</h1>
-          <p className="text-gray-400 mt-2">Perpanjangan Program Markaz Arabiyah</p>
+          <p className="text-gray-400 mt-2">Daftar Ulang Program Markaz Arabiyah</p>
         </div>
 
         {/* Card Form */}
@@ -230,7 +230,7 @@ export default function DaftarUlangPage() {
               <h2 className="text-xl font-bold text-white border-b border-gold-500/10 pb-3 mt-6">
                 {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id
                   ? "Klaim Kuota Paket Anda"
-                  : "Pilih Program Perpanjangan"}
+                  : "Pilih Program Daftar Ulang"}
               </h2>
 
               {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id && (
@@ -390,7 +390,7 @@ export default function DaftarUlangPage() {
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setStep(1)} className="px-4 py-3 text-gray-400 hover:text-white transition text-sm font-bold rounded-xl border border-gray-700">← Kembali</button>
                   <button onClick={handleRenew} disabled={loading || !isAgreed} className="flex-1 bg-gradient-to-r from-gold-600 to-gold-400 text-black font-extrabold py-3 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all active:scale-95 disabled:opacity-50 text-sm">
-                    {loading ? "Memproses..." : "Selesaikan Perpanjangan →"}
+                    {loading ? "Memproses..." : "Selesaikan Daftar Ulang →"}
                   </button>
                 </div>
               </div>

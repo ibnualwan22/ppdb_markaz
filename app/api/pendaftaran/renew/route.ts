@@ -133,7 +133,7 @@ export async function POST(request: Request) {
     const transaksi = result;
 
     return NextResponse.json({
-      message: "Tagihan perpanjangan berhasil diterbitkan.",
+      message: "Tagihan Daftar Ulang berhasil diterbitkan.",
       data: { transaksi, program, dufah: targetDufah }
     });
   } catch (error: any) {
