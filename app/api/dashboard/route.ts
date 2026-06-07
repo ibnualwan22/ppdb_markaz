@@ -8,20 +8,75 @@ export async function GET() {
     
     let stats = {
       dufahNama: dufahAktif ? dufahAktif.nama : "Tidak ada Duf'ah Aktif",
+      // Kartu 1: Administrasi Pendaftaran (Global)
+      totalPendaftar: 0,
+      totalPendaftarBaru: 0,
+      totalPendaftarLama: 0,
+      totalPendaftarKSU: 0,
+      // Kartu 2: Status Keuangan
+      totalLunas: 0,
+      totalBelumLunas: 0,
+      // Kartu 3: Penempatan Hunian
       totalMasukSakan: 0,
-      totalAmbilIdCard: 0,
-      selisih: 0,
-      listBelumIdCard: [] as any[],
+      totalBelumDapatKamar: 0,
       sakanBanin: [] as { nama: string, total: number }[],
       sakanBanat: [] as { nama: string, total: number }[],
       totalBanin: 0,
       totalBanat: 0,
+      // Kartu 4: Serah Terima Check-In
+      totalAmbilIdCard: 0,
+      totalBelumAmbilIdCard: 0,
       idCardBaru: 0,
       idCardLama: 0,
-      totalKSU: 0, // <-- STATE BARU UNTUK KSU
+      totalKSU: 0,
+      selisih: 0,
+      listBelumIdCard: [] as any[],
     };
 
     if (dufahAktif) {
+      // ==========================================
+      // KARTU 1: ADMINISTRASI PENDAFTARAN (GLOBAL)
+      // Semua santri yang terdaftar/terdata di Duf'ah aktif
+      // ==========================================
+      const allSantriDufahAktif = await prisma.santri.findMany({
+        where: {
+          OR: [
+            { isAktif: true },
+            { riwayat: { some: { dufahId: dufahAktif.id } } }
+          ]
+        },
+        select: {
+          id: true, kategori: true, gender: true, batasAktifDufah: true, isAktif: true,
+          riwayat: {
+            where: { dufahId: dufahAktif.id },
+            select: { isLunas: true, lemariId: true }
+          }
+        }
+      });
+
+      stats.totalPendaftar = allSantriDufahAktif.length;
+      stats.totalPendaftarBaru = allSantriDufahAktif.filter(s => s.kategori === 'BARU').length;
+      stats.totalPendaftarLama = allSantriDufahAktif.filter(s => s.kategori === 'LAMA').length;
+      stats.totalPendaftarKSU = allSantriDufahAktif.filter(s => s.kategori === 'KSU').length;
+
+      // ==========================================
+      // KARTU 2: STATUS KEUANGAN (LUNAS vs BELUM)
+      // ==========================================
+      allSantriDufahAktif.forEach(s => {
+        if (s.kategori === 'KSU') {
+          // KSU otomatis dianggap lunas
+          stats.totalLunas++;
+        } else {
+          const riwayat = s.riwayat[0];
+          const isLunas = s.batasAktifDufah >= dufahAktif.id || (riwayat && riwayat.isLunas);
+          if (isLunas) stats.totalLunas++;
+          else stats.totalBelumLunas++;
+        }
+      });
+
+      // ==========================================
+      // KARTU 3: PENEMPATAN HUNIAN (SAKAN)
+      // ==========================================
       const sakanData = await prisma.sakan.findMany({
         include: {
           kamar: {
@@ -49,7 +104,11 @@ export async function GET() {
       });
 
       stats.totalMasukSakan = stats.totalBanin + stats.totalBanat;
+      stats.totalBelumDapatKamar = stats.totalPendaftar - stats.totalMasukSakan;
 
+      // ==========================================
+      // KARTU 4: SERAH TERIMA CHECK-IN (ID CARD)
+      // ==========================================
       // 1. Hitung MURNI Santri Baru di Meja ID Card
       stats.idCardBaru = await prisma.riwayatDufah.count({
         where: { dufahId: dufahAktif.id, lemariId: { not: null }, isIdCardTaken: true, status: { not: "CHECKED_OUT" }, santri: { kategori: 'BARU' } }
@@ -66,6 +125,7 @@ export async function GET() {
       });
 
       stats.totalAmbilIdCard = stats.idCardBaru + stats.idCardLama;
+      stats.totalBelumAmbilIdCard = stats.totalMasukSakan - stats.totalAmbilIdCard - stats.totalKSU;
       
       // 4. Selisih Murni = Total Keseluruhan - (Yang sudah ID Card + Pengurus KSU)
       stats.selisih = stats.totalMasukSakan - stats.totalAmbilIdCard - stats.totalKSU;

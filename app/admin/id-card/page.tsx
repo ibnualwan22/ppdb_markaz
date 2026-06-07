@@ -194,6 +194,43 @@ Wassalamu'alaikum warahmatullahi wabarakatuh.`;
     window.open(url, "_blank");
   };
 
+  const sendWhatsAppWali = (item: any) => {
+    let phone = item.santri.noWaOrtu || "";
+    if (!phone) {
+      return swalError("Gagal", "Nomor WA Wali Santri tidak tersedia di database.");
+    }
+    phone = phone.replace(/\D/g, ""); 
+    if (phone.startsWith("0")) phone = "62" + phone.substring(1);
+
+    const namaSantri = item.santri.nama;
+    const nisSantri = item.santri.nis || "Belum ada";
+    const loginUrl = "https://ppdb.markazarabiyah.site/santri/login";
+
+    let pesan = `Assalamu'alaikum Warahmatullahi Wabarakatuh.
+    
+Bapak/Ibu wali santri dari ananda *${namaSantri}*, perkenalkan kami dari petugas PPDB Markaz Arabiyah.
+
+Kami menginformasikan bahwa ananda telah resmi terdaftar dan berikut adalah akses untuk masuk ke *Portal Santri*:
+
+👤 *Nomor Induk Santri (NIS):* ${nisSantri}
+🔗 *Link Portal Login:* ${loginUrl}
+
+*Cara Login:*
+Gunakan NIS ananda di atas sebagai Username sekaligus Password awal untuk masuk ke dalam portal.
+
+Di dalam portal, Bapak/Ibu dapat memantau:
+📊 Transparansi kehadiran harian ananda
+📝 Riwayat nilai akademik
+🔄 Informasi pendaftaran ulang
+
+Semoga ananda diberikan kemudahan dan keberkahan dalam menuntut ilmu di Markaz Arabiyah.
+Jazakumullah khairan.
+Wassalamu'alaikum Warahmatullahi Wabarakatuh.`;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(pesan)}`;
+    window.open(url, "_blank");
+  };
+
   const copyLaporanHarian = () => {
     const isToday = (dateString: string | Date | null) => {
       if (!dateString) return false;
@@ -429,8 +466,16 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                               <IconEye />
                             </button>
 
-                            <button onClick={() => sendWhatsAppCard(item)} className="bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/30 p-2.5 rounded-xl shadow-sm transition active:scale-95" title="Kirim Kartu WA">
-                              <IconWhatsapp />
+                            <button onClick={() => sendWhatsAppCard(item)} className="bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/30 p-2.5 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center" title="Kirim Kartu WA (Ke Santri)">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            </button>
+                            <button onClick={() => sendWhatsAppWali(item)} className="bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/30 px-3 py-2 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-1.5" title="Kirim Info Portal (Ke Wali)">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                              <span className="text-xs font-bold">Wali</span>
                             </button>
                           </div>
                         </td>

@@ -186,6 +186,33 @@ export default function MejaKeuanganPage() {
     }
   };
 
+  const hapusRombongan = async (id: string, namaRombongan: string) => {
+    const isSuperAdmin = (session?.user as any)?.permissions?.includes("all_access");
+    if (!isSuperAdmin) {
+      return swalError("Gagal", "Hanya Super Admin yang dapat menghapus data rombongan.");
+    }
+
+    if (!confirm(`Yakin ingin menghapus seluruh data pendaftaran rombongan ${namaRombongan}? Ini akan menghapus transaksi dan santri di dalamnya jika belum di-acc.`)) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/keuangan/rombongan/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        swalSuccess("Berhasil", "Data rombongan berhasil dihapus.");
+        muatData();
+      } else {
+        swalError("Gagal", data.error || "Gagal menghapus data rombongan");
+      }
+    } catch (e) {
+      swalError("Error", "Terjadi kesalahan server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileUpload = (e: any) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -252,6 +279,7 @@ export default function MejaKeuanganPage() {
         tanggalLahir: parseTanggalLahir(row.TanggalLahir || row.tanggalLahir),
         namaOrtu: toTitleCase(row.NamaOrtu || row.namaOrtu || ""),
         noWaOrtu: formatWa(row.NoWaOrtu || row.noWaOrtu),
+        noWaSantri: formatWa(row.NoWaSantri || row.noWaSantri),
         provinsi: toTitleCase(row.Provinsi || row.provinsi || ""),
         kabupaten: toTitleCase(row.Kabupaten || row.kabupaten || ""),
         kecamatan: toTitleCase(row.Kecamatan || row.kecamatan || ""),
@@ -299,6 +327,7 @@ export default function MejaKeuanganPage() {
         TanggalLahir: "20/05/2010",
         NamaOrtu: "Bapak Contoh",
         NoWaOrtu: "081234567890",
+        NoWaSantri: "081234567890",
         Provinsi: "Jawa Timur",
         Kabupaten: "Batu",
         Kecamatan: "Batu",
@@ -309,7 +338,7 @@ export default function MejaKeuanganPage() {
     // Set lebar kolom agar rapi
     ws["!cols"] = [
       { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
-      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template_Santri");
@@ -869,6 +898,15 @@ export default function MejaKeuanganPage() {
                             >
                               ↓ Invoice
                             </button>
+                            {((session?.user as any)?.permissions?.includes("all_access")) && (
+                              <button
+                                onClick={() => hapusRombongan(r.id, r.nama)}
+                                disabled={loading}
+                                className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                              >
+                                ✕ Hapus
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>
@@ -1092,7 +1130,7 @@ export default function MejaKeuanganPage() {
                 {parsedRombonganData.length > 0 && (
                   <p className="mt-2 text-xs text-green-400">✓ Berhasil membaca {parsedRombonganData.length} baris data santri.</p>
                 )}
-                <p className="mt-2 text-xs text-gray-500 italic">Kolom yang wajib ada di Excel: Nama. Kolom lainnya: Gender, TempatLahir, TanggalLahir, NamaOrtu, NoWaOrtu, Provinsi, Kabupaten, Kecamatan, Desa, DetailAlamat.</p>
+                <p className="mt-2 text-xs text-gray-500 italic">Kolom yang wajib ada di Excel: Nama. Kolom lainnya: Gender, TempatLahir, TanggalLahir, NamaOrtu, NoWaOrtu, NoWaSantri, Provinsi, Kabupaten, Kecamatan, Desa, DetailAlamat.</p>
               </div>
             </div>
             <div className="p-6 border-t border-gray-800 bg-dark-800 flex justify-end gap-4">

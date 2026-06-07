@@ -143,33 +143,104 @@ export default function AdminDashboardHome() {
         </div>
       </div>
 
-      {/* 3 KARTU STATISTIK */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 relative z-10">
-        <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-gold-500 flex flex-col justify-center relative overflow-hidden transition-shadow">
-          <p className="text-gold-500 font-bold text-sm z-10">Total Santri Global</p>
-          <p className="text-4xl font-black text-gold-400 mt-2 z-10">{stats?.totalMasukSakan} <span className="text-lg font-medium text-gray-400">Santri</span></p>
-          <div className="absolute -right-4 -bottom-4 text-7xl opacity-5 grayscale">🏢</div>
+      {/* 4 KARTU STATISTIK */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8 relative z-10">
+
+        {/* KARTU 1: ADMINISTRASI PENDAFTARAN (GLOBAL) */}
+        <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-gold-500 flex flex-col justify-between relative overflow-hidden">
+          <div className="z-10">
+            <p className="text-gold-500 font-bold text-xs uppercase tracking-wider">Total Pendaftar Global</p>
+            <p className="text-4xl font-black text-gold-400 mt-2">{stats?.totalPendaftar} <span className="text-base font-medium text-gray-500">Santri</span></p>
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-3 z-10">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20">
+              🆕 Baru: {stats?.totalPendaftarBaru}
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/20">
+              🔄 Lama: {stats?.totalPendaftarLama}
+            </span>
+            {stats?.totalPendaftarKSU > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20">
+                🎓 KSU: {stats?.totalPendaftarKSU}
+              </span>
+            )}
+          </div>
+          <div className="absolute -right-3 -bottom-3 text-6xl opacity-[0.04]">📋</div>
         </div>
 
-        <div className="bg-dark-800 p-6 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-green-600 flex flex-col justify-center relative overflow-hidden transition-shadow">
-          <p className="text-green-500 font-bold text-sm z-10">Jumlah Santri Yang Sudah Check In</p>
-          <p className="text-4xl font-black text-green-500 mt-2 z-10">{stats?.totalAmbilIdCard} <span className="text-lg font-medium text-green-900">Santri</span></p>
+        {/* KARTU 2: STATUS KEUANGAN */}
+        <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-emerald-500 flex flex-col justify-between relative overflow-hidden">
+          <div className="z-10">
+            <p className="text-emerald-400 font-bold text-xs uppercase tracking-wider">Status Keuangan</p>
+            <p className="text-4xl font-black text-emerald-400 mt-2">{stats?.totalLunas} <span className="text-base font-medium text-gray-500">Lunas</span></p>
+          </div>
+          {/* Progress bar */}
+          <div className="mt-3 z-10">
+            <div className="w-full h-2.5 bg-dark-900 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-700"
+                style={{ width: stats?.totalPendaftar > 0 ? `${(stats.totalLunas / stats.totalPendaftar) * 100}%` : '0%' }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-[10px] font-bold text-emerald-400">✅ {stats?.totalLunas} Lunas</span>
+              <span className="text-[10px] font-bold text-amber-400">⏳ {stats?.totalBelumLunas} Pending</span>
+            </div>
+          </div>
+          <div className="absolute -right-3 -bottom-3 text-6xl opacity-[0.04]">💰</div>
+        </div>
 
-          {stats?.totalKSU > 0 && (
-            <p className="text-xs font-bold text-purple-400 mt-1 z-10 bg-purple-900/40 inline-block px-2 py-0.5 rounded-md self-start border border-purple-500/30">
-              + {stats?.totalKSU} (KSU)
+        {/* KARTU 3: PENEMPATAN HUNIAN */}
+        <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 border-l-4 border-l-sky-500 flex flex-col justify-between relative overflow-hidden">
+          <div className="z-10">
+            <p className="text-sky-400 font-bold text-xs uppercase tracking-wider">Penempatan Hunian</p>
+            <p className="text-4xl font-black text-sky-400 mt-2">{stats?.totalMasukSakan} <span className="text-base font-medium text-gray-500">di Sakan</span></p>
+          </div>
+          {/* Progress bar */}
+          <div className="mt-3 z-10">
+            <div className="w-full h-2.5 bg-dark-900 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-sky-500 to-cyan-400 rounded-full transition-all duration-700"
+                style={{ width: stats?.totalPendaftar > 0 ? `${(stats.totalMasukSakan / stats.totalPendaftar) * 100}%` : '0%' }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-[10px] font-bold text-sky-400">🏠 {stats?.totalMasukSakan} Dapat Kamar</span>
+              <span className="text-[10px] font-bold text-gray-500">🚫 {stats?.totalBelumDapatKamar > 0 ? stats.totalBelumDapatKamar : 0} Belum</span>
+            </div>
+          </div>
+          <div className="absolute -right-3 -bottom-3 text-6xl opacity-[0.04]">🏘️</div>
+        </div>
+
+        {/* KARTU 4: SERAH TERIMA CHECK-IN */}
+        <div className={`p-5 rounded-2xl shadow-sm border-l-4 flex flex-col justify-between relative overflow-hidden ${stats?.selisih > 0 ? 'bg-dark-800 border border-amber-500/20 border-l-amber-500' : 'bg-dark-800 border border-gold-500/20 border-l-green-500'}`}>
+          <div className="z-10">
+            <p className={`font-bold text-xs uppercase tracking-wider ${stats?.selisih > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+              Check-In (ID Card)
             </p>
-          )}
-
-          <div className="absolute -right-4 -bottom-4 text-7xl opacity-10 grayscale">💳</div>
-        </div>
-
-        <div className={`p-6 rounded-2xl shadow-sm border-l-4 flex flex-col justify-center relative overflow-hidden transition-shadow ${stats?.selisih > 0 ? 'bg-dark-800 border-y-red-900/50 border-r-red-900/50 border-l-red-500' : 'bg-dark-800 border border-gold-500/10 border-l-gray-600'}`}>
-          <p className={`${stats?.selisih > 0 ? 'text-red-500' : 'text-gray-400'} font-bold text-sm z-10`}>Santri Lama Yang Lanjut Tapi Belum Check In</p>
-          <p className={`text-4xl font-black mt-2 z-10 ${stats?.selisih > 0 ? 'text-red-500' : 'text-gray-500'}`}>
-            {stats?.selisih} <span className="text-lg font-medium opacity-50">Santri</span>
-          </p>
-          {stats?.selisih > 0 && <p className="text-xs text-red-500 mt-2 font-bold animate-pulse">⚠️ Perlu tindakan!</p>}
+            <p className={`text-4xl font-black mt-2 ${stats?.selisih > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+              {stats?.totalAmbilIdCard} <span className="text-base font-medium text-gray-500">Check In</span>
+            </p>
+          </div>
+          {/* Progress bar */}
+          <div className="mt-3 z-10">
+            <div className="w-full h-2.5 bg-dark-900 rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-700 ${stats?.selisih > 0 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-green-500 to-emerald-400'}`}
+                style={{ width: stats?.totalMasukSakan > 0 ? `${((stats.totalAmbilIdCard + (stats?.totalKSU || 0)) / stats.totalMasukSakan) * 100}%` : '0%' }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-[10px] font-bold text-green-400">
+                💳 {stats?.totalAmbilIdCard}
+                {stats?.totalKSU > 0 && <span className="text-purple-400"> +{stats.totalKSU} KSU</span>}
+              </span>
+              {stats?.selisih > 0 && (
+                <span className="text-[10px] font-bold text-red-400 animate-pulse">⚠️ {stats.selisih} Belum</span>
+              )}
+            </div>
+          </div>
+          <div className="absolute -right-3 -bottom-3 text-6xl opacity-[0.04]">💳</div>
         </div>
       </div>
 
