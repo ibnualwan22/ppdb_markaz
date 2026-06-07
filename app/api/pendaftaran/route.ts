@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/app/lib/rateLimit";
 import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 function generateInvoiceNumber(dufahId: number) {
@@ -156,6 +157,8 @@ export async function POST(request: Request) {
       namaUser: "Sistem (Form Publik)",
       targetId: result.santri.id,
     });
+
+    notifySiakadWebhook();
 
     return NextResponse.json({
       message: "Pendaftaran berhasil, silakan lakukan pembayaran.",

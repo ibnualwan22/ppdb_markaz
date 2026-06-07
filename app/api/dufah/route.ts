@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 export async function GET() {
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
         tanggalTutup: tanggalTutup ? new Date(`${tanggalTutup}+07:00`) : null,
       }
     });
+
+    notifySiakadWebhook();
 
     return NextResponse.json(dufahBaru, { status: 201 });
   } catch (error) {

@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 export async function PATCH(
@@ -21,6 +22,8 @@ export async function PATCH(
       }
     });
 
+    notifySiakadWebhook();
+
     return NextResponse.json({ message: "Duf'ah berhasil diperbarui", data: dufahUpdate });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memperbarui Duf'ah" }, { status: 500 });
@@ -37,6 +40,8 @@ export async function DELETE(
     await prisma.dufah.delete({
       where: { id: parseInt(id) }
     });
+
+    notifySiakadWebhook();
 
     return NextResponse.json({ message: "Duf'ah berhasil dihapus" });
   } catch (error) {

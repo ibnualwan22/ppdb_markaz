@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 export async function PATCH(
@@ -75,6 +76,8 @@ export async function PATCH(
       targetId: id,
     });
 
+    notifySiakadWebhook();
+
     return NextResponse.json({ message: "Status berhasil diubah", data: santriUpdate });
   } catch (error) {
     return NextResponse.json({ error: "Gagal update status" }, { status: 500 });
@@ -139,6 +142,8 @@ export async function PUT(
       targetId: id,
     });
 
+    notifySiakadWebhook();
+
     return NextResponse.json({ message: "Data santri berhasil diperbarui", data: santriUpdate });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memperbarui data santri" }, { status: 500 });
@@ -171,6 +176,8 @@ export async function DELETE(
       userId: u3?.id,
       targetId: id,
     });
+
+    notifySiakadWebhook();
 
     return NextResponse.json({ message: "Santri berhasil dihapus" });
   } catch (error) {

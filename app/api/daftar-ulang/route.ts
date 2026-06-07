@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 // ==========================================
@@ -145,6 +146,8 @@ export async function POST(request: Request) {
         data: { isPriority: false }
       });
     }
+
+    notifySiakadWebhook();
 
     const pesan = statusBaru === "ASSIGNED" 
       ? `Sakan diperpanjang. (Bulan ke-${bulanKeBaru})` 

@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 export async function PATCH(
@@ -110,6 +111,7 @@ export async function PATCH(
         }
       }
     }
+    notifySiakadWebhook();
 
     return NextResponse.json({ 
       message: `${dufahAktif.nama} aktif. Logika batas aktif dan siklus asrama berhasil diterapkan.`,

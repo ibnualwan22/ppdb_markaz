@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import https from "https";
 import { sendGlobalNotification, emitDataUpdate, logActivity } from "@/app/lib/pusherServer";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 // Fungsi bantuan untuk menghasilkan NIS: Duf'ah + DDMMYY + Urut
@@ -267,6 +268,8 @@ export async function POST(
         }
       }
     }
+
+    notifySiakadWebhook();
 
     return NextResponse.json({
       message: "Verifikasi berhasil. Santri telah masuk antrean asrama.",
