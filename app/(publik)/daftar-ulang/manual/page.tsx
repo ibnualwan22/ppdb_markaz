@@ -483,71 +483,97 @@ export default function DaftarUlangManualPage() {
                 </div>
               )}
 
-              <div className="mt-6 bg-dark-900 border border-gold-500/30 p-4 rounded-xl flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="beliAtribut"
-                  checked={isBeliAtribut}
-                  onChange={(e) => setIsBeliAtribut(e.target.checked)}
-                  className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer"
-                />
-                <label htmlFor="beliAtribut" className="cursor-pointer text-gray-300">
-                  <span className="block font-bold text-white">Beli Atribut Baru (+ Rp 100.000)</span>
-                  <span className="text-sm text-gray-400">Centang ini jika Anda ingin membeli ulang perlengkapan (Kopiah/Khimar, Seragam,Dabus,Tote Bag) karena rusak atau hilang. Harga akan kembali normal.</span>
-                </label>
-              </div>
+              {/* FLOATING BOTTOM BAR - Muncul saat program sudah dipilih */}
+              {formData.programId && (
+                <div className="fixed bottom-0 left-0 right-0 z-50 animate-slideUp">
+                  <div className="max-w-3xl mx-auto px-4 pb-4">
+                    <div className="bg-dark-800/95 backdrop-blur-xl border border-gold-500/30 rounded-2xl shadow-[0_-5px_30px_rgba(0,0,0,0.5)] p-4 space-y-3">
+                      
+                      {/* Ringkasan Program Terpilih */}
+                      {(() => {
+                        const selected = programs.find(p => p.id === formData.programId);
+                        const hargaTampil = isBeliAtribut ? (selected?.harga || 0) : (selected?.harga || 0) - 100000;
+                        return selected ? (
+                          <div className="flex justify-between items-center bg-dark-900 rounded-xl px-4 py-2.5 border border-gold-500/10">
+                            <div>
+                              <p className="text-xs text-gray-400">Program Terpilih</p>
+                              <p className="font-bold text-white text-sm">{selected.nama} ({selected.durasiBulan} Bulan)</p>
+                            </div>
+                            <p className="text-gold-500 font-black text-lg">Rp {new Intl.NumberFormat('id-ID').format(hargaTampil)}</p>
+                          </div>
+                        ) : null;
+                      })()}
 
-              {/* AGREEMENT SECTION */}
-              <div className="mt-6 bg-dark-900 border border-gold-500/20 p-4 rounded-xl flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="agreement"
-                  checked={isAgreed}
-                  onChange={(e) => setIsAgreed(e.target.checked)}
-                  className="mt-1 w-5 h-5 accent-gold-500 cursor-pointer shrink-0"
-                />
-                <label htmlFor="agreement" className="cursor-pointer text-gray-300">
-                  <span className="block font-bold text-white">Syarat dan Ketentuan</span>
-                  <span className="text-sm text-gray-400">Saya setuju untuk tidak merefund atau mengalihkan pembayaran ke orang lain dengan keadaan sadar</span>
-                </label>
-              </div>
+                      {/* Beli Atribut Checkbox */}
+                      <div className="flex items-start gap-3 px-1">
+                        <input
+                          type="checkbox"
+                          id="beliAtributFloat"
+                          checked={isBeliAtribut}
+                          onChange={(e) => setIsBeliAtribut(e.target.checked)}
+                          className="mt-0.5 w-5 h-5 accent-gold-500 cursor-pointer shrink-0"
+                        />
+                        <label htmlFor="beliAtributFloat" className="cursor-pointer text-xs text-gray-400 leading-relaxed">
+                          <span className="font-bold text-gray-200">Beli Atribut Baru</span> (+Rp 100.000) — Centang jika perlengkapan rusak/hilang.
+                        </label>
+                      </div>
 
-              {/* TURNSTILE SECTION */}
-              <div className="mt-8 bg-dark-900 border border-gold-500/20 p-5 rounded-2xl">
-                <label className="block text-sm font-bold text-gray-400 mb-3">Verifikasi Keamanan *</label>
-                <div className="flex justify-center">
-                  <div ref={turnstileRef}></div>
+                      {/* Agreement Checkbox */}
+                      <div className="flex items-start gap-3 px-1">
+                        <input
+                          type="checkbox"
+                          id="agreement"
+                          checked={isAgreed}
+                          onChange={(e) => setIsAgreed(e.target.checked)}
+                          className="mt-0.5 w-5 h-5 accent-gold-500 cursor-pointer shrink-0"
+                        />
+                        <label htmlFor="agreement" className="cursor-pointer text-xs text-gray-400 leading-relaxed">
+                          <span className="font-bold text-gray-200">Saya setuju</span> untuk tidak merefund atau mengalihkan pembayaran ke orang lain dengan keadaan sadar.
+                        </label>
+                      </div>
+
+                      {/* Turnstile & Submit */}
+                      <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="shrink-0">
+                          <div ref={turnstileRef}></div>
+                          {turnstileToken && (
+                            <p className="text-green-400 text-[10px] text-center mt-1 font-bold">✓ Terverifikasi</p>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <button
+                            type="button"
+                            onClick={() => setStep(1)}
+                            className="px-4 py-3 text-gray-400 hover:text-white transition text-sm font-bold rounded-xl border border-gray-700 hover:border-gray-500"
+                          >
+                            ← Kembali
+                          </button>
+                          {targetDufah ? (
+                            <button
+                              onClick={handleSubmit}
+                              disabled={loading || !isAgreed || !turnstileToken}
+                              className="flex-1 sm:flex-none bg-gold-500 hover:bg-gold-400 text-black font-extrabold py-3 px-6 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            >
+                              {loading ? 'Memproses...' : 'Daftar Sekarang →'}
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="flex-1 sm:flex-none bg-red-900/50 text-red-200 border border-red-500/30 font-extrabold py-3 px-6 rounded-xl opacity-80 cursor-not-allowed text-sm"
+                            >
+                              Pendaftaran Ditutup
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {turnstileToken && (
-                  <p className="text-green-400 text-sm text-center mt-3 font-bold">✓ Terverifikasi</p>
-                )}
-              </div>
+              )}
 
-              <div className="flex justify-between items-center w-full mt-8">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-gray-400 hover:text-white transition text-sm font-bold flex items-center gap-2"
-                >
-                  <span>&larr;</span> Kembali
-                </button>
-                {targetDufah ? (
-                  <button
-                    onClick={handleSubmit}
-                    disabled={loading || !isAgreed || !turnstileToken}
-                    className="bg-gold-500 hover:bg-gold-400 text-black font-extrabold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Memproses...' : 'Selesaikan Pendaftaran \u2192'}
-                  </button>
-                ) : (
-                  <button
-                    disabled
-                    className="bg-red-900/50 text-red-200 border border-red-500/30 font-extrabold py-3 px-8 rounded-xl opacity-80 cursor-not-allowed"
-                  >
-                    Pendaftaran Ditutup
-                  </button>
-                )}
-              </div>
+              {/* Spacer agar konten tidak tertutup floating bar */}
+              {formData.programId && <div className="h-72"></div>}
             </div>
           )}
 
