@@ -110,3 +110,18 @@ body {
 .animate-scroll-left {
   animation: scroll-left 30s linear infinite;
 }
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.35s ease-out;
+}
