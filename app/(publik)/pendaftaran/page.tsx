@@ -540,7 +540,7 @@ export default function PendaftaranPage() {
         {/* FLOATING BOTTOM BAR - Di luar card agar tidak terkena overflow/backdrop parent */}
         {step === 3 && formData.programId && (
           <div className="fixed bottom-0 left-0 right-0 z-50 animate-slideUp">
-            <div className="max-w-3xl mx-auto px-4 pb-4">
+            <div className="max-w-3xl mx-auto px-4 pb-16 md:pb-6">
               <div className="bg-dark-800 border border-gold-500/30 rounded-2xl shadow-[0_-5px_30px_rgba(0,0,0,0.5)] p-4 space-y-3">
                 
                 {/* Ringkasan Program Terpilih */}
