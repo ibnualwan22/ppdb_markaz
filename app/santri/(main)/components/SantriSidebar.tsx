@@ -115,7 +115,7 @@ export default function SantriSidebar() {
           })}
         </div>
 
-        <div className="p-4 border-t border-dark-800">
+        <div className="p-4 border-t border-dark-800 pb-24 md:pb-4">
           <button 
             onClick={() => signOut({ callbackUrl: '/santri/login' })}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-500/20"

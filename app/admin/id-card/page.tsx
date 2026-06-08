@@ -151,7 +151,11 @@ export default function MejaIdCardPage() {
     const lokasiSakan = item.lemari.kamar.sakan.nama;
     const lokasiKamar = item.lemari.kamar.nama;
     const nomorLemari = item.lemari.nomor;
-    const batasAktif = item.santri.batasAktifDufah ? `Duf'ah ${item.santri.batasAktifDufah}` : dufahNama;
+    let batasAktif = dufahNama;
+    if (item.santri.batasAktifDufah) {
+      const targetDufahObj = daftarDufah.find(d => d.id === item.santri.batasAktifDufah);
+      batasAktif = targetDufahObj ? targetDufahObj.nama : `Duf'ah ${item.santri.batasAktifDufah}`;
+    }
     const isBeliAtribut = item.isBeliAtribut;
 
     const imageUrl = `${window.location.origin}/digital-card/${item.id}`;
