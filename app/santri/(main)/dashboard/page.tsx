@@ -26,6 +26,19 @@ export default async function SantriDashboardPage() {
     }
   })
 
+  let activeRiwayat = null;
+  if (santri) {
+    activeRiwayat = await prisma.riwayatDufah.findFirst({
+      where: {
+        santriId: santri.id,
+        dufah: { isActive: true }
+      },
+      include: {
+        dufah: true
+      }
+    });
+  }
+
   if (!santri) {
     return (
       <div className="min-h-screen bg-dark-950 flex flex-col items-center justify-center p-6 text-center">
@@ -126,18 +139,28 @@ export default async function SantriDashboardPage() {
         <div className="md:col-span-2 bg-dark-950 border border-dark-800 p-6 rounded-2xl shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-bl-full pointer-events-none" />
 
-          <div className="flex justify-between items-center mb-6 border-b border-dark-800 pb-3">
+          <div className="flex flex-wrap justify-between items-center mb-6 border-b border-dark-800 pb-3 gap-3">
             <h2 className="text-lg font-bold text-gold-500">Profil Aktif</h2>
-            {santri.isDataVerified ? (
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                Terverifikasi
-              </span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-1.5 shadow-sm animate-pulse">
-                ⚠️ Belum Validasi
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {activeRiwayat && (
+                <Link href={`/digital-card/${activeRiwayat.id}`} className="px-3 py-1.5 bg-gold-500 hover:bg-gold-400 text-black rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-[0_0_10px_rgba(212,175,55,0.2)]">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  ID Card {activeRiwayat.dufah.nama}
+                </Link>
+              )}
+              {santri.isDataVerified ? (
+                <span className="px-2.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                  Terverifikasi
+                </span>
+              ) : (
+                <span className="px-2.5 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-1.5 shadow-sm animate-pulse">
+                  ⚠️ Belum Validasi
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">
