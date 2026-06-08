@@ -34,12 +34,34 @@ export async function PATCH(
         data: { status: "CHECKED_OUT" }
       });
     } else if (isAktif === true && dufahAktif) {
-      // Jika diaktifkan kembali, kembalikan ke antrean (PRE_LIST) dan kosongkan kamarnya
-      // agar asrama bisa menempatkannya ulang.
-      await prisma.riwayatDufah.updateMany({
+      // Jika diaktifkan kembali, kembalikan CHECKED_OUT ke PRE_LIST
+      const reactivated = await prisma.riwayatDufah.updateMany({
         where: { santriId: id, dufahId: dufahAktif.id, status: "CHECKED_OUT" },
         data: { status: "PRE_LIST", lemariId: null }
       });
+
+      // Jika tidak ada riwayat sama sekali untuk dufah aktif, buatkan baru
+      if (reactivated.count === 0) {
+        const existingAny = await prisma.riwayatDufah.findFirst({
+          where: { santriId: id, dufahId: dufahAktif.id }
+        });
+        if (!existingAny) {
+          const lastRiwayat = await prisma.riwayatDufah.findFirst({
+            where: { santriId: id },
+            orderBy: { dufahId: 'desc' }
+          });
+          await prisma.riwayatDufah.create({
+            data: {
+              santriId: id,
+              dufahId: dufahAktif.id,
+              lemariId: lastRiwayat?.lemariId || null,
+              bulanKe: lastRiwayat ? (lastRiwayat.bulanKe || 1) + 1 : 1,
+              isLunas: true,
+              status: "PRE_LIST"
+            }
+          });
+        }
+      }
     }
 
     // KIRIM NOTIFIKASI JIKA CHECK OUT
