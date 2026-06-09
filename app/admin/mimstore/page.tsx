@@ -149,10 +149,10 @@ export default function MimStorePage() {
     };
 
     return {
-      dresscode: { total: data.filter(d => !d.isDresscodeTaken).length,      grouped: groupBySize(data.filter(d => !d.isDresscodeTaken), "ukuranDresscode") },
-      toteBag:   { total: data.filter(d => !d.isToteBagTaken).length,        items: data.filter(d => !d.isToteBagTaken) },
-      pin:       { total: data.filter(d => !d.isPinTaken).length,            items: data.filter(d => !d.isPinTaken) },
-      songkok:   { total: data.filter(d => !d.isSongkokKhimarTaken).length,  grouped: groupBySize(data.filter(d => !d.isSongkokKhimarTaken), "ukuranSongkok") },
+      dresscode: { total: data.filter(d => d.isBeliAtribut && !d.isDresscodeTaken).length,      grouped: groupBySize(data.filter(d => d.isBeliAtribut && !d.isDresscodeTaken), "ukuranDresscode") },
+      toteBag:   { total: data.filter(d => d.isBeliAtribut && !d.isToteBagTaken).length,        items: data.filter(d => d.isBeliAtribut && !d.isToteBagTaken) },
+      pin:       { total: data.filter(d => d.isBeliAtribut && !d.isPinTaken).length,            items: data.filter(d => d.isBeliAtribut && !d.isPinTaken) },
+      songkok:   { total: data.filter(d => d.isBeliAtribut && !d.isSongkokKhimarTaken).length,  grouped: groupBySize(data.filter(d => d.isBeliAtribut && !d.isSongkokKhimarTaken), "ukuranSongkok") },
       malzamah:  { total: data.filter(d => !d.isMalzamahTaken).length,       items: data.filter(d => !d.isMalzamahTaken) },
       tabirot:   { total: data.filter(d => !d.isTabirotTaken).length,        items: data.filter(d => !d.isTabirotTaken) },
     };
@@ -204,7 +204,11 @@ export default function MimStorePage() {
 
   const dataDitampilkan = useMemo(() => data.filter(item => {
     const matchKeyword = item.santri.nama.toLowerCase().includes(keyword.toLowerCase());
-    const matchFilter  = filterBelum.length === 0 || filterBelum.every(k => !item[k]);
+    const matchFilter  = filterBelum.length === 0 || filterBelum.every(k => {
+      const requireBeli = ["isDresscodeTaken", "isToteBagTaken", "isPinTaken", "isSongkokKhimarTaken"].includes(k);
+      if (requireBeli && !item.isBeliAtribut) return false;
+      return !item[k];
+    });
     return matchKeyword && matchFilter;
   }), [data, keyword, filterBelum]);
 

@@ -541,18 +541,31 @@ export default function MejaKeuanganPage() {
     return matchesScope && matchesSearch && matchesLunas;
   });
 
-  const totalLunas = filteredByScope
-    .filter(t => t.statusPembayaran === "PAID")
-    .reduce((acc, t) => acc + t.totalTagihan, 0);
+  const dataForMetrics = filteredByScope.filter(t => {
+    const isRombonganMatched = t.rombonganId && allRombongan.find(r => r.id === t.rombonganId)?.nama.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = t.santri.nama.toLowerCase().includes(search.toLowerCase()) || t.noKwitansi.toLowerCase().includes(search.toLowerCase()) || isRombonganMatched;
+    
+    const isPaid = t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS";
+    const matchesLunas = filterLunas === "ALL" ? true : filterLunas === "LUNAS" ? isPaid : !isPaid;
 
-  const totalPending = filteredByScope
+    const isLama = t.noKwitansi?.includes("RENEW-");
+    const matchesKategori = filterKategori === "ALL" ? true : filterKategori === "BARU" ? !isLama : isLama;
+
+    return matchesSearch && matchesLunas && matchesKategori;
+  });
+
+  const totalLunas = dataForMetrics
+    .filter(t => t.statusPembayaran === "PAID")
+    .reduce((acc, t) => acc + (t.totalTagihan || 0), 0);
+
+  const totalPending = dataForMetrics
     .filter(t => t.statusPembayaran === "PENDING")
-    .reduce((acc, t) => acc + t.totalTagihan, 0);
+    .reduce((acc, t) => acc + (t.totalTagihan || 0), 0);
 
   // Statistics Counts
-  const countTotalPendaftar = filteredByScope.length;
-  const countSudahBayar = filteredByScope.filter(t => t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS").length;
-  const countBelumBayar = filteredByScope.filter(t => t.statusPembayaran === "PENDING").length;
+  const countTotalPendaftar = dataForMetrics.length;
+  const countSudahBayar = dataForMetrics.filter(t => t.statusPembayaran === "PAID" || t.statusPembayaran === "KSU_GRATIS").length;
+  const countBelumBayar = dataForMetrics.filter(t => t.statusPembayaran === "PENDING").length;
 
   const filteredData = filteredByScope.filter(t => {
     // 1. Text Search Filter
