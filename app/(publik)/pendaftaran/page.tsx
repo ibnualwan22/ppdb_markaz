@@ -108,13 +108,13 @@ export default function PendaftaranPage() {
     };
   }, [onTurnstileSuccess, onTurnstileExpired, tryRenderTurnstile]);
 
-  // Render widget saat step berubah ke 3 (div baru muncul di DOM)
+  // Render widget saat step berubah ke 3 dan program sudah dipilih (div baru muncul di DOM)
   useEffect(() => {
-    if (step === 3) {
+    if (step === 3 && formData.programId) {
       const timer = setTimeout(() => tryRenderTurnstile(), 100);
       return () => clearTimeout(timer);
     }
-  }, [step, tryRenderTurnstile]);
+  }, [step, formData.programId, tryRenderTurnstile]);
 
   useEffect(() => {
     fetch(API_PROV).then(res => res.json()).then(data => setProvinces(data)).catch(() => { });
