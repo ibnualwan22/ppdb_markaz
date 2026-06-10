@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const kategori = searchParams.get("kategori") || "";
     const bulanKe = searchParams.get("bulanKe") || "";
     const sakan = searchParams.get("sakan") || "";
+    const program = searchParams.get("program") || "";
 
     // ==========================================
     // 1. FILTER PERIODE DUF'AH
@@ -93,6 +94,21 @@ export async function GET(request: Request) {
       });
     }
 
+    // Filter Program (Turots / Reguler)
+    if (program && program !== "SEMUA") {
+      additionalFilters.push({
+        OR: [
+          { program: { kategoriProgram: program } },
+          {
+            AND: [
+              { programId: null },
+              { transaksi: { some: { program: { kategoriProgram: program } } } }
+            ]
+          }
+        ]
+      });
+    }
+
     // ==========================================
     // 4. GABUNGKAN SEMUA FILTER
     // ==========================================
@@ -101,6 +117,7 @@ export async function GET(request: Request) {
     };
 
     const includeRelations = {
+      program: true,
       riwayat: {
         include: {
           dufah: true,

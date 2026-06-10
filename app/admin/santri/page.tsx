@@ -63,6 +63,7 @@ const IconFemale = () => (
 export default function MasterSantriPage() {
   const [dataSantri, setDataSantri] = useState<any[]>([]);
   const [daftarDufah, setDaftarDufah] = useState<any[]>([]);
+  const [daftarProgram, setDaftarProgram] = useState<any[]>([]);
   const [sakanList, setSakanList] = useState<string[]>([]);
   const { hasAccess } = usePermissions();
   const canManageSantri = hasAccess("manage_santri");
@@ -76,6 +77,7 @@ export default function MasterSantriPage() {
   const [filterKategori, setFilterKategori] = useState("SEMUA");
   const [filterBulanKe, setFilterBulanKe] = useState("SEMUA");
   const [filterSakan, setFilterSakan] = useState("SEMUA");
+  const [filterProgram, setFilterProgram] = useState("SEMUA");
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -114,6 +116,11 @@ export default function MasterSantriPage() {
     if (res.ok) setDaftarDufah(await res.json());
   };
 
+  const muatDaftarProgram = async () => {
+    const res = await fetch("/api/program");
+    if (res.ok) setDaftarProgram(await res.json());
+  };
+
   // Helper: Build query string dari semua filter aktif
   const buildQueryString = (page: number, mode?: string) => {
     const params = new URLSearchParams();
@@ -125,6 +132,7 @@ export default function MasterSantriPage() {
     if (filterKategori !== "SEMUA") params.set("kategori", filterKategori);
     if (filterBulanKe !== "SEMUA") params.set("bulanKe", filterBulanKe);
     if (filterSakan !== "SEMUA") params.set("sakan", filterSakan);
+    if (filterProgram !== "SEMUA") params.set("program", filterProgram);
     if (mode) params.set("mode", mode);
     return params.toString();
   };
@@ -164,12 +172,13 @@ export default function MasterSantriPage() {
 
   useEffect(() => {
     muatDaftarDufah();
+    muatDaftarProgram();
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
     muatDataSantri(1);
-  }, [filterDufah, filterGender, filterKategori, filterBulanKe, filterSakan, debouncedKeyword]);
+  }, [filterDufah, filterGender, filterKategori, filterBulanKe, filterSakan, filterProgram, debouncedKeyword]);
 
   const hitungSisaDurasi = (santri: any) => {
     if (santri.kategori === "KSU") return "Tak Terbatas";
@@ -386,6 +395,51 @@ export default function MasterSantriPage() {
     } else {
       const err = await res.json();
       swalError(err.error || 'Gagal memperbarui masa aktif.');
+    }
+  };
+
+  const gantiProgram = async (santri: any) => {
+    const programSaatIni = santri.program || santri.transaksi?.[0]?.program;
+    const programOptions = daftarProgram
+      .filter((p: any) => p.isActive)
+      .reduce((acc: any, p: any) => {
+        acc[p.id] = `${p.nama} (${p.kategoriProgram || 'REGULER'}) — Rp ${new Intl.NumberFormat('id-ID').format(p.harga)}`;
+        return acc;
+      }, {});
+
+    const { value: selectedProgramId, isConfirmed } = await Swal.fire({
+      title: 'Ganti Program Santri',
+      html: `<p style="margin-bottom:8px;font-size:14px;">Santri: <b>${santri.nama}</b></p>
+             <p style="margin-bottom:16px;font-size:12px;color:#999;">Program saat ini: <b style="color:#d4af37">${programSaatIni?.nama || 'Tidak ada'}</b></p>`,
+      input: 'select',
+      inputOptions: programOptions,
+      inputPlaceholder: 'Pilih Program Baru',
+      inputValue: programSaatIni?.id || '',
+      showCancelButton: true,
+      confirmButtonText: 'Ganti Program',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#d4af37',
+      inputValidator: (value) => {
+        if (!value) return 'Silakan pilih program!';
+        if (value === programSaatIni?.id) return 'Program yang dipilih sama dengan yang saat ini!';
+      }
+    });
+
+    if (!isConfirmed || !selectedProgramId) return;
+
+    const res = await fetch(`/api/santri/${santri.id}/ganti-program`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ programId: selectedProgramId }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      swalSuccess('Berhasil', data.message || 'Program berhasil diubah.');
+      muatDataSantri();
+    } else {
+      const err = await res.json();
+      swalError(err.error || 'Gagal mengubah program.');
     }
   };
 
@@ -678,7 +732,7 @@ export default function MasterSantriPage() {
     setExportLoading(false);
   };
 
-  // Data sudah difilter dari server, langsung pakai dataSantri
+  // Data sudah difilter dari server (termasuk filter program), langsung pakai dataSantri
   const dataDitampilkan = dataSantri;
 
   const exportToExcel = async () => {
@@ -697,7 +751,7 @@ export default function MasterSantriPage() {
           No: index + 1,
           NIS: santri.nis || "-",
           Nama: santri.nama,
-          Program: santri.transaksi?.[0]?.program?.nama || "-",
+          Program: santri.program?.nama || santri.transaksi?.[0]?.program?.nama || "-",
           Gender: santri.gender === "BANAT" ? "Perempuan" : "Laki-laki",
           "Tempat Lahir": santri.tempatLahir || "-",
           "Tanggal Lahir": tglLahirVal,
@@ -742,7 +796,7 @@ export default function MasterSantriPage() {
       const tableData = allData.map((santri: any, index: number) => [
         index + 1,
         santri.nama,
-        santri.transaksi?.[0]?.program?.nama || "-",
+        santri.program?.nama || santri.transaksi?.[0]?.program?.nama || "-",
         santri.riwayat?.[0]?.lemari?.kamar?.sakan?.nama || "-",
         santri.riwayat?.[0]?.lemari ? `Kamar ${santri.riwayat[0].lemari.kamar.nama} - Loker ${santri.riwayat[0].lemari.nomor}` : "-",
         hitungSisaDurasi(santri),
@@ -807,7 +861,7 @@ export default function MasterSantriPage() {
 
         {/* FILTER AREA */}
         <div className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Periode / Duf&apos;ah</label>
               <select
@@ -896,6 +950,30 @@ export default function MasterSantriPage() {
                 />
               </div>
             </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Program</label>
+              <div className="flex items-center bg-dark-900 border border-dark-900 rounded-xl overflow-hidden shadow-inner h-[46px]">
+                <button
+                  onClick={() => setFilterProgram("SEMUA")}
+                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === 'SEMUA' ? 'bg-gold-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  Semua
+                </button>
+                <button
+                  onClick={() => setFilterProgram("REGULER")}
+                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === 'REGULER' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  Reguler
+                </button>
+                <button
+                  onClick={() => setFilterProgram("TUROTS")}
+                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === 'TUROTS' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  Turots
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -964,14 +1042,35 @@ export default function MasterSantriPage() {
                           </p>
                         </td>
                         <td className="p-4">
-                          {santri.transaksi && santri.transaksi[0]?.program ? (
-                            <>
-                              <p className="text-sm font-bold text-emerald-400">{santri.transaksi[0].program.nama}</p>
-                              <p className="text-[10px] text-gray-500">Durasi: {santri.transaksi[0].program.durasiBulan} Bulan</p>
-                            </>
-                          ) : (
-                            <span className="text-gray-500 text-sm italic">-</span>
-                          )}
+                          {(() => {
+                            const programDisplay = santri.program || (santri.transaksi && santri.transaksi[0]?.program);
+                            if (programDisplay) {
+                              return (
+                                <div className="flex flex-col gap-1.5">
+                                  <p className="text-sm font-bold text-emerald-400">{programDisplay.nama}</p>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${programDisplay.kategoriProgram === 'TUROTS' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'}`}>
+                                      {programDisplay.kategoriProgram || 'REGULER'}
+                                    </span>
+                                    <span className="text-[10px] text-gray-500">{programDisplay.durasiBulan} Bln</span>
+                                  </div>
+                                  {isSuperAdmin && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); gantiProgram(santri); }}
+                                      className="text-[10px] text-amber-400/70 hover:text-amber-400 font-bold flex items-center gap-0.5 transition mt-0.5"
+                                      title="Ganti Program"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                      </svg>
+                                      Ganti
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return <span className="text-gray-500 text-sm italic">-</span>;
+                          })()}
                         </td>
                         <td className="p-4 text-center font-bold text-gold-400">
                           {hitungSisaDurasi(santri)}

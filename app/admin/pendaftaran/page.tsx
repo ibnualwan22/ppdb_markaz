@@ -32,6 +32,7 @@ export default function MejaKeuanganPage() {
   const [filterScope, setFilterScope] = useState("AKTIF"); // "AKTIF" atau "GLOBAL"
   const [filterLunas, setFilterLunas] = useState("ALL"); // "ALL", "LUNAS", "BELUM"
   const [filterKategori, setFilterKategori] = useState("ALL"); // "ALL", "BARU", "LAMA"
+  const [filterProgram, setFilterProgram] = useState("REGULER"); // "ALL", "REGULER", "TUROTS"
 
   const pusher = usePusher();
 
@@ -398,6 +399,9 @@ export default function MejaKeuanganPage() {
       if (filterKategori === "BARU" && kategori === "Lama") return;
       if (filterKategori === "LAMA" && kategori !== "Lama") return;
 
+      // Filter Program (Turots/Reguler)
+      if (filterProgram !== "ALL" && t.program?.kategoriProgram !== filterProgram) return;
+
       combinedData.push({
         id: t.id,
         santri: t.santri,
@@ -538,7 +542,11 @@ export default function MejaKeuanganPage() {
         ? true
         : r.dufahTujuanId?.toString() === filterScope;
     const matchesSearch = r.nama.toLowerCase().includes(search.toLowerCase());
-    return matchesScope && matchesSearch && matchesLunas;
+
+    // Filter Program: Rombongan transaksi harus cocok
+    const matchesProgram = filterProgram === "ALL" ? true : r.transaksi?.some((t: any) => t.program?.kategoriProgram === filterProgram);
+
+    return matchesScope && matchesSearch && matchesLunas && matchesProgram;
   });
 
   const dataForMetrics = filteredByScope.filter(t => {
@@ -551,7 +559,10 @@ export default function MejaKeuanganPage() {
     const isLama = t.noKwitansi?.includes("RENEW-");
     const matchesKategori = filterKategori === "ALL" ? true : filterKategori === "BARU" ? !isLama : isLama;
 
-    return matchesSearch && matchesLunas && matchesKategori;
+    // Filter Program (Turots/Reguler)
+    const matchesProgram = filterProgram === "ALL" ? true : t.program?.kategoriProgram === filterProgram;
+
+    return matchesSearch && matchesLunas && matchesKategori && matchesProgram;
   });
 
   const totalLunas = dataForMetrics
@@ -586,7 +597,10 @@ export default function MejaKeuanganPage() {
       ? true
       : filterKategori === "BARU" ? !isLama : isLama;
 
-    return matchesSearch && isNotRombonganChild && matchesLunas && matchesKategori;
+    // 5. Filter Program (Turots/Reguler)
+    const matchesProgram = filterProgram === "ALL" ? true : t.program?.kategoriProgram === filterProgram;
+
+    return matchesSearch && isNotRombonganChild && matchesLunas && matchesKategori && matchesProgram;
   });
 
   const filteredDaftarUlang = daftarUlang.filter(d => {
@@ -617,7 +631,12 @@ export default function MejaKeuanganPage() {
 
   const barData = allDufah.map(d => {
     const income = transaksi
-      .filter(t => (t.noKwitansi.includes(`-${d.id}-`) || t.noKwitansi.includes(`RENEW-${d.id}-`)) && t.statusPembayaran === "PAID")
+      .filter(t => {
+        const matchesDufah = t.noKwitansi.includes(`-${d.id}-`) || t.noKwitansi.includes(`RENEW-${d.id}-`);
+        const matchesPaid = t.statusPembayaran === "PAID";
+        const matchesProgram = filterProgram === "ALL" ? true : t.program?.kategoriProgram === filterProgram;
+        return matchesDufah && matchesPaid && matchesProgram;
+      })
       .reduce((acc, t) => acc + t.totalTagihan, 0);
     return { name: d.nama, Pendapatan: income };
   });
@@ -689,6 +708,28 @@ export default function MejaKeuanganPage() {
                 <option key={d.id} value={d.id.toString()}>{d.nama}</option>
               ))}
             </select>
+          </div>
+
+          {/* Toggle Program (Turots/Reguler) */}
+          <div className="flex items-center bg-dark-900 border border-gold-500/20 rounded-xl overflow-hidden flex-1 md:flex-none">
+            <button
+              onClick={() => setFilterProgram("ALL")}
+              className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === 'ALL' ? 'bg-gold-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
+            >
+              Semua
+            </button>
+            <button
+              onClick={() => setFilterProgram("REGULER")}
+              className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === 'REGULER' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            >
+              Reguler
+            </button>
+            <button
+              onClick={() => setFilterProgram("TUROTS")}
+              className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === 'TUROTS' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
+            >
+              Turots
+            </button>
           </div>
 
           <div className="w-full lg:w-72 relative">

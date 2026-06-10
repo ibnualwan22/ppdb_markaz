@@ -60,6 +60,8 @@ model Santri {
   isCuti          Boolean                @default(false)
   saldoDufah      Int                    @default(0)
   isDataVerified  Boolean                @default(false)
+  programId       String?                // Override program khusus untuk Master Santri
+  program         Program?               @relation("SantriProgram", fields: [programId], references: [id])
   riwayat         RiwayatDufah[]
   transaksi       TransaksiPendaftaran[]
 
@@ -167,6 +169,7 @@ model ApiKey {
 model Program {
   id                  String                 @id @default(uuid())
   nama                String
+  kategoriProgram     String                 @default("REGULER")
   harga               Float
   durasiBulan         Int                    @default(1)
   isActive            Boolean                @default(true)
@@ -174,6 +177,7 @@ model Program {
   tanggalMulaiDefault String?
   tanggalTutupDefault String?
   transaksi           TransaksiPendaftaran[]
+  santriAktif         Santri[]               @relation("SantriProgram")
 }
 
 model TransaksiPendaftaran {

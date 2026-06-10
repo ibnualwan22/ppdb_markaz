@@ -9,12 +9,13 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { nama, harga, durasiBulan, isActive, tanggalMulaiDefault, tanggalTutupDefault } = body;
+    const { nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault } = body;
 
     const program = await prisma.program.update({
       where: { id },
       data: {
         nama,
+        kategoriProgram: kategoriProgram !== undefined ? kategoriProgram : undefined,
         harga: harga !== undefined ? parseFloat(harga) : undefined,
         durasiBulan:
           durasiBulan !== undefined ? parseInt(durasiBulan) : undefined,

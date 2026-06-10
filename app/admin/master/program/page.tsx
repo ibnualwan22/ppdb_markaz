@@ -17,6 +17,7 @@ export default function MasterProgramPage() {
   const [harga, setHarga] = useState("");
   const [durasiBulan, setDurasiBulan] = useState("1");
   const [isActive, setIsActive] = useState(true);
+  const [kategoriProgram, setKategoriProgram] = useState("REGULER");
   const [tanggalMulaiDefault, setTanggalMulaiDefault] = useState("10 Juni");
   const [tanggalTutupDefault, setTanggalTutupDefault] = useState("06 Juli");
 
@@ -39,6 +40,7 @@ export default function MasterProgramPage() {
     setHarga("");
     setDurasiBulan("1");
     setIsActive(true);
+    setKategoriProgram("REGULER");
     setTanggalMulaiDefault("10 Juni");
     setTanggalTutupDefault("06 Juli");
   };
@@ -49,6 +51,7 @@ export default function MasterProgramPage() {
     setHarga(p.harga.toString());
     setDurasiBulan(p.durasiBulan.toString());
     setIsActive(p.isActive);
+    setKategoriProgram(p.kategoriProgram || "REGULER");
     setTanggalMulaiDefault(p.tanggalMulaiDefault || "10 Juni");
     setTanggalTutupDefault(p.tanggalTutupDefault || "06 Juli");
     setIsModalOpen(true);
@@ -64,7 +67,7 @@ export default function MasterProgramPage() {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama, harga, durasiBulan, isActive, tanggalMulaiDefault, tanggalTutupDefault }),
+      body: JSON.stringify({ nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault }),
     });
 
     setLoading(false);
@@ -106,6 +109,7 @@ export default function MasterProgramPage() {
                 <thead className="bg-dark-900 text-gold-500 text-sm font-bold uppercase tracking-wider">
                   <tr>
                     <th className="p-3">Nama Program</th>
+                    <th className="p-3">Kategori</th>
                     <th className="p-3">Harga (Rp)</th>
                     <th className="p-3 text-center">Durasi (Bulan)</th>
                     <th className="p-3 text-center">Status</th>
@@ -116,6 +120,11 @@ export default function MasterProgramPage() {
                   {programs.map(p => (
                     <tr key={p.id} className="hover:bg-dark-900/50 transition">
                       <td className="p-3 font-semibold">{p.nama}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 text-xs font-bold rounded-md ${p.kategoriProgram === 'TUROTS' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'}`}>
+                          {p.kategoriProgram || 'REGULER'}
+                        </span>
+                      </td>
                       <td className="p-3">{new Intl.NumberFormat('id-ID').format(p.harga)}</td>
                       <td className="p-3 text-center font-bold text-gray-400">{p.durasiBulan} Bulan</td>
                       <td className="p-3 text-center">
@@ -159,6 +168,13 @@ export default function MasterProgramPage() {
                 <div>
                   <label className="block text-sm font-bold text-gray-300 mb-1">Durasi (Bulan)</label>
                   <input type="number" value={durasiBulan} onChange={(e) => setDurasiBulan(e.target.value)} required min="1" className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Kategori Program</label>
+                  <select value={kategoriProgram} onChange={(e) => setKategoriProgram(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gold-500 font-bold outline-none focus:ring-1 focus:ring-gold-500/50 cursor-pointer">
+                    <option value="REGULER">REGULER (Fokus Bahasa)</option>
+                    <option value="TUROTS">TUROTS (Fokus Kitab Kuning)</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
