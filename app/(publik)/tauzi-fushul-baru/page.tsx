@@ -37,7 +37,9 @@ export default async function TauziFushulBaruPage() {
     orderBy: { nama: 'asc' }
   });
 
-  const formattedData = dataSantri.map(santri => {
+  const formattedData = dataSantri
+    .filter(santri => santri.transaksi[0]?.program?.kategoriProgram !== "TUROTS")
+    .map(santri => {
     const activeRiwayat = santri.riwayat[0];
     const programPilihan = santri.transaksi[0]?.program?.nama || "Belum Memilih Program";
     

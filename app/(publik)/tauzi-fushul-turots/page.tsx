@@ -4,19 +4,18 @@ import TauziFushulTable from "@/components/TauziFushulTable";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Tauzi' Fushul | Markaz Arabiyah",
-  description: "Halaman penempatan kelas (Tauzi' Fushul) santri Markaz Arabiyah.",
+  title: "Tauzi' Fushul Turots | Markaz Arabiyah",
+  description: "Halaman penempatan kelas (Tauzi' Fushul) khusus program Turots Markaz Arabiyah.",
 };
 
 // Pastikan halaman ini dinamis karena kita butuh data terbaru
 export const dynamic = "force-dynamic";
 
-export default async function TauziFushulPage() {
+export default async function TauziFushulTurotsPage() {
   // Ambil data langsung dari database
   const dataSantri = await prisma.santri.findMany({
     where: {
       isAktif: true,
-      kategori: "LAMA",
       riwayat: {
         some: {
           dufah: { isActive: true }
@@ -38,7 +37,7 @@ export default async function TauziFushulPage() {
   });
 
   const formattedData = dataSantri
-    .filter(santri => santri.transaksi[0]?.program?.kategoriProgram !== "TUROTS")
+    .filter(santri => santri.transaksi[0]?.program?.kategoriProgram === "TUROTS")
     .map(santri => {
     const activeRiwayat = santri.riwayat[0];
     const programPilihan = santri.transaksi[0]?.program?.nama || "Belum Memilih Program";
@@ -60,10 +59,10 @@ export default async function TauziFushulPage() {
     <div className="min-h-screen bg-dark-900 bg-luxury-pattern text-gray-200 py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-6xl mx-auto mb-10 text-center">
         <h1 className="text-3xl font-extrabold text-gold-500 tracking-wide sm:text-4xl drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-          Tauzi' Fushul (Santri Lama)
+          Tauzi' Fushul (Program Turots)
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-gray-400 mx-auto">
-          Halaman sementara untuk pengelolaan pre-test santri lama.
+          Halaman sementara untuk pengelolaan pre-test khusus program Turots.
         </p>
       </div>
 
