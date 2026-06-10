@@ -485,6 +485,11 @@ export default function MimStorePage() {
                           {item.santri.kategori}
                         </span>
                       )}
+                      {item.nilaiTauzi !== null && item.nilaiTauzi !== undefined && (
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30" title="Telah mengikuti Tauzi' Fushul">
+                          مُشَارَكَة
+                        </span>
+                      )}
                     </div>
                     {item.lemari ? (
                       <p className="text-xs text-gray-500 mt-1 uppercase font-medium">

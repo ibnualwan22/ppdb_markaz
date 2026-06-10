@@ -101,6 +101,8 @@ model RiwayatDufah {
   isLunas              Boolean   @default(true)
   updatedAt            DateTime  @default(now()) @updatedAt
   waktuAmbilKartu      DateTime?
+  nilaiTauzi           Int?
+  kelasRekomendasi     String?
   dufah                Dufah     @relation(fields: [dufahId], references: [id], onDelete: Cascade)
   lemari               Lemari?   @relation(fields: [lemariId], references: [id])
   santri               Santri    @relation(fields: [santriId], references: [id], onDelete: Cascade)
