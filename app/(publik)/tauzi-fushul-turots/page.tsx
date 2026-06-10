@@ -23,6 +23,7 @@ export default async function TauziFushulTurotsPage() {
       }
     },
     include: {
+      program: true,
       riwayat: {
         where: { dufah: { isActive: true } },
         include: { dufah: true }
@@ -37,10 +38,13 @@ export default async function TauziFushulTurotsPage() {
   });
 
   const formattedData = dataSantri
-    .filter(santri => santri.transaksi[0]?.program?.kategoriProgram === "TUROTS")
+    .filter(santri => {
+      const kategori = santri.program?.kategoriProgram || santri.transaksi[0]?.program?.kategoriProgram;
+      return kategori === "TUROTS";
+    })
     .map(santri => {
     const activeRiwayat = santri.riwayat[0];
-    const programPilihan = santri.transaksi[0]?.program?.nama || "Belum Memilih Program";
+    const programPilihan = santri.program?.nama || santri.transaksi[0]?.program?.nama || "Belum Memilih Program";
     
     return {
       santriId: santri.id,
