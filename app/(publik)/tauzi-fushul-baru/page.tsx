@@ -13,30 +13,38 @@ export const dynamic = "force-dynamic";
 
 export default async function TauziFushulBaruPage() {
   // Ambil data langsung dari database
-  const dataSantri = await prisma.santri.findMany({
-    where: {
-      isAktif: true,
-      kategori: "BARU",
-      riwayat: {
-        some: {
-          dufah: { isActive: true }
+  const [dataSantri, programsDb] = await Promise.all([
+    prisma.santri.findMany({
+      where: {
+        isAktif: true,
+        kategori: "BARU",
+        riwayat: {
+          some: {
+            dufah: { isActive: true }
+          }
         }
-      }
-    },
-    include: {
-      program: true,
-      riwayat: {
-        where: { dufah: { isActive: true } },
-        include: { dufah: true }
       },
-      transaksi: {
-        include: { program: true },
-        orderBy: { createdAt: 'desc' as const },
-        take: 1
-      }
-    },
-    orderBy: { nama: 'asc' }
-  });
+      include: {
+        program: true,
+        riwayat: {
+          where: { dufah: { isActive: true } },
+          include: { dufah: true }
+        },
+        transaksi: {
+          include: { program: true },
+          orderBy: { createdAt: 'desc' as const },
+          take: 1
+        }
+      },
+      orderBy: { nama: 'asc' }
+    }),
+    prisma.program.findMany({
+      where: { isActive: true, durasiBulan: { notIn: [3, 6] } },
+      orderBy: { nama: 'asc' }
+    })
+  ]);
+
+  const opsiKelas = programsDb.map(p => p.nama);
 
   const formattedData = dataSantri
     .filter(santri => {
@@ -72,7 +80,7 @@ export default async function TauziFushulBaruPage() {
       </div>
 
       <div className="max-w-6xl mx-auto">
-        <TauziFushulTable initialData={formattedData} />
+        <TauziFushulTable initialData={formattedData} opsiKelasProps={opsiKelas} />
       </div>
     </div>
   );

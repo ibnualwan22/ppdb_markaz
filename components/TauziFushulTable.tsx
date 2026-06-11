@@ -17,23 +17,10 @@ type SantriData = {
 
 interface Props {
   initialData: SantriData[];
+  opsiKelasProps: string[];
 }
 
-// Opsi kelas untuk dropdown rekomendasi. 
-// Bisa diambil dari data unik program yang ada, tapi karena di foto ada:
-// SHIFR, I'DAD AWWAL, I'DAD TSANI, ATIQOH, TAKHOSSUS AWWAL, TAKHOSSUS TSANI
-const opsiKelas = [
-  "SHIFR",
-  "I'DAD AWWAL",
-  "I'DAD TSANI",
-  "ATIQOH",
-  "TAKHOSSUS AWWAL",
-  "TAKHOSSUS TSANI",
-  "SYARQI AWWAL",
-  "SYARQI TSANI"
-];
-
-export default function TauziFushulTable({ initialData }: Props) {
+export default function TauziFushulTable({ initialData, opsiKelasProps }: Props) {
   const [data, setData] = useState<SantriData[]>(initialData);
   const [activeTab, setActiveTab] = useState<string>("");
   const [isSaving, setIsSaving] = useState<string | null>(null);
@@ -226,7 +213,7 @@ export default function TauziFushulTable({ initialData }: Props) {
                     className="w-full min-w-[200px] px-4 py-2 border border-dark-700 bg-dark-900 rounded-xl focus:outline-none focus:border-gold-500/60 text-white shadow-inner font-semibold"
                   >
                     <option value={item.program}>{item.program} (Bawaan)</option>
-                    {opsiKelas.map(
+                    {opsiKelasProps.map(
                       (opt) =>
                         opt !== item.program && (
                           <option key={opt} value={opt}>
