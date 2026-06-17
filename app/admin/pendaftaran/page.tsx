@@ -710,7 +710,7 @@ export default function MejaKeuanganPage() {
             </select>
           </div>
 
-          {/* Toggle Program (Turots/Reguler) */}
+          {/* Toggle Program (Turots/Reguler/2Minggu) */}
           <div className="flex items-center bg-dark-900 border border-gold-500/20 rounded-xl overflow-hidden flex-1 md:flex-none">
             <button
               onClick={() => setFilterProgram("ALL")}
@@ -729,6 +729,12 @@ export default function MejaKeuanganPage() {
               className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === 'TUROTS' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
             >
               Turots
+            </button>
+            <button
+              onClick={() => setFilterProgram("2MINGGU")}
+              className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === '2MINGGU' ? 'bg-purple-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            >
+              2 Minggu
             </button>
           </div>
 

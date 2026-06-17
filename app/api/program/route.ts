@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault } = body;
+    const { nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault, targetDufahId } = body;
 
     if (!nama || harga === undefined || durasiBulan === undefined) {
       return NextResponse.json(
@@ -37,7 +37,8 @@ export async function POST(request: Request) {
         durasiBulan: parseInt(durasiBulan),
         isActive: isActive !== undefined ? isActive : true,
         tanggalMulaiDefault,
-        tanggalTutupDefault
+        tanggalTutupDefault,
+        targetDufahId: targetDufahId ? parseInt(targetDufahId) : null
       },
     });
 

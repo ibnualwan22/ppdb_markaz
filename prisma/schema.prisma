@@ -80,6 +80,7 @@ model Dufah {
   tanggalTutup         DateTime?
   riwayat              RiwayatDufah[]
   transaksiPendaftaran TransaksiPendaftaran[]
+  programKhusus        Program[]              @relation("ProgramKhusus")
   Rombongan            Rombongan[]
 }
 
@@ -176,6 +177,8 @@ model Program {
   createdAt           DateTime               @default(now())
   tanggalMulaiDefault String?
   tanggalTutupDefault String?
+  targetDufahId       Int?                   // Jika null, maka berlaku untuk semua Duf'ah aktif
+  targetDufah         Dufah?                 @relation("ProgramKhusus", fields: [targetDufahId], references: [id])
   transaksi           TransaksiPendaftaran[]
   santriAktif         Santri[]               @relation("SantriProgram")
 }

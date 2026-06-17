@@ -1,3 +1,4 @@
+
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/app/lib/rateLimit";
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
       gender, tanggalLahir,
       noWaOrtu, noWaSantri,
       programId,
+      dufahTujuanId,
       turnstileToken
     } = body;
 
@@ -69,21 +71,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Program tidak ditemukan" }, { status: 404 });
     }
 
-    // 2. Tentukan Dufah Tujuan berdasarkan waktu saat ini (prioritaskan Duf'ah terbaru/tertinggi jika tumpang tindih)
     const allDufahs = await prisma.dufah.findMany({ orderBy: { id: 'desc' } });
     const now = new Date();
-    
-    // Cari Dufah yang rentang pendaftarannya mencakup waktu saat ini
-    const targetDufah = allDufahs.find(df => {
-      if (!df.tanggalBuka || !df.tanggalTutup) return false;
-      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
-    });
+
+    let targetDufah;
+    if (dufahTujuanId) {
+      targetDufah = allDufahs.find(df => {
+        if (df.id !== dufahTujuanId) return false;
+        if (!df.tanggalBuka || !df.tanggalTutup) return false;
+        return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+      });
+    } else {
+      targetDufah = allDufahs.find(df => {
+        if (!df.tanggalBuka || !df.tanggalTutup) return false;
+        return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+      });
+    }
 
     if (!targetDufah) {
       return NextResponse.json({ error: "Pendaftaran saat ini sedang ditutup. Tidak ada periode Duf'ah yang buka." }, { status: 400 });
     }
 
-    const dufahTujuanId = targetDufah.id;
+    const finalDufahTujuanId = targetDufah.id;
 
     // 3. Hitung Kode Unik & Total
     const kodeUnik = Math.floor(Math.random() * 900) + 100; // 100-999
@@ -93,13 +102,13 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       // Cek berdasarkan Nama & Tanggal Lahir (karena NIK dihapus)
       const parsedTanggalLahir = new Date(tanggalLahir);
-      let santri = await tx.santri.findFirst({ 
-        where: { 
-          nama, 
-          tanggalLahir: parsedTanggalLahir 
-        } 
+      let santri = await tx.santri.findFirst({
+        where: {
+          nama,
+          tanggalLahir: parsedTanggalLahir
+        }
       });
-      
+
       if (!santri) {
         // Buat Santri Baru
         santri = await tx.santri.create({
@@ -123,13 +132,13 @@ export async function POST(request: Request) {
       }
 
       // Buat Transaksi
-      const noKwitansi = generateInvoiceNumber(dufahTujuanId);
+      const noKwitansi = generateInvoiceNumber(finalDufahTujuanId);
       const transaksi = await tx.transaksiPendaftaran.create({
         data: {
           noKwitansi,
           santriId: santri.id,
           programId: program.id,
-          dufahTujuanId,
+          dufahTujuanId: finalDufahTujuanId,
           nominalProgram: program.harga,
           kodeUnik,
           totalTagihan,

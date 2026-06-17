@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { santriId, programId, isBeliAtribut } = body;
+    const { santriId, programId, dufahTujuanId, isBeliAtribut } = body;
 
     if (!santriId || !programId) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
@@ -35,10 +35,19 @@ export async function POST(request: Request) {
     const now = new Date();
     
     // Cari Dufah yang rentang pendaftarannya mencakup waktu saat ini
-    const targetDufah = allDufahs.find(df => {
-      if (!df.tanggalBuka || !df.tanggalTutup) return false;
-      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
-    });
+    let targetDufah;
+    if (dufahTujuanId) {
+      targetDufah = allDufahs.find(df => {
+        if (df.id !== dufahTujuanId) return false;
+        if (!df.tanggalBuka || !df.tanggalTutup) return false;
+        return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+      });
+    } else {
+      targetDufah = allDufahs.find(df => {
+        if (!df.tanggalBuka || !df.tanggalTutup) return false;
+        return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+      });
+    }
 
     if (!targetDufah) {
       return NextResponse.json({ error: "Pendaftaran saat ini sedang ditutup. Tidak ada periode Duf'ah yang buka." }, { status: 400 });
@@ -49,10 +58,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Santri tidak ditemukan" }, { status: 404 });
     }
 
-    const dufahTujuanId = targetDufah.id;
+    const finalDufahTujuanId = targetDufah.id;
 
     // Cek apakah santri masih memiliki sisa paket
-    const isKlaimPaket = santri.batasAktifDufah >= dufahTujuanId;
+    const isKlaimPaket = santri.batasAktifDufah >= finalDufahTujuanId;
 
     // Jika klaim paket otomatis 0, jika tidak beli atribut potong 100k
     const nominalProgram = isKlaimPaket ? 0 : (isBeliAtribut ? program.harga : Math.max(0, program.harga - 100000));
@@ -64,7 +73,7 @@ export async function POST(request: Request) {
 
     // Acuan kamar sebelumnya tempat dia menetap adalah Duf'ah sebelum dufahTujuan ini
     const dufahLama = await prisma.dufah.findFirst({
-      where: { id: { lt: dufahTujuanId } },
+      where: { id: { lt: finalDufahTujuanId } },
       orderBy: { id: 'desc' }
     });
 
@@ -96,10 +105,10 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       const trx = await tx.transaksiPendaftaran.create({
         data: {
-          noKwitansi: generateInvoiceNumber(dufahTujuanId),
+          noKwitansi: generateInvoiceNumber(finalDufahTujuanId),
           santriId,
           programId,
-          dufahTujuanId,
+          dufahTujuanId: finalDufahTujuanId,
           nominalProgram,
           kodeUnik,
           totalTagihan,
@@ -110,14 +119,14 @@ export async function POST(request: Request) {
 
       // Buat riwayat jika belum ada untuk dufah tujuan agar terdeteksi booking/belum lunas di asrama
       const existingRiwayat = await tx.riwayatDufah.findUnique({
-        where: { santriId_dufahId: { santriId, dufahId: dufahTujuanId } }
+        where: { santriId_dufahId: { santriId, dufahId: finalDufahTujuanId } }
       });
 
       if (!existingRiwayat) {
         await tx.riwayatDufah.create({
           data: {
             santriId,
-            dufahId: dufahTujuanId,
+            dufahId: finalDufahTujuanId,
             lemariId: lemariBaru,
             status: statusBaru,
             isIdCardTaken: false,

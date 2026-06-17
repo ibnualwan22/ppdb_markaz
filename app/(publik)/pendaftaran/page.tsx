@@ -43,6 +43,7 @@ export default function PendaftaranPage() {
   });
 
   const [allDufah, setAllDufah] = useState<any[]>([]);
+  const [openDufahList, setOpenDufahList] = useState<any[]>([]);
   const [targetDufah, setTargetDufah] = useState<any>(null);
 
   // Invoice Result
@@ -122,15 +123,19 @@ export default function PendaftaranPage() {
     fetch("/api/dufah").then(res => res.json()).then(data => {
       setAllDufah(data);
       const now = new Date();
-      const target = data.find((df: any) => {
+      const openDufahs = data.filter((df: any) => {
         if (!df.tanggalBuka || !df.tanggalTutup) return false;
         return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
       });
 
-      if (target) {
-        target.namaPeriodeLengkap = target.nama;
+      openDufahs.forEach((df: any) => {
+        df.namaPeriodeLengkap = df.nama;
+      });
+
+      setOpenDufahList(openDufahs);
+      if (openDufahs.length === 1) {
+        setTargetDufah(openDufahs[0]);
       }
-      setTargetDufah(target || null);
     }).catch(() => { });
 
     // Load Cache
@@ -212,7 +217,12 @@ export default function PendaftaranPage() {
     if (step === 2 && (!formData.desaId || !formData.detailAlamat)) {
       return swalError("Error", "Mohon lengkapi alamat lengkap.");
     }
-    setStep(step + 1);
+
+    if (step === 2 && openDufahList.length <= 1) {
+      setStep(4); // Skip Periode step if only 1 period is active
+    } else {
+      setStep(step + 1);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -254,6 +264,7 @@ export default function PendaftaranPage() {
           desa: formData.desaNama,
           detailAlamat: formData.detailAlamat,
           programId: formData.programId,
+          dufahTujuanId: targetDufah?.id,
           turnstileToken,
         })
       });
@@ -263,7 +274,7 @@ export default function PendaftaranPage() {
 
       if (res.ok) {
         setInvoice(data.data.transaksi);
-        setStep(4); // Pindah ke layar Invoice
+        setStep(5); // Pindah ke layar Invoice
         localStorage.removeItem("ppdb_pendaftaran_data");
         localStorage.removeItem("ppdb_pendaftaran_step");
         // Reset Turnstile
@@ -303,12 +314,12 @@ export default function PendaftaranPage() {
         </div>
 
         {/* Stepper Progress */}
-        {step < 4 && (
+        {step < 5 && (
           <div className="flex justify-between items-center mb-8 relative">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-dark-800 rounded-full z-0">
-              <div className="h-full bg-gold-500 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 2) * 100}%` }}></div>
+              <div className="h-full bg-gold-500 rounded-full transition-all duration-500" style={{ width: `${((Math.min(step, 4) - 1) / 3) * 100}%` }}></div>
             </div>
-            {[1, 2, 3].map((s) => (
+            {[1, 2, 3, 4].map((s) => (
               <div key={s} className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors ${step >= s ? 'bg-gold-500 border-gold-500 text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' : 'bg-dark-900 border-dark-800 text-gray-500'}`}>
                 {s}
               </div>
@@ -421,19 +432,64 @@ export default function PendaftaranPage() {
             </div>
           )}
 
-          {/* STEP 3: PILIH PROGRAM */}
+          {/* STEP 3: PILIH PERIODE */}
           {step === 3 && (
             <div className="space-y-6 animate-fadeIn">
               <button onClick={() => setStep(2)} className="text-gold-500 font-bold mb-4 flex items-center gap-2 hover:text-gold-400 transition">
                 <span>&larr;</span> Kembali
               </button>
+              
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white border-b border-gold-500/10 pb-3 mb-6">Pilih Periode Pendaftaran</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {openDufahList.map(df => (
+                    <div
+                      key={df.id}
+                      onClick={() => {
+                        setTargetDufah(df);
+                        setFormData({ ...formData, programId: "" });
+                      }}
+                      className={`cursor-pointer border-2 rounded-xl p-4 transition-all duration-300 ${targetDufah?.id === df.id ? 'border-gold-500 bg-gold-500/10' : 'border-dark-800 bg-dark-900 hover:border-gold-500/30'}`}
+                    >
+                      <h4 className="font-extrabold text-gold-500 text-lg">Periode {df.nama}</h4>
+                      <p className="text-xs text-gray-400 mt-1">Buka: {new Date(df.tanggalBuka).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - {new Date(df.tanggalTutup).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  if (!targetDufah) return swalError("Error", "Pilih periode terlebih dahulu.");
+                  setStep(4);
+                }} 
+                className="w-full mt-6 bg-gold-500 hover:bg-gold-400 text-black font-extrabold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-transform active:scale-95"
+              >
+                Selanjutnya: Program
+              </button>
+            </div>
+          )}
+
+          {/* STEP 4: PILIH PROGRAM */}
+          {step === 4 && (
+            <div className="space-y-6 animate-fadeIn">
+              <button onClick={() => setStep(openDufahList.length > 1 ? 3 : 2)} className="text-gold-500 font-bold mb-4 flex items-center gap-2 hover:text-gold-400 transition">
+                <span>&larr;</span> Kembali
+              </button>
+
               <h2 className="text-2xl font-bold text-white border-b border-gold-500/10 pb-3 mb-6">Pilih Program</h2>
 
               {programs.length === 0 ? (
                 <div className="text-center text-gray-500 p-10 bg-dark-900 rounded-xl">Sedang memuat daftar program...</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {programs.map(p => {
+                  {programs.filter(p => {
+                    if (targetDufah) {
+                      // Jika program tidak punya target (null) ATAU targetnya sama dengan dufah yang dipilih
+                      return !p.targetDufahId || p.targetDufahId === targetDufah.id;
+                    }
+                    return true;
+                  }).map(p => {
                     const tgMulai = p.tanggalMulaiDefault || "10";
                     const tgTutup = p.tanggalTutupDefault || "06";
 
@@ -481,8 +537,8 @@ export default function PendaftaranPage() {
             </div>
           )}
 
-          {/* STEP 4: INVOICE / SUCCESS */}
-          {step === 4 && invoice && (
+          {/* STEP 5: INVOICE / SUCCESS */}
+          {step === 5 && invoice && (
             <div className="text-center animate-fadeIn py-6">
               <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,197,94,0.3)]">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -538,7 +594,7 @@ export default function PendaftaranPage() {
         </div>
 
         {/* FLOATING BOTTOM BAR - Di luar card agar tidak terkena overflow/backdrop parent */}
-        {step === 3 && formData.programId && (
+        {step === 4 && formData.programId && (
           <div className="fixed bottom-0 left-0 right-0 z-50 animate-slideUp">
             <div className="max-w-3xl mx-auto px-4 pb-16 md:pb-6">
               <div className="bg-dark-800 border border-gold-500/30 rounded-2xl shadow-[0_-5px_30px_rgba(0,0,0,0.5)] p-4 space-y-3">
@@ -583,7 +639,7 @@ export default function PendaftaranPage() {
                   <div className="flex gap-2 w-full sm:w-auto">
                     <button
                       type="button"
-                      onClick={() => setStep(1)}
+                      onClick={() => setStep(openDufahList.length > 1 ? 3 : 2)}
                       className="px-4 py-3 text-gray-400 hover:text-white transition text-sm font-bold rounded-xl border border-gray-700 hover:border-gray-500"
                     >
                       ← Kembali

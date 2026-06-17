@@ -20,11 +20,20 @@ export default function MasterProgramPage() {
   const [kategoriProgram, setKategoriProgram] = useState("REGULER");
   const [tanggalMulaiDefault, setTanggalMulaiDefault] = useState("10 Juni");
   const [tanggalTutupDefault, setTanggalTutupDefault] = useState("06 Juli");
+  const [targetDufahId, setTargetDufahId] = useState("");
+  const [allDufah, setAllDufah] = useState<any[]>([]);
 
   const muatData = async () => {
     try {
       const res = await fetch("/api/program");
       if (res.ok) setPrograms(await res.json());
+
+      const resDufah = await fetch("/api/dufah");
+      if (resDufah.ok) {
+        const dufahs = await resDufah.json();
+        // Sort by ID descending so newest is on top
+        setAllDufah(dufahs.sort((a: any, b: any) => b.id - a.id));
+      }
     } catch (e) {
       console.error(e);
     }
@@ -43,6 +52,7 @@ export default function MasterProgramPage() {
     setKategoriProgram("REGULER");
     setTanggalMulaiDefault("10 Juni");
     setTanggalTutupDefault("06 Juli");
+    setTargetDufahId("");
   };
 
   const bukaModalEdit = (p: any) => {
@@ -54,6 +64,7 @@ export default function MasterProgramPage() {
     setKategoriProgram(p.kategoriProgram || "REGULER");
     setTanggalMulaiDefault(p.tanggalMulaiDefault || "10 Juni");
     setTanggalTutupDefault(p.tanggalTutupDefault || "06 Juli");
+    setTargetDufahId(p.targetDufahId ? p.targetDufahId.toString() : "");
     setIsModalOpen(true);
   };
 
@@ -64,10 +75,21 @@ export default function MasterProgramPage() {
     const url = editId ? `/api/program/${editId}` : "/api/program";
     const method = editId ? "PATCH" : "POST";
 
+    const bodyParams = {
+      nama,
+      harga,
+      durasiBulan,
+      isActive,
+      kategoriProgram,
+      tanggalMulaiDefault,
+      tanggalTutupDefault,
+      targetDufahId: targetDufahId || null
+    };
+
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault }),
+      body: JSON.stringify(bodyParams),
     });
 
     setLoading(false);
@@ -110,6 +132,7 @@ export default function MasterProgramPage() {
                   <tr>
                     <th className="p-3">Nama Program</th>
                     <th className="p-3">Kategori</th>
+                    <th className="p-3">Target Periode</th>
                     <th className="p-3">Harga (Rp)</th>
                     <th className="p-3 text-center">Durasi (Bulan)</th>
                     <th className="p-3 text-center">Status</th>
@@ -121,8 +144,13 @@ export default function MasterProgramPage() {
                     <tr key={p.id} className="hover:bg-dark-900/50 transition">
                       <td className="p-3 font-semibold">{p.nama}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-1 text-xs font-bold rounded-md ${p.kategoriProgram === 'TUROTS' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'}`}>
+                        <span className={`px-2 py-1 text-xs font-bold rounded-md ${p.kategoriProgram === 'TUROTS' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : p.kategoriProgram === '2MINGGU' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30' : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'}`}>
                           {p.kategoriProgram || 'REGULER'}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 text-[10px] font-bold rounded uppercase tracking-wider ${p.targetDufahId ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30' : 'bg-dark-900 text-gray-500 border border-dark-800'}`}>
+                          {p.targetDufahId ? `Khusus Duf'ah ${allDufah.find(d => d.id === p.targetDufahId)?.nama || p.targetDufahId}` : "Semua Periode"}
                         </span>
                       </td>
                       <td className="p-3">{new Intl.NumberFormat('id-ID').format(p.harga)}</td>
@@ -174,6 +202,16 @@ export default function MasterProgramPage() {
                   <select value={kategoriProgram} onChange={(e) => setKategoriProgram(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gold-500 font-bold outline-none focus:ring-1 focus:ring-gold-500/50 cursor-pointer">
                     <option value="REGULER">REGULER (Fokus Bahasa)</option>
                     <option value="TUROTS">TUROTS (Fokus Kitab Kuning)</option>
+                    <option value="2MINGGU">2 MINGGU (Program Khusus)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 mb-1">Tersedia Untuk Periode (Duf'ah)</label>
+                  <select value={targetDufahId} onChange={(e) => setTargetDufahId(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gray-200 outline-none focus:ring-1 focus:ring-gold-500/50 cursor-pointer">
+                    <option value="">Semua Periode Aktif</option>
+                    {allDufah.map(df => (
+                      <option key={df.id} value={df.id}>Khusus Duf'ah {df.nama}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

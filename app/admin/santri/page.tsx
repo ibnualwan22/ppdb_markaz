@@ -972,6 +972,12 @@ export default function MasterSantriPage() {
                 >
                   Turots
                 </button>
+                <button
+                  onClick={() => setFilterProgram("2MINGGU")}
+                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === '2MINGGU' ? 'bg-purple-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  2 Minggu
+                </button>
               </div>
             </div>
           </div>
@@ -1049,7 +1055,7 @@ export default function MasterSantriPage() {
                                 <div className="flex flex-col gap-1.5">
                                   <p className="text-sm font-bold text-emerald-400">{programDisplay.nama}</p>
                                   <div className="flex items-center gap-1.5">
-                                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${programDisplay.kategoriProgram === 'TUROTS' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'}`}>
+                                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${programDisplay.kategoriProgram === 'TUROTS' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : programDisplay.kategoriProgram === '2MINGGU' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'}`}>
                                       {programDisplay.kategoriProgram || 'REGULER'}
                                     </span>
                                     <span className="text-[10px] text-gray-500">{programDisplay.durasiBulan} Bln</span>

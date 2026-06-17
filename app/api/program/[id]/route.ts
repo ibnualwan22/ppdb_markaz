@@ -9,7 +9,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault } = body;
+    const { nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault, targetDufahId } = body;
 
     const program = await prisma.program.update({
       where: { id },
@@ -20,8 +20,9 @@ export async function PATCH(
         durasiBulan:
           durasiBulan !== undefined ? parseInt(durasiBulan) : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
-        tanggalMulaiDefault,
-        tanggalTutupDefault
+        tanggalMulaiDefault: tanggalMulaiDefault !== undefined ? tanggalMulaiDefault : undefined,
+        tanggalTutupDefault: tanggalTutupDefault !== undefined ? tanggalTutupDefault : undefined,
+        targetDufahId: targetDufahId !== undefined ? (targetDufahId === null || targetDufahId === "" ? null : parseInt(targetDufahId)) : undefined
       },
     });
 
