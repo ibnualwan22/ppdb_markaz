@@ -73,7 +73,10 @@ export default function SantriSidebar() {
     <>
       {/* Mobile Topbar */}
       <div className="md:hidden bg-dark-950 border-b border-dark-800 p-4 flex justify-between items-center sticky top-0 z-50">
-        <h1 className="text-xl font-black text-white">Portal <span className="text-gold-500">Santri</span></h1>
+        <div>
+          <h1 className="text-lg font-black text-white">SIAKAD <span className="text-gold-500">Markaz Arabiyah</span></h1>
+          <p className="text-[10px] text-gold-500/50 font-semibold tracking-widest uppercase leading-none">Sistem Informasi Akademik</p>
+        </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-gray-300 hover:text-white">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {isMobileMenuOpen ? (
@@ -93,8 +96,8 @@ export default function SantriSidebar() {
       {/* Sidebar */}
       <div className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:sticky top-0 left-0 z-50 w-64 h-screen bg-dark-950 border-r border-dark-800 flex flex-col transition-transform duration-300 ease-in-out`}>
         <div className="p-6 border-b border-dark-800 hidden md:block">
-          <h1 className="text-2xl font-black text-white">Portal <span className="text-gold-500">Santri</span></h1>
-          <p className="text-xs text-gray-400 mt-1">Markaz Arabiyah</p>
+          <h1 className="text-xl font-black text-white">SIAKAD <span className="text-gold-500">Markaz Arabiyah</span></h1>
+          <p className="text-[10px] text-gold-500/60 font-semibold tracking-widest uppercase mt-1">Sistem Informasi Akademik</p>
         </div>
 
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">

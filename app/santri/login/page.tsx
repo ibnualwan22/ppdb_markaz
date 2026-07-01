@@ -64,8 +64,9 @@ export default function SantriLoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
             </svg>
           </div>
-          <h1 className="text-3xl font-extrabold text-white mb-2">Portal <span className="text-gold-500">Santri</span></h1>
-          <p className="text-gray-400 text-sm font-medium">Masuk untuk melihat data diri dan penempatan asrama.</p>
+          <h1 className="text-3xl font-extrabold text-white mb-1">SIAKAD <span className="text-gold-500">Markaz Arabiyah</span></h1>
+          <p className="text-gold-500/60 text-xs font-semibold tracking-widest uppercase mb-2">Sistem Informasi Akademik</p>
+          <p className="text-gray-400 text-sm font-medium">Masuk untuk melihat data akademik, asrama, dan keuangan.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -117,7 +118,7 @@ export default function SantriLoginPage() {
             {loading ? (
               <span className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
             ) : (
-              "Masuk ke Portal"
+              "Masuk ke SIAKAD"
             )}
           </button>
         </form>
