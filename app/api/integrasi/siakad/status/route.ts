@@ -91,6 +91,7 @@ export async function GET(req: NextRequest) {
         kategori: true,
         isAktif: true,
         saldoDufah: true,
+        isCuti: true,
         batasAktifDufah: true,
         expiredDufahId: true,
         program: {
@@ -103,22 +104,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: `Santri dengan NIS ${nis} tidak ditemukan.` }, { status: 404 });
     }
 
-    // Ambil nama Dufah tempat dia expired
+    // Ambil nama Dufah tempat dia expired (dari batasAktifDufah)
     let namaExpiredDufah = null;
-    if (santri.expiredDufahId) {
-       const dufahExpired = allDufahs.find(df => df.id === santri.expiredDufahId);
+    if (santri.batasAktifDufah) {
+       const dufahExpired = allDufahs.find(df => df.id === santri.batasAktifDufah);
        if (dufahExpired) namaExpiredDufah = dufahExpired.nama;
     }
 
+    // HITUNG KUOTA SEBENARNYA:
+    // Jika santri cuti, saldoDufah-nya di-freeze. Jika tidak, hitung (Batas Dufah - Dufah Target + 1)
+    let sisaKuota = santri.isCuti ? santri.saldoDufah : 0;
+    if (!santri.isCuti && santri.batasAktifDufah && santri.batasAktifDufah >= targetDufahDaftar.id) {
+       sisaKuota = santri.batasAktifDufah - targetDufahDaftar.id + 1;
+    }
+
     // LOGIKA OTOMATIS: Menentukan apakah santri ini wajib daftar ulang atau masih punya kuota
-    // Santri wajib daftar ulang jika expiredDufahId-nya lebih kecil (sudah lewat) dari Dufah target pendaftaran (TargetDufahDaftar) 
-    // atau saldoDufah-nya 0.
-    const butuhDaftarUlang = (santri.saldoDufah <= 0) || (santri.expiredDufahId ? santri.expiredDufahId < targetDufahDaftar.id : true);
+    // Santri wajib daftar ulang (Bayar penuh) jika kuota 0 atau batasAktifDufah kurang dari target.
+    const butuhDaftarUlang = sisaKuota <= 0;
     
     // Pengecekan Terputus (Penalty Logic)
     let statusKoneksi = "LANCAR";
-    if (santri.expiredDufahId && (targetDufahDaftar.id - santri.expiredDufahId > 1) && santri.saldoDufah <= 0) {
-        statusKoneksi = "TERPUTUS"; // Jika jeda antara masa expired dan periode pendaftaran sekarang > 1 periode
+    // Jika batas aktifnya ada, dan jarak dari batas aktif ke periode target pendaftaran lebih dari 1 periode, dan kuotanya sudah habis
+    if (santri.batasAktifDufah && (targetDufahDaftar.id - santri.batasAktifDufah > 1) && sisaKuota <= 0) {
+        statusKoneksi = "TERPUTUS"; // Jika jeda > 1 periode
     }
 
     return NextResponse.json({
@@ -132,15 +140,15 @@ export async function GET(req: NextRequest) {
         programAktif: santri.program ? santri.program.nama : null,
         kategoriProgram: santri.program ? santri.program.kategoriProgram : null,
         masaAktif: {
-           sisaKoutaBulan: santri.saldoDufah, 
-           berakhirPadaDufahId: santri.expiredDufahId,
+           sisaKoutaBulan: sisaKuota, 
+           berakhirPadaDufahId: santri.batasAktifDufah,
            berakhirPadaDufahNama: namaExpiredDufah || "Belum Ditentukan",
            dufahSekarangSistem: { id: currentActiveDufah?.id, nama: currentActiveDufah?.nama } 
         },
         logikaSistem: {
            butuhDaftarUlang,
-           statusKoneksi,   // Jika TERPUTUS, biasanya fasilitas kamar direset dan dianggap pendaftar BARU.
-           pesan: butuhDaftarUlang ? "Batas durasi telah/akan habis. Silakan mendaftar ulang untuk periode ini." : "Masa aktif masih berlaku, belum wajib daftar ulang."
+           statusKoneksi,
+           pesan: butuhDaftarUlang ? "Batas durasi telah/akan habis. Silakan mendaftar ulang untuk periode ini." : "Masa aktif masih berlaku, Anda hanya butuh klaim kelas gratis untuk periode ini."
         }
       },
       meta: {
