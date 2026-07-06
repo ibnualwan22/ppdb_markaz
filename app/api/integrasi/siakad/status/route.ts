@@ -28,9 +28,45 @@ export async function GET(req: NextRequest) {
     if(!targetDufahDaftar) targetDufahDaftar = currentActiveDufah;
 
     // Ambil daftar program
-    const programTersedia = await prisma.program.findMany({
+    const programs = await prisma.program.findMany({
       where: { isActive: true },
-      select: { id: true, nama: true, harga: true, durasiBulan: true, kategoriProgram: true }
+      select: { id: true, nama: true, harga: true, durasiBulan: true, kategoriProgram: true, tanggalMulaiDefault: true, tanggalTutupDefault: true }
+    });
+
+    const formatterId = new Intl.NumberFormat('id-ID');
+    const programTersedia = programs.map(p => {
+      const tgMulai = p.tanggalMulaiDefault || "10";
+      const tgTutup = p.tanggalTutupDefault || "06";
+
+      let displayMulai = tgMulai;
+      let displayTutup = tgTutup;
+
+      if (targetDufahDaftar && targetDufahDaftar.tanggalBuka) {
+        if (/^\d+$/.test(tgMulai.trim())) {
+          const d = new Date(targetDufahDaftar.tanggalBuka);
+          d.setMonth(d.getMonth() + 1);
+          // Menggunakan Intl.DateTimeFormat agar konsisten di semua lingkungan Node
+          const formatterBln = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
+          displayMulai = `${tgMulai.trim()} ${formatterBln.format(d)}`;
+        }
+        if (/^\d+$/.test(tgTutup.trim())) {
+          const d = new Date(targetDufahDaftar.tanggalBuka);
+          d.setMonth(d.getMonth() + 1 + p.durasiBulan);
+          const formatterBln = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
+          displayTutup = `${tgTutup.trim()} ${formatterBln.format(d)}`;
+        }
+      }
+
+      return {
+        id: p.id,
+        nama: p.nama,
+        harga: p.harga,
+        hargaFormatted: `Rp ${formatterId.format(p.harga)}`,
+        durasiBulan: p.durasiBulan,
+        durasiBulanFormatted: `${p.durasiBulan} BULAN`,
+        kategoriProgram: p.kategoriProgram,
+        tglProgramFormatted: `${displayMulai} - ${displayTutup}`
+      };
     });
 
     if (!nis) {
