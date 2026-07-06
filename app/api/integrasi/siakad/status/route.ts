@@ -4,10 +4,10 @@ import { checkPermission } from "@/lib/checkPermission";
 
 export async function GET(req: NextRequest) {
   try {
-    // 1. Cek Permission via API Key (Headers x-api-key)
-    const auth = await checkPermission(req, "integrasi_siakad");
-    if (!auth.allowed) {
-      return NextResponse.json({ error: auth.reason || "Forbidden" }, { status: 403 });
+    // 1. Cek Permission via Environment Variable
+    const apiKey = req.headers.get("x-api-key");
+    if (!apiKey || apiKey !== process.env.SIAKAD_API_KEY) {
+      return NextResponse.json({ error: "Unauthorized: Invalid API Key" }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
