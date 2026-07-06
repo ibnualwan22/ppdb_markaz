@@ -99,6 +99,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [targetDufah, setTargetDufah] = useState<any>(null);
+  const [categoryModal, setCategoryModal] = useState<{ isOpen: boolean, target: string }>({ isOpen: false, target: '' });
 
   const navLinks = [
     { href: "#beranda", label: "Beranda" },
@@ -254,7 +255,7 @@ export default function Home() {
           </nav>
           <div className="mt-auto flex flex-col gap-3 pt-8 border-t border-white/10">
             <Link href="/santri/login" onClick={() => setSidebarOpen(false)} className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-bold text-center hover:border-gold-500/50 transition-all">Login Santri</Link>
-            <Link href="/pendaftaran" onClick={() => setSidebarOpen(false)} className="w-full py-3 rounded-xl bg-gold-500 text-black font-bold text-center hover:bg-gold-400 transition-all">Daftar Sekarang</Link>
+            <div onClick={() => { setSidebarOpen(false); setCategoryModal({ isOpen: true, target: '/pendaftaran' }); }} className="cursor-pointer w-full py-3 rounded-xl bg-gold-500 text-black font-bold text-center hover:bg-gold-400 transition-all">Daftar Sekarang</div>
           </div>
         </div>
       </div>
@@ -281,21 +282,21 @@ export default function Home() {
 
           <FadeIn delay={600}>
             <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-center w-full max-w-lg mx-auto">
-              <Link
-                href="/daftar-ulang"
-                className="group w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-gold-500 text-black font-black text-base md:text-xl hover:bg-gold-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3 active:scale-95"
+              <div
+                onClick={() => setCategoryModal({ isOpen: true, target: '/daftar-ulang' })}
+                className="cursor-pointer group w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-gold-500 text-black font-black text-base md:text-xl hover:bg-gold-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3 active:scale-95"
               >
                 Mulai Daftar Ulang
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
-              </Link>
-              <Link
-                href="/pendaftaran"
-                className="w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-white/5 border-2 border-white/10 hover:border-gold-500/50 hover:bg-white/10 text-white font-black text-base md:text-xl transition-all flex items-center justify-center gap-3 active:scale-95"
+              </div>
+              <div
+                onClick={() => setCategoryModal({ isOpen: true, target: '/pendaftaran' })}
+                className="cursor-pointer w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-white/5 border-2 border-white/10 hover:border-gold-500/50 hover:bg-white/10 text-white font-black text-base md:text-xl transition-all flex items-center justify-center gap-3 active:scale-95"
               >
                 Link Pendaftaran
-              </Link>
+              </div>
             </div>
 
             <div className="mt-6 md:mt-8">
@@ -550,12 +551,12 @@ export default function Home() {
                             </div>
                           </div>
 
-                          <Link
-                            href="/pendaftaran"
-                            className="w-full py-4 rounded-2xl bg-gold-500 text-black font-black text-center hover:bg-gold-400 transition-all shadow-lg active:scale-95"
+                          <button
+                            onClick={() => setCategoryModal({ isOpen: true, target: '/pendaftaran' })}
+                            className="w-full py-4 rounded-2xl bg-gold-500 text-black font-black text-center hover:bg-gold-400 transition-all shadow-lg active:scale-95 cursor-pointer"
                           >
                             Daftar Program
-                          </Link>
+                          </button>
                         </div>
                       </FadeIn>
                     )
@@ -771,6 +772,39 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* MODAL PILIH KATEGORI */}
+      <div className={`fixed inset-0 z-[300] transition-all duration-300 ${categoryModal.isOpen ? 'visible' : 'invisible'}`}>
+        <div className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${categoryModal.isOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setCategoryModal({ ...categoryModal, isOpen: false })}></div>
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6 bg-[#0a0a0a] border border-gold-500/20 rounded-3xl shadow-2xl transition-all duration-300 ${categoryModal.isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-black text-white">Pilih Kategori Program</h3>
+            <button onClick={() => setCategoryModal({ ...categoryModal, isOpen: false })} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <Link
+              href={`${categoryModal.target}?kategori=REGULER`}
+              onClick={() => setCategoryModal({ ...categoryModal, isOpen: false })}
+              className="block p-5 rounded-2xl border-2 border-white/5 bg-white/[0.02] hover:border-gold-500 hover:bg-gold-500/5 transition-all group"
+            >
+              <h4 className="text-xl font-bold text-white mb-1 group-hover:text-gold-400">Program Reguler</h4>
+              <p className="text-sm text-gray-400 font-medium leading-relaxed">Fokus intensif pembelajaran Bahasa Arab.</p>
+            </Link>
+
+            <Link
+              href={`${categoryModal.target}?kategori=TUROTS`}
+              onClick={() => setCategoryModal({ ...categoryModal, isOpen: false })}
+              className="block p-5 rounded-2xl border-2 border-white/5 bg-white/[0.02] hover:border-gold-500 hover:bg-gold-500/5 transition-all group"
+            >
+              <h4 className="text-xl font-bold text-white mb-1 group-hover:text-gold-400">Program Turats</h4>
+              <p className="text-sm text-gray-400 font-medium leading-relaxed">Fokus pembelajaran kutubut turats (Fathul Qorib, Ibnu Aqil, dll).</p>
+            </Link>
+          </div>
+        </div>
+      </div>
 
       <footer className="w-full bg-[#050505] pt-12 md:pt-20 pb-8 md:pb-10 px-4 md:px-6 border-t border-white/5 relative z-10">
         <div className="max-w-7xl mx-auto">

@@ -7,10 +7,12 @@ import { swalSuccess, swalError } from "@/app/lib/swal";
 import { generateRegistrationPdf } from "@/app/lib/generateRegistrationPdf";
 
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function DaftarUlangPage() {
+function DaftarUlangContent() {
   const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -34,6 +36,14 @@ export default function DaftarUlangPage() {
 
   // Agreement
   const [isAgreed, setIsAgreed] = useState(false);
+
+  const [activeKategori, setActiveKategori] = useState("REGULER");
+  useEffect(() => {
+    if (searchParams) {
+      if(searchParams.get('kategori') === 'TUROTS') setActiveKategori('TUROTS');
+      else setActiveKategori('REGULER');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (status === "authenticated" && session?.user?.role === "SANTRI") {
@@ -229,8 +239,8 @@ export default function DaftarUlangPage() {
 
               <h2 className="text-xl font-bold text-white border-b border-gold-500/10 pb-3 mt-6">
                 {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id
-                  ? "Klaim Kuota Paket Anda"
-                  : "Pilih Program Daftar Ulang"}
+                  ? `Klaim Kuota - Program ${activeKategori === 'TUROTS' ? 'Turats' : 'Reguler'}`
+                  : `Pilih Program ${activeKategori === 'TUROTS' ? 'Turats' : 'Reguler'}`}
               </h2>
 
               {santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id && (
@@ -242,6 +252,10 @@ export default function DaftarUlangPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {programs
                   .filter(p => {
+                    const isTurats = p.kategoriProgram === "TUROTS";
+                    if (activeKategori === "TUROTS" && !isTurats) return false;
+                    if (activeKategori === "REGULER" && isTurats) return false;
+
                     const isKlaim = santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id;
                     if (isKlaim) {
                       const sisaKuota = santriData.batasAktifDufah - targetDufah.id + 1;
@@ -399,5 +413,13 @@ export default function DaftarUlangPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DaftarUlangPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-dark-900 flex items-center justify-center text-gold-500 font-bold">Memuat Form Daftar Ulang...</div>}>
+      <DaftarUlangContent />
+    </Suspense>
   );
 }

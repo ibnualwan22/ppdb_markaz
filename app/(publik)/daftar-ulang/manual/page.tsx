@@ -12,7 +12,11 @@ const API_KAB = (id: string) => `https://www.emsifa.com/api-wilayah-indonesia/ap
 const API_KEC = (id: string) => `https://www.emsifa.com/api-wilayah-indonesia/api/districts/${id}.json`;
 const API_DESA = (id: string) => `https://www.emsifa.com/api-wilayah-indonesia/api/villages/${id}.json`;
 
-export default function DaftarUlangManualPage() {
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+
+function DaftarUlangManualContent() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -60,6 +64,14 @@ export default function DaftarUlangManualPage() {
   const onTurnstileSuccess = useCallback((token: string) => {
     setTurnstileToken(token);
   }, []);
+
+  const [activeKategori, setActiveKategori] = useState("REGULER");
+  useEffect(() => {
+    if (searchParams) {
+      if(searchParams.get('kategori') === 'TUROTS') setActiveKategori('TUROTS');
+      else setActiveKategori('REGULER');
+    }
+  }, [searchParams]);
 
   const onTurnstileExpired = useCallback(() => {
     setTurnstileToken(null);
@@ -429,13 +441,20 @@ export default function DaftarUlangManualPage() {
               <button onClick={() => setStep(2)} className="text-gold-500 font-bold mb-4 flex items-center gap-2 hover:text-gold-400 transition">
                 <span>&larr;</span> Kembali
               </button>
-              <h2 className="text-2xl font-bold text-white border-b border-gold-500/10 pb-3 mb-6">Pilih Program</h2>
+              <h2 className="text-2xl font-bold text-white border-b border-gold-500/10 pb-3 mb-6">
+                Pilih Program {activeKategori === 'TUROTS' ? 'Turats' : 'Reguler'}
+              </h2>
 
               {programs.length === 0 ? (
                 <div className="text-center text-gray-500 p-10 bg-dark-900 rounded-xl">Sedang memuat daftar program...</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {programs.map(p => {
+                  {programs.filter(p => {
+                    const isTurats = p.kategoriProgram === "TUROTS";
+                    if (activeKategori === "TUROTS" && !isTurats) return false;
+                    if (activeKategori === "REGULER" && isTurats) return false;
+                    return true;
+                  }).map(p => {
                     const tgMulai = p.tanggalMulaiDefault || "10";
                     const tgTutup = p.tanggalTutupDefault || "06";
 
@@ -592,5 +611,13 @@ export default function DaftarUlangManualPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DaftarUlangManualPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-dark-900 flex items-center justify-center text-gold-500 font-bold">Memuat Form Daftar Ulang...</div>}>
+      <DaftarUlangManualContent />
+    </Suspense>
   );
 }

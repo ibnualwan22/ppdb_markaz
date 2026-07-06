@@ -20,6 +20,7 @@ export default function SantriDaftarUlangPage() {
   // Pilihan
   const [programId, setProgramId] = useState("");
   const [isBeliAtribut, setIsBeliAtribut] = useState(false);
+  const [activeKategori, setActiveKategori] = useState("REGULER");
 
   // Hasil Akhir
   const [invoice, setInvoice] = useState<any>(null);
@@ -144,9 +145,29 @@ export default function SantriDaftarUlangPage() {
               </div>
             )}
 
+            {/* TAB FILTER KATEGORI */}
+            <div className="flex bg-dark-900 rounded-xl p-1 mb-6 border border-dark-800">
+              <button
+                onClick={() => { setActiveKategori("REGULER"); setProgramId(""); }}
+                className={`flex-1 py-4 text-sm md:text-base font-bold rounded-lg transition-all shadow-sm ${activeKategori === "REGULER" ? "bg-gold-500 text-black shadow-gold-500/20" : "text-gray-400 hover:text-white"}`}
+              >
+                Program Reguler
+              </button>
+              <button
+                onClick={() => { setActiveKategori("TUROTS"); setProgramId(""); }}
+                className={`flex-1 py-4 text-sm md:text-base font-bold rounded-lg transition-all shadow-sm ${activeKategori === "TUROTS" ? "bg-gold-500 text-black shadow-gold-500/20" : "text-gray-400 hover:text-white"}`}
+              >
+                Program Turats
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {programs
                 .filter(p => {
+                  const isTurats = p.kategoriProgram === "TUROTS";
+                  if (activeKategori === "TUROTS" && !isTurats) return false;
+                  if (activeKategori === "REGULER" && isTurats) return false;
+
                   const isKlaim = santriData.batasAktifDufah && targetDufah && santriData.batasAktifDufah >= targetDufah.id;
                   if (isKlaim) {
                     const sisaKuota = santriData.batasAktifDufah - targetDufah.id + 1;
