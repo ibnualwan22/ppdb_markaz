@@ -86,6 +86,7 @@ const menuItems = [
   { href: "/admin/dashboard", label: "Dashboard Muasis", icon: <IconHome />, permission: "view_dashboard" },
   { href: "/admin/pendaftaran", label: "Meja Keuangan", icon: <IconCreditCard />, permission: "view_keuangan" },
   { href: "/admin/asrama", label: "Meja Asrama", icon: <IconBed />, permission: "view_asrama" },
+  { href: "/admin/asrama/mutasi", label: "Mutasi Sakan", icon: <IconChart />, permission: "view_asrama" },
   { href: "/admin/id-card", label: "Meja ID Card", icon: <IconIdCard />, permission: "view_idcard" },
   { href: "/admin/mimstore", label: "Mim Store", icon: <IconStore />, permission: "view_mimstore" },
 ];

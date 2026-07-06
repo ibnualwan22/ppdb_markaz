@@ -35,29 +35,33 @@ export async function PATCH(
     if (!targetLemari) return NextResponse.json({ error: "Lemari tujuan tidak valid" }, { status: 400 });
 
     // ==========================================
-    // LOGIKA BARU: VALIDASI ROLLING (BLOKIR SATU SAKAN PENUH)
+    // LOGIKA BARU: VALIDASI ROLLING BUKAN LAGI %3, TAPI CEK SAKAN
     // ==========================================
 
-    // 2. Ambil tepat 1 riwayat kamar terakhir di bulan sebelumnya
-    const riwayatBulanLalu = await prisma.riwayatDufah.findFirst({
+    // Cek 3 riwayat terakhir sebelum target assignment ini
+    const riwayat3 = await prisma.riwayatDufah.findMany({
       where: { 
         santriId: dataBulanIni.santriId, 
-        dufahId: { lt: dataBulanIni.dufahId } // Cari dufah sebelum bulan ini
+        lemariId: { not: null },
+        dufahId: { lt: dataBulanIni.dufahId } 
       },
       orderBy: { dufahId: 'desc' },
-      include: {
-        lemari: { include: { kamar: { include: { sakan: true } } } }
-      }
+      take: 3,
+      include: { lemari: { include: { kamar: { include: { sakan: true } } } } }
     });
 
+    const sakanIdList = riwayat3.map(r => r.lemari?.kamar.sakanId).filter(Boolean);
+    const allSame = sakanIdList.length >= 3 && sakanIdList.every(id => id === sakanIdList[0]);
+
     // 3. Validasi aturan mutasi 3 bulan: selain KSU, wajib pindah ke Sakan/Gedung yang berbeda
-    if (dataBulanIni.santri.kategori !== "KSU" && riwayatBulanLalu && riwayatBulanLalu.lemari && riwayatBulanLalu.bulanKe % 3 === 0) {
-      const sakanLamaId = riwayatBulanLalu.lemari.kamar.sakanId;
+    if (dataBulanIni.santri.kategori !== "KSU" && allSame) {
+      const sakanLamaId = sakanIdList[0];
       const sakanBaruId = targetLemari.kamar.sakanId;
 
       if (sakanLamaId === sakanBaruId) {
+        const namaSakanLalu = riwayat3[0].lemari?.kamar.sakan.nama;
         return NextResponse.json({ 
-          error: `SISTEM MENOLAK: ${dataBulanIni.santri.nama} telah menetap di Sakan ${riwayatBulanLalu.lemari.kamar.sakan.nama} selama 3 bulan (atau kelipatannya). Aturan mutasi mewajibkan santri pindah ke Sakan/Gedung lain, bukan sekadar pindah kamar/lemari di sakan yang sama.` 
+          error: `SISTEM MENOLAK: ${dataBulanIni.santri.nama} telah menetap di Sakan ${namaSakanLalu} selama 3 bulan/dufah berturut-turut. Aturan mutasi mewajibkan santri pindah ke Sakan/Gedung lain, bukan sekadar pindah kamar/lemari di sakan yang sama.` 
         }, { status: 403 });
       }
     }

@@ -83,10 +83,27 @@ export async function PATCH(
           // Logika Siklus 3 Bulan Asrama & Reset Syawal
           const newBulanKe = isTahunBaru ? 1 : riwayat.bulanKe + 1;
           
-          // Jika BUKAN KSU: Tahun Baru ATAU sudah 3 bulan, lemari dicabut (null) agar mutasi.
-          // Khusus KSU: lemari SELALU dipertahankan, meskipun Reset Syawal.
           const isKSU = riwayat.santri.kategori === "KSU";
-          const isMutasiSakan = isKSU ? false : (isTahunBaru || riwayat.bulanKe >= 3);
+
+          // Cek 3 riwayat terakhir (termasuk riwayat sekarang jika lemari dicantumkan, namun karena 'riwayat' adalah bulan sebelumnya, kita hitung ke belakang)
+          // Jika 3 riwayat terakhir memiliki sakanId yang SAMA BUKAN null, maka wajib mutasi.
+          const riwayat3Terakhir = await prisma.riwayatDufah.findMany({
+            where: { 
+              santriId: riwayat.santriId, 
+              lemariId: { not: null },
+              dufahId: { lte: riwayat.dufahId } 
+            },
+            orderBy: { dufahId: 'desc' },
+            take: 3,
+            include: { lemari: { include: { kamar: true } } }
+          });
+          
+          const sakanIds = riwayat3Terakhir.map(r => r.lemari?.kamar.sakanId).filter(Boolean);
+          const allSameSakan = sakanIds.length >= 3 && sakanIds.every(id => id === sakanIds[0]);
+
+          // Jika BUKAN KSU: Tahun Baru ATAU sakan sama berturut-turut, lemari dicabut (null) agar mutasi.
+          // Khusus KSU: lemari SELALU dipertahankan, meskipun Reset Syawal.
+          const isMutasiSakan = isKSU ? false : (isTahunBaru || allSameSakan);
           const newLemariId = isMutasiSakan ? null : riwayat.lemariId;
           const newStatus = isMutasiSakan ? "PRE_LIST" : "ASSIGNED";
 
