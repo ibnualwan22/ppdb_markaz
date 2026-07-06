@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       aksi: "CREATE",
       modul: "Integrasi API",
       deskripsi: `Pendaftaran via Endpoint SIAKAD a.n ${santri.nama} — Program: ${program.nama}`,
-      namaUser: `Sistem SIAKAD ${auth.project ? `(${auth.project})` : ""}`,
+      namaUser: `Sistem SIAKAD`,
       targetId: santri.id,
     });
 
