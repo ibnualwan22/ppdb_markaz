@@ -108,7 +108,12 @@ export async function GET(req: NextRequest) {
     let namaExpiredDufah = null;
     if (santri.batasAktifDufah) {
        const dufahExpired = allDufahs.find(df => df.id === santri.batasAktifDufah);
-       if (dufahExpired) namaExpiredDufah = dufahExpired.nama;
+       if (dufahExpired) {
+           namaExpiredDufah = dufahExpired.nama;
+       } else {
+           // Jika Dufah masa depan belum dibuat di database, tebak namanya otomatis
+           namaExpiredDufah = `Duf'ah ${santri.batasAktifDufah}`; 
+       }
     }
 
     // HITUNG KUOTA SEBENARNYA:
