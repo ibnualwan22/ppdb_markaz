@@ -62,23 +62,84 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tidak ada periode Duf'ah yang valid di sistem saat ini." }, { status: 400 });
     }
 
-    // 5. Hitung Kode Unik & Total Tagihan
-    const kodeUnik = Math.floor(Math.random() * 900) + 100; // 100-999
-    const totalTagihan = program.harga + kodeUnik;
-    const noKwitansi = generateInvoiceNumber(targetDufah.id);
+    // 5. Cek apakah santri masih memiliki sisa paket (Klaim)
+    const isKlaimPaket = santri.batasAktifDufah !== null && santri.batasAktifDufah >= targetDufah.id;
 
-    // 6. Simpan Transaksi
-    const transaksi = await prisma.transaksiPendaftaran.create({
-      data: {
-        noKwitansi,
-        santriId: santri.id,
-        programId: program.id,
-        dufahTujuanId: targetDufah.id,
-        nominalProgram: program.harga,
-        kodeUnik,
-        totalTagihan,
-        statusPembayaran: "PENDING"
+    // Jika klaim paket, tagihan otomatis 0. Jika tidak, asumsikan potong 100k karena pendaftar lama tidak perlu atribut.
+    const nominalProgram = isKlaimPaket ? 0 : Math.max(0, program.harga - 100000);
+    const kodeUnik = isKlaimPaket ? 0 : Math.floor(Math.random() * 900) + 100; // 100-999
+    const totalTagihan = nominalProgram + kodeUnik;
+    const noKwitansi = generateInvoiceNumber(targetDufah.id);
+    const statusPembayaran = isKlaimPaket ? "KLAIM_PAKET" : "PENDING";
+    const waktuLunas = isKlaimPaket ? new Date() : null;
+
+    // 6. Simpan Transaksi menggunakan Prisma Transaction
+    const transaksi = await prisma.$transaction(async (tx) => {
+      const trx = await tx.transaksiPendaftaran.create({
+        data: {
+          noKwitansi,
+          santriId: santri.id,
+          programId: program.id,
+          dufahTujuanId: targetDufah.id, // TS-error guard: targetDufah is definitely populated here
+          nominalProgram,
+          kodeUnik,
+          totalTagihan,
+          statusPembayaran,
+          waktuLunas
+        }
+      });
+
+      // Jika Klaim Paket, lunas otomatis -> buatkan riwayat dufah
+      if (isKlaimPaket) {
+        const existingRiwayat = await tx.riwayatDufah.findUnique({
+          where: { santriId_dufahId: { santriId: santri.id, dufahId: targetDufah.id as number } }
+        });
+        
+        if (!existingRiwayat) {
+          // Cari bulanKe sebelumnya
+          const dufahLama = await tx.dufah.findFirst({
+            where: { id: { lt: targetDufah.id as number } },
+            orderBy: { id: 'desc' }
+          });
+
+          let riwayatBulanLalu = null;
+          if (dufahLama) {
+            riwayatBulanLalu = await tx.riwayatDufah.findUnique({
+              where: { santriId_dufahId: { santriId: santri.id, dufahId: dufahLama.id } }
+            });
+          }
+
+          const batasMaksimal = 3;
+          let lemariBaru = null;
+          let statusBaru = "PRE_LIST";
+          let bulanKeBaru = 1;
+
+          if (riwayatBulanLalu && riwayatBulanLalu.lemariId) {
+            const durasiBerjalan = riwayatBulanLalu.bulanKe;
+            if (durasiBerjalan % batasMaksimal !== 0) {
+              lemariBaru = riwayatBulanLalu.lemariId;
+              statusBaru = "ASSIGNED";
+              bulanKeBaru = durasiBerjalan + 1;
+            } else {
+              bulanKeBaru = durasiBerjalan + 1;
+            }
+          }
+
+          await tx.riwayatDufah.create({
+            data: {
+              santriId: santri.id,
+              dufahId: targetDufah.id as number,
+              lemariId: lemariBaru,
+              status: statusBaru,
+              isIdCardTaken: false,
+              bulanKe: bulanKeBaru,
+              isLunas: true
+            }
+          });
+        }
       }
+
+      return trx;
     });
 
     // 7. Push Notifications & Webhooks
