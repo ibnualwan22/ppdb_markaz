@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     // Jika tidak ada yang buka, fallback ke Dufah yang aktif saat ini, 
     // jika masih tidak ada fallback ke id terbesar.
     if (!targetDufah) {
-        targetDufah = await prisma.dufah.findFirst({ where: { isActive: true } });
+        targetDufah = await prisma.dufah.findFirst({ where: { isActive: true } }) || undefined;
         if(!targetDufah) targetDufah = allDufahs[0];
     }
 
