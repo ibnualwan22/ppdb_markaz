@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Protect } from "@/components/Protect";
 import { swalSuccess, swalError } from "@/app/lib/swal";
@@ -33,6 +33,8 @@ export default function MejaKeuanganPage() {
   const [filterLunas, setFilterLunas] = useState("ALL"); // "ALL", "LUNAS", "BELUM"
   const [filterKategori, setFilterKategori] = useState("ALL"); // "ALL", "BARU", "LAMA"
   const [filterProgram, setFilterProgram] = useState("REGULER"); // "ALL", "REGULER", "TUROTS"
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const pusher = usePusher();
 
@@ -67,6 +69,11 @@ export default function MejaKeuanganPage() {
       pusher.unsubscribe("ppdb-channel");
     };
   }, [pusher]);
+
+  // Reset pagination when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterScope, filterLunas, filterKategori, filterProgram]);
 
   const prosesVerifikasi = async (id: string, isKSU: boolean = false) => {
     if (!confirm(`Yakin ingin memverifikasi transaksi ini${isKSU ? ' sebagai KSU GRATIS' : ''}?`)) return;
@@ -603,6 +610,11 @@ export default function MejaKeuanganPage() {
     return matchesSearch && isNotRombonganChild && matchesLunas && matchesKategori && matchesProgram;
   });
 
+  const indexOfLastData = currentPage * itemsPerPage;
+  const indexOfFirstData = indexOfLastData - itemsPerPage;
+  const currentData = filteredData.slice(indexOfFirstData, indexOfLastData);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
   const filteredDaftarUlang = daftarUlang.filter(d => {
     // Filter Kategori: Daftar Ulang selalu LAMA
     if (filterKategori === "BARU") return false;
@@ -1000,9 +1012,9 @@ export default function MejaKeuanganPage() {
                     <td colSpan={7} className="text-center py-10 text-gray-500">Tidak ada data pendaftaran di {selectedDufahLabel}</td>
                   </tr>
                 ) : (
-                  filteredData.map((t, index) => (
+                  currentData.map((t, index) => (
                     <tr key={t.id} className="border-b border-gray-800 hover:bg-dark-900/50 transition-colors">
-                      <td className="px-4 py-4 text-center font-bold text-gray-400">{index + 1}</td>
+                      <td className="px-4 py-4 text-center font-bold text-gray-400">{indexOfFirstData + index + 1}</td>
                       <td className="px-4 py-4 text-xs font-mono text-gray-400">{new Date(t.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-4 font-bold text-white">
                         {t.santri.nama}
@@ -1120,6 +1132,50 @@ export default function MejaKeuanganPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-gold-500/20 bg-dark-900 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="text-sm text-gray-400">
+                Menampilkan <span className="font-bold text-white">{indexOfFirstData + 1}</span> hingga <span className="font-bold text-white">{Math.min(indexOfLastData, filteredData.length)}</span> dari <span className="font-bold text-white">{filteredData.length}</span> data
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg text-sm font-bold bg-dark-800 text-gray-300 border border-gray-700 hover:bg-dark-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  Sebelumnya
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(currentPage - p) <= 1)
+                    .map((p, i, arr) => (
+                      <React.Fragment key={p}>
+                        {i > 0 && arr[i - 1] !== p - 1 && <span className="text-gray-500 px-1">...</span>}
+                        <button
+                          onClick={() => setCurrentPage(p)}
+                          className={`px-3 py-1 rounded-lg text-sm font-bold transition border ${
+                            currentPage === p
+                              ? 'bg-gold-500 text-black border-gold-400'
+                              : 'bg-dark-800 text-gray-300 border-gray-700 hover:bg-dark-700'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </React.Fragment>
+                    ))}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg text-sm font-bold bg-dark-800 text-gray-300 border border-gray-700 hover:bg-dark-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
