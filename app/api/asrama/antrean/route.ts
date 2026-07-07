@@ -6,7 +6,7 @@ export async function GET() {
   try {
     // Cari Duf'ah yang sedang berjalan (isActive)
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
-    
+
     if (!dufahAktif) {
       return NextResponse.json([]);
     }
@@ -32,7 +32,7 @@ export async function GET() {
       where: {
         dufahId: { in: relevantDufahIds },
         lemariId: null,
-        santri: { isAktif: true },  // Hanya tampilkan santri yang masih aktif
+        santri: { isAktif: true },
       },
       include: {
         santri: {

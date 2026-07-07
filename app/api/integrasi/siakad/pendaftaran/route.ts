@@ -136,6 +136,12 @@ export async function POST(req: NextRequest) {
               isLunas: true
             }
           });
+
+          // Sync the Santri's program override to their newly claimed program
+          await tx.santri.update({
+            where: { id: santri.id },
+            data: { programId: program.id }
+          });
         }
       }
 

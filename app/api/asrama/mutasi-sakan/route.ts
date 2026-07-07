@@ -67,6 +67,7 @@ export async function GET() {
 
       dataMutasi.push({
         santriId: riwayat.santriId,
+        riwayatId: riwayat.id, // ID riwayat untuk assign langsung
         nama: riwayat.santri.nama,
         nis: riwayat.santri.nis,
         gender: riwayat.santri.gender,

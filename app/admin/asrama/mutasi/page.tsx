@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Protect } from "@/components/Protect";
 import { swalError, swalSuccess } from "@/app/lib/swal";
+import { useRouter } from "next/navigation";
 
 const IconHistory = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -28,6 +29,7 @@ export default function MutasiSakanPage() {
   const [loading, setLoading] = useState(true);
   const [filterGender, setFilterGender] = useState("SEMUA");
   const [selectedRiwayat, setSelectedRiwayat] = useState<any | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/asrama/mutasi-sakan")
@@ -152,12 +154,22 @@ export default function MutasiSakanPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => setSelectedRiwayat(item)}
-                            className="flex items-center justify-center gap-2 w-full bg-dark-900 text-gold-500 border border-gold-500/30 hover:bg-gold-500 hover:text-black hover:border-gold-500 px-3 py-2 rounded-lg text-xs font-black transition-all active:scale-95 shadow-sm"
-                          >
-                            <IconHistory /> Riwayat
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => setSelectedRiwayat(item)}
+                              className="flex items-center justify-center gap-2 w-full bg-dark-900 text-gold-500 border border-gold-500/30 hover:bg-gold-500 hover:text-black hover:border-gold-500 px-3 py-2 rounded-lg text-xs font-black transition-all active:scale-95 shadow-sm"
+                            >
+                              <IconHistory /> Riwayat
+                            </button>
+                            {item.sakanSaatIni === "Antrean (PRE_LIST)" && (
+                              <button
+                                onClick={() => router.push(`/admin/asrama?directRiwayatId=${item.riwayatId}`)}
+                                className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white border border-blue-500 hover:bg-blue-500 hover:border-blue-400 px-3 py-2 rounded-lg text-xs font-black transition-all active:scale-95 shadow-sm"
+                              >
+                                Tempatkan
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))

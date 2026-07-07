@@ -119,7 +119,8 @@ export async function POST(
           nis,
           batasAktifDufah: newBatasAktif,
           isAktif: true,
-          kategori: isKSU ? "KSU" : santriDb?.kategori
+          kategori: isKSU ? "KSU" : santriDb?.kategori,
+          programId: transaksi.programId
         }
       });
 
@@ -198,6 +199,8 @@ export async function POST(
 
     // KIRIM UPDATE DATA KE FRONTEND
     emitDataUpdate("pendaftaran-verified");
+    emitDataUpdate("mimstore");
+    emitDataUpdate("id-card");
 
     // KIRIM NOTIFIKASI GLOBAL KE ASRAMA & ID CARD
     await sendGlobalNotification(

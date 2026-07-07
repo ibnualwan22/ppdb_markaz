@@ -161,7 +161,8 @@ export async function POST(
               nis,
               batasAktifDufah: newBatasAktif,
               isAktif: true,
-              kategori: kategoriBaru
+              kategori: kategoriBaru,
+              programId: transaksi.programId
             }
           });
 
@@ -190,7 +191,8 @@ export async function POST(
               nis,
               batasAktifDufah: newBatasAktif,
               isAktif: true,
-              kategori: kategoriBaru
+              kategori: kategoriBaru,
+              programId: transaksi.programId
             }
           });
 
@@ -215,6 +217,8 @@ export async function POST(
     });
 
     emitDataUpdate("pendaftaran-verified");
+    emitDataUpdate("mimstore");
+    emitDataUpdate("id-card");
 
     await sendGlobalNotification(
       "Pembayaran Rombongan Lunas 💰",

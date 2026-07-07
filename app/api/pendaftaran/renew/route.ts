@@ -136,6 +136,14 @@ export async function POST(request: Request) {
         });
       }
 
+      // Sync the Santri's program override to their newly claimed program if they claimed it directly
+      if (isKlaimPaket) {
+        await tx.santri.update({
+          where: { id: santriId },
+          data: { programId }
+        });
+      }
+
       return trx;
     });
 

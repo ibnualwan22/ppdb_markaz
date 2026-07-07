@@ -56,10 +56,20 @@ export default function MejaAsramaPage() {
   const [activeSakanId, setActiveSakanId] = useState<string>("");
   const [sakanGenderFilter, setSakanGenderFilter] = useState<string>("BANIN"); // Filter Step 2
   const [selectedLemari, setSelectedLemari] = useState<any>(null);
-
-
+  const [directRiwayatId, setDirectRiwayatId] = useState<string | null>(null);
 
   const pusher = usePusher();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("search");
+      if (q) setSearchAntrean(q);
+
+      const rid = params.get("directRiwayatId");
+      if (rid) setDirectRiwayatId(rid);
+    }
+  }, []);
 
   const muatData = async (isBackground = false) => {
     try {
@@ -90,6 +100,33 @@ export default function MejaAsramaPage() {
       pusher.unsubscribe("ppdb-channel");
     };
   }, [pusher]);
+
+  // Intercept direct routing from Mutasi page
+  useEffect(() => {
+    if (directRiwayatId && dataLokasi.length > 0) {
+      const checkAndFetchDirect = async () => {
+        let match = antrean.find((a: any) => a.id === directRiwayatId);
+        
+        if (!match) {
+          try {
+            const res = await fetch(`/api/asrama/antrean/${directRiwayatId}`);
+            if (res.ok) match = await res.json();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+
+        if (match && !match.error) {
+          handlePilihSantri(match);
+        } else {
+          swalNotif("Info", "Gagal memuat data santri ini.");
+        }
+        setDirectRiwayatId(null);
+      };
+
+      checkAndFetchDirect();
+    }
+  }, [antrean, dataLokasi, directRiwayatId]);
 
 
 
