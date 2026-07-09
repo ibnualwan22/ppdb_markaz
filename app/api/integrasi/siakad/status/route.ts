@@ -96,6 +96,15 @@ export async function GET(req: NextRequest) {
         expiredDufahId: true,
         program: {
           select: { id: true, nama: true, kategoriProgram: true }
+        },
+        transaksi: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            program: {
+              select: { nama: true, kategoriProgram: true }
+            }
+          }
         }
       }
     });
@@ -142,8 +151,8 @@ export async function GET(req: NextRequest) {
         nama: santri.nama,
         isAktif: santri.isAktif,
         kategoriSiswa: santri.kategori,
-        programAktif: santri.program ? santri.program.nama : null,
-        kategoriProgram: santri.program ? santri.program.kategoriProgram : null,
+        programAktif: santri.program ? santri.program.nama : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.nama : null),
+        kategoriProgram: santri.program ? santri.program.kategoriProgram : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.kategoriProgram : null),
         masaAktif: {
            sisaKoutaBulan: sisaKuota, 
            berakhirPadaDufahId: santri.batasAktifDufah,
