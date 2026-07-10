@@ -739,8 +739,9 @@ export default function MasterSantriPage() {
     setExportLoading(true);
     try {
       const allData = await fetchExportData();
-      if (allData.length === 0) { setExportLoading(false); return swalError("Tidak ada data untuk diexport!"); }
-      const dataExport = allData.map((santri: any, index: number) => {
+      const filteredData = allData.filter((santri: any) => santri.riwayat?.[0]?.lemari);
+      if (filteredData.length === 0) { setExportLoading(false); return swalError("Tidak ada santri dengan kamar untuk diexport!"); }
+      const dataExport = filteredData.map((santri: any, index: number) => {
         let tglLahirVal = "-";
         if (santri.tanggalLahir) {
           const d = new Date(santri.tanggalLahir);
@@ -787,13 +788,14 @@ export default function MasterSantriPage() {
     setExportLoading(true);
     try {
       const allData = await fetchExportData();
-      if (allData.length === 0) { setExportLoading(false); return swalError("Tidak ada data untuk diexport!"); }
+      const filteredData = allData.filter((santri: any) => santri.riwayat?.[0]?.lemari);
+      if (filteredData.length === 0) { setExportLoading(false); return swalError("Tidak ada santri dengan kamar untuk diexport!"); }
       const doc = new jsPDF("p", "pt", "a4");
 
       doc.setFontSize(14);
       doc.text("Data Master Santri Markaz", 40, 40);
 
-      const tableData = allData.map((santri: any, index: number) => [
+      const tableData = filteredData.map((santri: any, index: number) => [
         index + 1,
         santri.nama,
         santri.program?.nama || santri.transaksi?.[0]?.program?.nama || "-",
