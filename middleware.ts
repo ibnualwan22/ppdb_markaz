@@ -9,7 +9,7 @@ export default withAuth(
 
     if (!isAuth) {
       if (isSantriRoute) {
-        return NextResponse.redirect(new URL('/santri/login', req.url));
+        return NextResponse.redirect(new URL('https://siakad.markazarabiyah.site/santri'));
       }
       return NextResponse.redirect(new URL('/login', req.url));
     }

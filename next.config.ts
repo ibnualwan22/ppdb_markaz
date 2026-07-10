@@ -11,6 +11,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/santri/login',
+        destination: 'https://siakad.markazarabiyah.site/santri',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
