@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
         isCuti: true,
         batasAktifDufah: true,
         expiredDufahId: true,
+        noWaOrtu: true,
         program: {
           select: { id: true, nama: true, kategoriProgram: true }
         },
@@ -143,6 +144,16 @@ export async function GET(req: NextRequest) {
         statusKoneksi = "TERPUTUS"; // Jika jeda > 1 periode
     }
 
+    let formattedWaWali = santri.noWaOrtu;
+    if (formattedWaWali) {
+      formattedWaWali = formattedWaWali.replace(/\D/g, ""); // hilangkan karakter non-angka
+      if (formattedWaWali.startsWith("0")) {
+        formattedWaWali = "62" + formattedWaWali.substring(1);
+      } else if (formattedWaWali.startsWith("8")) {
+        formattedWaWali = "628" + formattedWaWali.substring(1);
+      }
+    }
+
     return NextResponse.json({
       message: "Data status santri berhasil diambil.",
       data: {
@@ -151,6 +162,7 @@ export async function GET(req: NextRequest) {
         nama: santri.nama,
         isAktif: santri.isAktif,
         kategoriSiswa: santri.kategori,
+        noWaWali: formattedWaWali, // Nomor WA Wali Santri dengan format internasional
         programAktif: santri.program ? santri.program.nama : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.nama : null),
         kategoriProgram: santri.program ? santri.program.kategoriProgram : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.kategoriProgram : null),
         masaAktif: {

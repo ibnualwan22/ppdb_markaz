@@ -103,7 +103,22 @@ export async function GET(request: Request) {
           return b.dufahId - a.dufahId;
         });
       }
-      return santri;
+
+      // Format nomor WA agar bisa langsung dikirim via API WA (format internasional 62)
+      let formattedWaWali = santri.noWaOrtu;
+      if (formattedWaWali) {
+        formattedWaWali = formattedWaWali.replace(/\D/g, ""); // hilangkan karakter non-angka
+        if (formattedWaWali.startsWith("0")) {
+          formattedWaWali = "62" + formattedWaWali.substring(1);
+        } else if (formattedWaWali.startsWith("8")) {
+          formattedWaWali = "628" + formattedWaWali.substring(1);
+        }
+      }
+
+      return {
+        ...santri,
+        noWaWali: formattedWaWali || santri.noWaOrtu // tambahan field khusus agar mempermudah pengiriman WA
+      };
     });
 
     // ==========================================
