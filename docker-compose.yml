@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ppdb_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    ports:
+      - "5434:5432"
+    volumes:
+      - ppdb_db_data:/var/lib/postgresql/data
+    networks:
+      - ppdb_network
+
+  app:
+    build: .
+    container_name: ppdb_app
+    restart: always
+    ports:
+      - "3002:3000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - ppdb_network
+
+volumes:
+  ppdb_db_data:
+
+networks:
+  ppdb_network:
