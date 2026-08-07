@@ -51,6 +51,21 @@ function DaftarUlangContent() {
     }
   }, [status, session, router]);
 
+  // Siakad SSO Auto-Login Bypass
+  useEffect(() => {
+    fetch("/api/auth/siakad-session")
+      .then(res => res.json())
+      .then(data => {
+        if (data.session && data.santriData) {
+          setSantriData(data.santriData);
+          setStep(2);
+        }
+      })
+      .catch((err) => {
+        console.error("SSO check failed:", err);
+      });
+  }, []);
+
   useEffect(() => {
     fetch("/api/program").then(res => res.json()).then(data => setPrograms(data.filter((p: any) => p.isActive))).catch(() => { });
     fetch("/api/dufah").then(res => res.json()).then(data => {

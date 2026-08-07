@@ -85,12 +85,11 @@ export async function PATCH(
           
           const isKSU = riwayat.santri.kategori === "KSU";
 
-          // Cek 3 riwayat terakhir (termasuk riwayat sekarang jika lemari dicantumkan, namun karena 'riwayat' adalah bulan sebelumnya, kita hitung ke belakang)
-          // Jika 3 riwayat terakhir memiliki sakanId yang SAMA BUKAN null, maka wajib mutasi.
+          // Cek 3 riwayat terakhir secara harfiah (menghitung bulan kosong juga agar tidak meloncat)
+          // Jika 3 riwayat terakhir memiliki sakanId yang SAMA, maka wajib mutasi.
           const riwayat3Terakhir = await prisma.riwayatDufah.findMany({
             where: { 
               santriId: riwayat.santriId, 
-              lemariId: { not: null },
               dufahId: { lte: riwayat.dufahId } 
             },
             orderBy: { dufahId: 'desc' },
@@ -98,8 +97,11 @@ export async function PATCH(
             include: { lemari: { include: { kamar: true } } }
           });
           
-          const sakanIds = riwayat3Terakhir.map(r => r.lemari?.kamar.sakanId).filter(Boolean);
-          const allSameSakan = sakanIds.length >= 3 && sakanIds.every(id => id === sakanIds[0]);
+          // Mengambil sakanId, jika tidak ada lemari maka akan jadi null
+          const sakanIds = riwayat3Terakhir.map(r => r.lemari?.kamar.sakanId || null);
+          
+          // Memastikan ada 3 data riwayat, tidak ada yang bernilai null (kosong), dan semuanya identik
+          const allSameSakan = sakanIds.length >= 3 && sakanIds.every(id => id !== null && id === sakanIds[0]);
 
           // Jika BUKAN KSU: Tahun Baru ATAU sakan sama berturut-turut, lemari dicabut (null) agar mutasi.
           // Khusus KSU: lemari SELALU dipertahankan, meskipun Reset Syawal.
