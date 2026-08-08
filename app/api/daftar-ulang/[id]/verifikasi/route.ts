@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 export async function POST(
   request: Request,
@@ -47,6 +48,7 @@ export async function POST(
     emitDataUpdate("pendaftaran-verified");
     emitDataUpdate("mimstore");
     emitDataUpdate("id-card");
+    notifySiakadWebhook();
 
     // Kirim notifikasi ke admin asrama dan id-card
     await sendGlobalNotification(

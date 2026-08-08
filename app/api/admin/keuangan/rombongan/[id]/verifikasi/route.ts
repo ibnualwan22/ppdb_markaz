@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { sendGlobalNotification, emitDataUpdate, logActivity } from "@/app/lib/pusherServer";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 async function generateNIS(tx: any, dufah: any, tanggalLahir: Date) {
   const dufahNumberMatch = dufah.nama.match(/\d+/);
@@ -219,6 +220,7 @@ export async function POST(
     emitDataUpdate("pendaftaran-verified");
     emitDataUpdate("mimstore");
     emitDataUpdate("id-card");
+    notifySiakadWebhook();
 
     await sendGlobalNotification(
       "Pembayaran Rombongan Lunas 💰",

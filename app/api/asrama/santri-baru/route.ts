@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { emitDataUpdate, emitNotification } from "@/app/lib/pusherServer";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 export async function POST(request: Request) {
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
 
     emitDataUpdate("santri-baru");
     emitNotification("asrama", `🛏️ ${nama} telah ditempatkan ke kamar baru`, { nama, kategori });
+    notifySiakadWebhook();
 
     return NextResponse.json({
       message: `${nama} berhasil didata. ${kategori === "KSU" ? "(KSU otomatis Bypass ID Card)" : ""}`,

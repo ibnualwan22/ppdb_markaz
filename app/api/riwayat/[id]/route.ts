@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { emitDataUpdate } from "@/app/lib/pusherServer";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 export async function PATCH(
@@ -25,6 +26,7 @@ export async function PATCH(
     });
 
     emitDataUpdate("pindah-kamar");
+    notifySiakadWebhook();
     return NextResponse.json({ message: "Santri berhasil dipindahkan!", data: update });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memindahkan santri" }, { status: 500 });
