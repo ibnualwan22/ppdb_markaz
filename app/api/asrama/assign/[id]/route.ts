@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 
 export async function PATCH(
@@ -108,6 +109,8 @@ export async function PATCH(
       userId: u?.id,
       targetId: updatePenempatan.santriId,
     });
+
+    await notifySiakadWebhook();
 
     return NextResponse.json({ 
       message: `Berhasil! ${updatePenempatan.santri.nama} menempati sakan baru di ${namaSakan}.`,
