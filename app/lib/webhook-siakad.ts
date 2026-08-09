@@ -3,8 +3,8 @@ export const notifySiakadWebhook = async () => {
     const siakadUrl = process.env.NEXT_PUBLIC_SIAKAD_URL || 'https://siakad.markazarabiyah.site';
     const webhookUrl = `${siakadUrl}/api/webhooks/ppdb`;
     
-    // Fire and forget, so we don't return the promise chain
-    fetch(webhookUrl, {
+    // Await the fetch so that serverless process doesn't exit prematurely
+    await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

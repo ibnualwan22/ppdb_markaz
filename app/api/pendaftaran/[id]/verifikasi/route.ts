@@ -272,7 +272,7 @@ export async function POST(
       }
     }
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({
       message: "Verifikasi berhasil. Santri telah masuk antrean asrama.",

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       }
     });
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json(dufahBaru, { status: 201 });
   } catch (error) {

@@ -98,7 +98,7 @@ export async function PATCH(
       targetId: id,
     });
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({ message: "Status berhasil diubah", data: santriUpdate });
   } catch (error) {
@@ -164,7 +164,7 @@ export async function PUT(
       targetId: id,
     });
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({ message: "Data santri berhasil diperbarui", data: santriUpdate });
   } catch (error) {
@@ -199,7 +199,7 @@ export async function DELETE(
       targetId: id,
     });
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({ message: "Santri berhasil dihapus" });
   } catch (error) {

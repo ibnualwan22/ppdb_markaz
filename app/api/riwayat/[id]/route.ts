@@ -26,7 +26,7 @@ export async function PATCH(
     });
 
     emitDataUpdate("pindah-kamar");
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
     return NextResponse.json({ message: "Santri berhasil dipindahkan!", data: update });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memindahkan santri" }, { status: 500 });

@@ -167,7 +167,7 @@ export async function POST(request: Request) {
       targetId: result.santri.id,
     });
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({
       message: "Pendaftaran berhasil, silakan lakukan pembayaran.",

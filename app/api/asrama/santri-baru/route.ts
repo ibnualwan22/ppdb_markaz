@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     emitDataUpdate("santri-baru");
     emitNotification("asrama", `🛏️ ${nama} telah ditempatkan ke kamar baru`, { nama, kategori });
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({
       message: `${nama} berhasil didata. ${kategori === "KSU" ? "(KSU otomatis Bypass ID Card)" : ""}`,

@@ -130,7 +130,7 @@ export async function PATCH(
         }
       }
     }
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({ 
       message: `${dufahAktif.nama} aktif. Logika batas aktif dan siklus asrama berhasil diterapkan.`,

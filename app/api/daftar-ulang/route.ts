@@ -147,7 +147,7 @@ export async function POST(request: Request) {
       });
     }
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     const pesan = statusBaru === "ASSIGNED" 
       ? `Sakan diperpanjang. (Bulan ke-${bulanKeBaru})` 

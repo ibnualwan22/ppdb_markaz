@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
     });
 
     try {
-        notifySiakadWebhook(); 
+        await notifySiakadWebhook(); 
     } catch(e) {
         // Abaikan error webhook saat di sisi server agar transaksi tetap berlanjut
     }

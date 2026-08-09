@@ -48,7 +48,7 @@ export async function POST(
     emitDataUpdate("pendaftaran-verified");
     emitDataUpdate("mimstore");
     emitDataUpdate("id-card");
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     // Kirim notifikasi ke admin asrama dan id-card
     await sendGlobalNotification(

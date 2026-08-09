@@ -22,7 +22,7 @@ export async function PATCH(
       }
     });
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({ message: "Duf'ah berhasil diperbarui", data: dufahUpdate });
   } catch (error) {
@@ -41,7 +41,7 @@ export async function DELETE(
       where: { id: parseInt(id) }
     });
 
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     return NextResponse.json({ message: "Duf'ah berhasil dihapus" });
   } catch (error) {

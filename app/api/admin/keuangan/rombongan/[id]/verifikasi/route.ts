@@ -220,7 +220,7 @@ export async function POST(
     emitDataUpdate("pendaftaran-verified");
     emitDataUpdate("mimstore");
     emitDataUpdate("id-card");
-    notifySiakadWebhook();
+    await notifySiakadWebhook();
 
     await sendGlobalNotification(
       "Pembayaran Rombongan Lunas 💰",
