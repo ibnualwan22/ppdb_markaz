@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,14 +43,13 @@ export async function POST(req: NextRequest) {
       data: { bulanKe }
     });
 
-    // 4. Trigger Webhook ke SIAKAD (tanpa await agar cepat merespon client)
-    notifySiakadWebhook().catch((err) => {
-      console.error("Gagal memanggil webhook SIAKAD dari update-bulan-ke:", err);
-    });
+    // Tidak memanggil notifySiakadWebhook() karena SIAKAD
+    // sudah melakukan update lokal sendiri. Webhook sync_all
+    // justru menyebabkan race condition yang menimpa nilai baru.
 
     return NextResponse.json({
       success: true,
-      message: "Bulan Ke berhasil diperbarui.",
+      message: `Bulan Ke berhasil diperbarui menjadi bulan ke-${bulanKe}.`,
       data: { nis, bulanKe }
     }, { status: 200 });
 
@@ -60,3 +58,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Gagal memperbarui Bulan Ke", details: error.message }, { status: 500 });
   }
 }
+
