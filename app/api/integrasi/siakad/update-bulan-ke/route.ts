@@ -1,0 +1,62 @@
+import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
+
+export async function POST(req: NextRequest) {
+  try {
+    // 1. Cek Permission via Environment Variable
+    const apiKey = req.headers.get("x-api-key");
+    if (!apiKey || apiKey !== process.env.SIAKAD_API_KEY) {
+      return NextResponse.json({ error: "Unauthorized: Invalid API Key" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const nis = body?.nis;
+    const bulanKe = parseInt(body?.bulanKe);
+
+    if (!nis || isNaN(bulanKe)) {
+      return NextResponse.json({ error: "Format payload tidak valid. Membutuhkan 'nis' dan 'bulanKe'." }, { status: 400 });
+    }
+
+    // 2. Cari santri beserta riwayat yang aktif (ASSIGNED / PRE_LIST)
+    const santri = await prisma.santri.findUnique({
+      where: { nis },
+      include: {
+        riwayat: {
+          where: {
+            status: { in: ["ASSIGNED", "PRE_LIST"] }
+          },
+          orderBy: {
+            id: 'desc'
+          }
+        }
+      }
+    });
+
+    if (!santri || santri.riwayat.length === 0) {
+      return NextResponse.json({ error: "Santri atau Riwayat Aktif tidak ditemukan." }, { status: 404 });
+    }
+
+    // 3. Update RiwayatDufah
+    const targetRiwayat = santri.riwayat[0];
+    await prisma.riwayatDufah.update({
+      where: { id: targetRiwayat.id },
+      data: { bulanKe }
+    });
+
+    // 4. Trigger Webhook ke SIAKAD (tanpa await agar cepat merespon client)
+    notifySiakadWebhook().catch((err) => {
+      console.error("Gagal memanggil webhook SIAKAD dari update-bulan-ke:", err);
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Bulan Ke berhasil diperbarui.",
+      data: { nis, bulanKe }
+    }, { status: 200 });
+
+  } catch (error: any) {
+    console.error("Error Integrasi SIAKAD Update Bulan Ke:", error);
+    return NextResponse.json({ error: "Gagal memperbarui Bulan Ke", details: error.message }, { status: 500 });
+  }
+}
