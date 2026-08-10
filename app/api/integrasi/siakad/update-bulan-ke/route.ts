@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       include: {
         riwayat: {
           orderBy: {
-            id: 'desc'
+            dufahId: 'desc'
           },
           take: 1
         }
