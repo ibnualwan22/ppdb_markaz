@@ -17,23 +17,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Format payload tidak valid. Membutuhkan 'nis' dan 'bulanKe'." }, { status: 400 });
     }
 
-    // 2. Cari santri beserta riwayat yang aktif (ASSIGNED / PRE_LIST)
+    // 2. Cari santri beserta riwayat terbaru (tanpa filter status agar tidak gagal update)
     const santri = await prisma.santri.findUnique({
       where: { nis },
       include: {
         riwayat: {
-          where: {
-            status: { in: ["ASSIGNED", "PRE_LIST"] }
-          },
           orderBy: {
             id: 'desc'
-          }
+          },
+          take: 1
         }
       }
     });
 
     if (!santri || santri.riwayat.length === 0) {
-      return NextResponse.json({ error: "Santri atau Riwayat Aktif tidak ditemukan." }, { status: 404 });
+      return NextResponse.json({ error: "Santri atau Riwayat tidak ditemukan." }, { status: 404 });
     }
 
     // 3. Update RiwayatDufah
