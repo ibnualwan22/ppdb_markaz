@@ -22,6 +22,7 @@ export default function MasterProgramPage() {
   const [tanggalTutupDefault, setTanggalTutupDefault] = useState("06 Juli");
   const [targetDufahId, setTargetDufahId] = useState("");
   const [allDufah, setAllDufah] = useState<any[]>([]);
+  const [kategoriMaster, setKategoriMaster] = useState<any[]>([]);
 
   const muatData = async () => {
     try {
@@ -33,6 +34,11 @@ export default function MasterProgramPage() {
         const dufahs = await resDufah.json();
         // Sort by ID descending so newest is on top
         setAllDufah(dufahs.sort((a: any, b: any) => b.id - a.id));
+      }
+
+      const resKat = await fetch("/api/kategori-program");
+      if (resKat.ok) {
+        setKategoriMaster(await resKat.json());
       }
     } catch (e) {
       console.error(e);
@@ -200,9 +206,17 @@ export default function MasterProgramPage() {
                 <div>
                   <label className="block text-sm font-bold text-gray-300 mb-1">Kategori Program</label>
                   <select value={kategoriProgram} onChange={(e) => setKategoriProgram(e.target.value)} className="w-full p-3 border border-dark-900 rounded-xl bg-dark-900 text-gold-500 font-bold outline-none focus:ring-1 focus:ring-gold-500/50 cursor-pointer">
-                    <option value="REGULER">REGULER (Fokus Bahasa)</option>
-                    <option value="TUROTS">TUROTS (Fokus Kitab Kuning)</option>
-                    <option value="2MINGGU">2 MINGGU (Program Khusus)</option>
+                    <option value="">Pilih Kategori</option>
+                    {kategoriMaster.filter(k => k.isActive || k.nama === kategoriProgram).map(k => (
+                      <option key={k.id} value={k.nama}>{k.nama}</option>
+                    ))}
+                    {kategoriMaster.length === 0 && (
+                      <>
+                        <option value="REGULER">REGULER (Fokus Bahasa)</option>
+                        <option value="TUROTS">TUROTS (Fokus Kitab Kuning)</option>
+                        <option value="2MINGGU">2 MINGGU (Program Khusus)</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div>

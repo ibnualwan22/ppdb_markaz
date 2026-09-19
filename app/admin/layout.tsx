@@ -95,6 +95,7 @@ const menuItems = [
 const masterItems = [
   { href: "/admin/master", label: "Master Lokasi", icon: <IconCog />, permission: "manage_asrama" },
   { href: "/admin/master/program", label: "Master Program", icon: <IconGradCap />, permission: "view_program" },
+  { href: "/admin/master/kategori-program", label: "Master Kategori", icon: <IconGradCap />, permission: "view_program" },
   { href: "/admin/master/pengajar", label: "Dewan Asatidz", icon: <IconUserCircle />, permission: "view_program" },
   { href: "/admin/dufah", label: "Manajemen Duf'ah", icon: <IconCalendar />, permission: "manage_dufah" },
   { href: "/admin/santri", label: "Master Santri", icon: <IconGradCap />, permission: "view_santri" },

@@ -168,6 +168,13 @@ model ApiKey {
   role        Role     @relation(fields: [roleId], references: [id])
 }
 
+model KategoriProgram {
+  id        String   @id @default(uuid())
+  nama      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
 model Program {
   id                  String                 @id @default(uuid())
   nama                String
