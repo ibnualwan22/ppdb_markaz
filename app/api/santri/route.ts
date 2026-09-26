@@ -1,14 +1,19 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 
 export async function GET(request: Request) {
-  // 0. API KEY SECURITY CHECK
+  // 0. API KEY ATAU SESSION SECURITY CHECK
   const apiKey = request.headers.get("x-api-key");
   const validApiKey = process.env.SIAKAD_API_KEY;
+  
+  // Izinkan jika ada API KEY yang valid ATAU jika ini adalah user internal (admin/staf) yang sedang login via browser
+  const session = await getServerSession(authOptions);
 
-  if (!validApiKey || apiKey !== validApiKey) {
-    return NextResponse.json({ error: "Unauthorized: Invalid or missing API Key" }, { status: 401 });
+  if ((!validApiKey || apiKey !== validApiKey) && !session) {
+    return NextResponse.json({ error: "Unauthorized: Invalid or missing API Key, and no active session" }, { status: 401 });
   }
 
   try {
