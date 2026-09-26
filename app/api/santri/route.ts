@@ -3,6 +3,14 @@ import { NextResponse } from "next/server";
 
 
 export async function GET(request: Request) {
+  // 0. API KEY SECURITY CHECK
+  const apiKey = request.headers.get("x-api-key");
+  const validApiKey = process.env.SIAKAD_API_KEY;
+
+  if (!validApiKey || apiKey !== validApiKey) {
+    return NextResponse.json({ error: "Unauthorized: Invalid or missing API Key" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get("filter") || "AKTIF";
