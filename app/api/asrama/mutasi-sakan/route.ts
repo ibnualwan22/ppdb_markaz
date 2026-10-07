@@ -49,7 +49,7 @@ export async function GET() {
 
       // Cek apakah bulan ini masih di sakan yang sama (belum pindah)
       const sakanBulanIni = riwayat.lemari?.kamar.sakanId;
-      const masihDiSakanSama = sakanBulanIni === sakanIds[0];
+      const masihDiSakanSama = sakanBulanIni === hasilMutasi.sakanIdLama;
 
       // Susun riwayat dari terlama ke terbaru (3 sebelumnya + bulan ini)
       const riwayatSebelumnya = riwayat3Sebelumnya.map(r => ({
