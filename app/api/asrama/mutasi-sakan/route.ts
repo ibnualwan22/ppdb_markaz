@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -41,10 +42,10 @@ export async function GET() {
         }
       });
 
-      const sakanIds = riwayat3Sebelumnya.map(r => r.lemari?.kamar.sakanId).filter(Boolean);
-      const allSameSakan = sakanIds.length === 3 && sakanIds.every(id => id === sakanIds[0]);
-
-      if (!allSameSakan) continue; // 3 dufah sebelumnya TIDAK di sakan yang sama, skip
+      // Keputusan pakai helper bersama: 3 dufah SEBELUM dufah aktif harus
+      // berurutan dan semuanya di sakan yang sama. Riwayat bolong tidak dihitung.
+      const hasilMutasi = await cekWajibMutasiSakan(riwayat.santriId, dufahAktif.id);
+      if (!hasilMutasi.wajibMutasi) continue; // TIDAK wajib mutasi, skip
 
       // Cek apakah bulan ini masih di sakan yang sama (belum pindah)
       const sakanBulanIni = riwayat.lemari?.kamar.sakanId;

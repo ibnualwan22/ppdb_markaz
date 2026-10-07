@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
+import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
 
 
 export async function PATCH(
@@ -79,33 +80,18 @@ export async function PATCH(
           where: { santriId_dufahId: { santriId: riwayat.santriId, dufahId: dufahAktif.id } }
         });
 
+        const isKSU = riwayat.santri.kategori === "KSU";
+
         if (!cekDuplikat) {
           // Logika Siklus 3 Bulan Asrama & Reset Syawal
           const newBulanKe = isTahunBaru ? 1 : riwayat.bulanKe + 1;
-          
-          const isKSU = riwayat.santri.kategori === "KSU";
 
-          // Cek 3 riwayat terakhir secara harfiah (menghitung bulan kosong juga agar tidak meloncat)
-          // Jika 3 riwayat terakhir memiliki sakanId yang SAMA, maka wajib mutasi.
-          const riwayat3Terakhir = await prisma.riwayatDufah.findMany({
-            where: { 
-              santriId: riwayat.santriId, 
-              dufahId: { lte: riwayat.dufahId } 
-            },
-            orderBy: { dufahId: 'desc' },
-            take: 3,
-            include: { lemari: { include: { kamar: true } } }
-          });
-          
-          // Mengambil sakanId, jika tidak ada lemari maka akan jadi null
-          const sakanIds = riwayat3Terakhir.map(r => r.lemari?.kamar.sakanId || null);
-          
-          // Memastikan ada 3 data riwayat, tidak ada yang bernilai null (kosong), dan semuanya identik
-          const allSameSakan = sakanIds.length >= 3 && sakanIds.every(id => id !== null && id === sakanIds[0]);
+          // Cek 3 dufah berturut-turut di sakan yang sama (helper bersama)
+          const hasilMutasi = await cekWajibMutasiSakan(riwayat.santriId, dufahAktif.id);
 
           // Jika BUKAN KSU: Tahun Baru ATAU sakan sama berturut-turut, lemari dicabut (null) agar mutasi.
           // Khusus KSU: lemari SELALU dipertahankan, meskipun Reset Syawal.
-          const isMutasiSakan = isKSU ? false : (isTahunBaru || allSameSakan);
+          const isMutasiSakan = isKSU ? false : (isTahunBaru || hasilMutasi.wajibMutasi);
           const newLemariId = isMutasiSakan ? null : riwayat.lemariId;
           const newStatus = isMutasiSakan ? "PRE_LIST" : "ASSIGNED";
 
@@ -126,6 +112,31 @@ export async function PATCH(
                 where: { id: riwayat.lemariId },
                 data: { isLocked: false }
              });
+          }
+        } else if (!isKSU) {
+          // Aktivasi ulang: record sudah ada sehingga cekDuplikat melewatinya,
+          // tapi santri bisa saja terlanjur ditempatkan di sakan terlarang
+          // via jalur lain. Evaluasi ulang: jika saat ini masih di sakan
+          // yang wajib ditinggalkan, mutasikan sekarang.
+          // (Sengaja tanpa isTahunBaru agar penempatan manual yang sudah
+          // benar tidak dibongkar oleh aktivasi ulang.)
+          const hasilMutasi = await cekWajibMutasiSakan(riwayat.santriId, dufahAktif.id);
+          if (hasilMutasi.wajibMutasi && hasilMutasi.sakanIdLama) {
+            const existing = await prisma.riwayatDufah.findUnique({
+              where: { santriId_dufahId: { santriId: riwayat.santriId, dufahId: dufahAktif.id } },
+              include: { lemari: { include: { kamar: true } } }
+            });
+            const sakanSekarang = existing?.lemari?.kamar?.sakanId;
+            if (existing?.lemariId && sakanSekarang === hasilMutasi.sakanIdLama) {
+              await prisma.riwayatDufah.update({
+                where: { id: existing.id },
+                data: { lemariId: null, status: "PRE_LIST" }
+              });
+              await prisma.lemari.update({
+                where: { id: existing.lemariId },
+                data: { isLocked: false }
+              });
+            }
           }
         }
       }

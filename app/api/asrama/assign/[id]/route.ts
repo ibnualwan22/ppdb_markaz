@@ -4,6 +4,7 @@ import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/p
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
+import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
 
 
 export async function PATCH(
@@ -39,30 +40,13 @@ export async function PATCH(
     // LOGIKA BARU: VALIDASI ROLLING BUKAN LAGI %3, TAPI CEK SAKAN
     // ==========================================
 
-    // Cek 3 riwayat terakhir sebelum target assignment ini
-    const riwayat3 = await prisma.riwayatDufah.findMany({
-      where: { 
-        santriId: dataBulanIni.santriId, 
-        lemariId: { not: null },
-        dufahId: { lt: dataBulanIni.dufahId } 
-      },
-      orderBy: { dufahId: 'desc' },
-      take: 3,
-      include: { lemari: { include: { kamar: { include: { sakan: true } } } } }
-    });
-
-    const sakanIdList = riwayat3.map(r => r.lemari?.kamar.sakanId).filter(Boolean);
-    const allSame = sakanIdList.length >= 3 && sakanIdList.every(id => id === sakanIdList[0]);
-
-    // 3. Validasi aturan mutasi 3 bulan: selain KSU, wajib pindah ke Sakan/Gedung yang berbeda
-    if (dataBulanIni.santri.kategori !== "KSU" && allSame) {
-      const sakanLamaId = sakanIdList[0];
-      const sakanBaruId = targetLemari.kamar.sakanId;
-
-      if (sakanLamaId === sakanBaruId) {
-        const namaSakanLalu = riwayat3[0].lemari?.kamar.sakan.nama;
-        return NextResponse.json({ 
-          error: `SISTEM MENOLAK: ${dataBulanIni.santri.nama} telah menetap di Sakan ${namaSakanLalu} selama 3 bulan/dufah berturut-turut. Aturan mutasi mewajibkan santri pindah ke Sakan/Gedung lain, bukan sekadar pindah kamar/lemari di sakan yang sama.` 
+    // 3. Validasi aturan mutasi 3 dufah: selain KSU, wajib pindah ke Sakan/Gedung yang berbeda
+    // (helper bersama: 3 dufah SEBELUM dufah ini harus berurutan dan satu sakan)
+    if (dataBulanIni.santri.kategori !== "KSU") {
+      const hasil = await cekWajibMutasiSakan(dataBulanIni.santriId, dataBulanIni.dufahId);
+      if (hasil.wajibMutasi && hasil.sakanIdLama === targetLemari.kamar.sakanId) {
+        return NextResponse.json({
+          error: `SISTEM MENOLAK: ${dataBulanIni.santri.nama} telah menetap di Sakan ${hasil.namaSakanLama} selama 3 dufah berturut-turut. Aturan mutasi mewajibkan santri pindah ke Sakan/Gedung lain, bukan sekadar pindah kamar/lemari di sakan yang sama.`
         }, { status: 403 });
       }
     }

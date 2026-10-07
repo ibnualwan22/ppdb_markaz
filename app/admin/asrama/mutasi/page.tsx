@@ -161,12 +161,12 @@ export default function MutasiSakanPage() {
                             >
                               <IconHistory /> Riwayat
                             </button>
-                            {item.sakanSaatIni === "Antrean (PRE_LIST)" && (
+                            {(!item.sudahDimutasi || item.sakanSaatIni === "Antrean (PRE_LIST)") && (
                               <button
                                 onClick={() => router.push(`/admin/asrama?directRiwayatId=${item.riwayatId}`)}
                                 className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white border border-blue-500 hover:bg-blue-500 hover:border-blue-400 px-3 py-2 rounded-lg text-xs font-black transition-all active:scale-95 shadow-sm"
                               >
-                                Tempatkan
+                                {item.sakanSaatIni === "Antrean (PRE_LIST)" ? "Tempatkan" : "Pindahkan"}
                               </button>
                             )}
                           </div>
