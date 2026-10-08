@@ -60,9 +60,11 @@ export async function GET() {
       "2MINGGU": "2 Minggu",
     };
 
+    const dufahAktifId = dufahAktif.id;
+
     function getProgramLabel(santriId: string, kategoriOverride?: string | null): string {
       if (kategoriOverride) return labelProgram[kategoriOverride] || kategoriOverride;
-      const trxTujuan = daftarTransaksi.find((t) => t.santriId === santriId && t.dufahTujuanId === dufahAktif.id);
+      const trxTujuan = daftarTransaksi.find((t) => t.santriId === santriId && t.dufahTujuanId === dufahAktifId);
       const trx = trxTujuan || daftarTransaksi.find((t) => t.santriId === santriId);
       const kat = trx?.program?.kategoriProgram;
       return kat ? (labelProgram[kat] || kat) : "-";
