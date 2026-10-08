@@ -460,7 +460,7 @@ export default function MejaAsramaPage() {
                       className={`text-left bg-dark-800 border border-gold-500/10 rounded-lg px-4 py-2.5 flex flex-col md:flex-row md:items-center gap-1 md:gap-3 ${h.riwayatId ? "hover:border-gold-500/50 cursor-pointer transition-all" : "cursor-default"}`}
                     >
                       <span className="font-bold text-gray-100">{h.nama}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border w-fit ${h.programLabel === 'Turats' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' : h.programLabel === 'Reguler' ? 'text-blue-400 border-blue-500/40 bg-blue-500/10' : 'text-gray-500 border-gray-700'}`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border w-fit ${h.programLabel === 'Turats' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' : h.programLabel === 'Reguler' ? 'text-blue-400 border-blue-500/40 bg-blue-500/10' : h.programLabel === 'Hufadz' ? 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' : 'text-gray-500 border-gray-700'}`}>
                         {h.programLabel}
                       </span>
                       <span className={`text-[10px] font-black px-2 py-0.5 rounded w-fit ${h.statusBayar === 'Lunas' ? 'bg-green-600 text-white' : h.statusBayar === 'Belum lunas' ? 'bg-amber-400 text-black' : h.statusBayar === 'Menunggu verifikasi' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}>
@@ -525,7 +525,7 @@ export default function MejaAsramaPage() {
                           <span className={`text-[10px] font-bold px-2 py-1 rounded text-white ${item.santri.kategori === 'KSU' ? 'bg-purple-600' : item.santri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
                             {item.santri.kategori}
                           </span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${item.programLabel === 'Turats' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' : item.programLabel === 'Reguler' ? 'text-blue-400 border-blue-500/40 bg-blue-500/10' : 'text-gray-500 border-gray-700 bg-dark-900'}`}>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${item.programLabel === 'Turats' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' : item.programLabel === 'Reguler' ? 'text-blue-400 border-blue-500/40 bg-blue-500/10' : item.programLabel === 'Hufadz' ? 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' : 'text-gray-500 border-gray-700 bg-dark-900'}`}>
                             {item.programLabel || '-'}
                           </span>
                         </div>

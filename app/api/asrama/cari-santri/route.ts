@@ -76,6 +76,7 @@ export async function GET(request: Request) {
       REGULER: "Reguler",
       TUROTS: "Turats",
       "2MINGGU": "2 Minggu",
+      HUFADZ: "Hufadz",
     };
     const byId = new Map(daftar.map((s) => [s.id, s]));
 

@@ -29,7 +29,7 @@ export async function GET() {
         status: { not: "CHECKED_OUT" },
       },
       include: {
-        santri: { select: { id: true, nama: true, gender: true, nis: true, kategori: true } },
+        santri: { select: { id: true, nama: true, gender: true, nis: true, kategori: true, program: { select: { kategoriProgram: true } } } },
         lemari: { include: { kamar: { include: { sakan: true } } } }
       },
       orderBy: {

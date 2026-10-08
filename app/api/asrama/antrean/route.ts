@@ -58,6 +58,7 @@ export async function GET() {
       REGULER: "Reguler",
       TUROTS: "Turats",
       "2MINGGU": "2 Minggu",
+      HUFADZ: "Hufadz",
     };
 
     const dufahAktifId = dufahAktif.id;
