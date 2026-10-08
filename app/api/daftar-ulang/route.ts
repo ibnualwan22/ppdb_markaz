@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
+import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
 
 
 // ==========================================
@@ -92,25 +93,44 @@ export async function POST(request: Request) {
       });
     }
 
-    const batasMaksimal = 3;
     let lemariBaru = null;
-    let statusBaru = "PRE_LIST"; 
+    let statusBaru = "PRE_LIST";
     let bulanKeBaru = 1;
     let kategoriBaru = dataSantri.kategori; // Default kategori tetap
+    let infoMutasi = "";
 
     // Logika Terputus & Reset
     if (riwayatBulanLalu && riwayatBulanLalu.lemariId) {
-      // TIDAK TERPUTUS
-      const durasiBerjalan = riwayatBulanLalu.bulanKe;
-      if (durasiBerjalan % batasMaksimal !== 0) {
-        lemariBaru = riwayatBulanLalu.lemariId;
-        statusBaru = "ASSIGNED";
-        bulanKeBaru = durasiBerjalan + 1;
+      // TIDAK TERPUTUS: warisi kamar bulan lalu, KECUALI wajib mutasi sakan
+      // (3 dufah berturut-turut di sakan yang sama — dicek via helper bersama
+      // agar konsisten dengan aturan aktivasi dufah).
+      const durasiBerjalan = riwayatBulanLalu.bulanKe || 1;
+      const isKSU = dataSantri.kategori === "KSU";
+      const hasilMutasi = isKSU
+        ? { wajibMutasi: false as boolean, namaSakanLama: null as string | null }
+        : await cekWajibMutasiSakan(santriId, dufahTujuan.id);
+
+      if (!hasilMutasi.wajibMutasi) {
+        // Jangan warisi kamar yang sedang dikunci manual oleh admin.
+        const lemariLama = await prisma.lemari.findUnique({
+          where: { id: riwayatBulanLalu.lemariId },
+          select: { id: true, isLocked: true }
+        });
+        if (lemariLama && !lemariLama.isLocked) {
+          lemariBaru = riwayatBulanLalu.lemariId;
+          statusBaru = "ASSIGNED";
+        } else {
+          // Kamar dikunci manual / sudah tidak ada -> antre ulang
+          lemariBaru = null;
+          statusBaru = "PRE_LIST";
+        }
       } else {
+        // Wajib mutasi sakan: lepas kamar, antre penempatan baru
         lemariBaru = null;
         statusBaru = "PRE_LIST";
-        bulanKeBaru = durasiBerjalan + 1; 
+        infoMutasi = ` Wajib mutasi dari ${hasilMutasi.namaSakanLama || "sakan lama"}.`;
       }
+      bulanKeBaru = durasiBerjalan + 1;
     } else {
       // TERPUTUS! Hukumannya: Reset kamar, Reset bulan, Reset Kategori
       lemariBaru = null;
@@ -149,9 +169,9 @@ export async function POST(request: Request) {
 
     await notifySiakadWebhook();
 
-    const pesan = statusBaru === "ASSIGNED" 
-      ? `Sakan diperpanjang. (Bulan ke-${bulanKeBaru})` 
-      : "Silakan menuju Meja Asrama untuk antrean Sakan baru.";
+    const pesan = statusBaru === "ASSIGNED"
+      ? `Sakan diperpanjang. (Bulan ke-${bulanKeBaru})`
+      : `Silakan menuju Meja Asrama untuk antrean Sakan baru.${infoMutasi}`;
 
     return NextResponse.json({ message: pesan, data: pendaftaranBerhasil }, { status: 201 });
 

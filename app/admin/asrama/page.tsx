@@ -187,6 +187,31 @@ export default function MejaAsramaPage() {
     return matchName && matchGender;
   });
 
+  // Tahap 2 pencarian: jika tidak ketemu di antrean, cari fuzzy ke seluruh
+  // santri (debounce 300ms). Menampilkan status bayar & penempatan agar
+  // admin paham kenapa santri tidak ada di antrean.
+  const [hasilGlobal, setHasilGlobal] = useState<any[]>([]);
+  const [cariLoading, setCariLoading] = useState(false);
+  const antreanKosong = filteredAntrean.length === 0;
+
+  useEffect(() => {
+    const q = searchAntrean.trim();
+    if (!antreanKosong || q.length < 3) {
+      setHasilGlobal([]);
+      setCariLoading(false);
+      return;
+    }
+    setCariLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/asrama/cari-santri?q=${encodeURIComponent(q)}`);
+        if (res.ok) setHasilGlobal(await res.json());
+      } catch (error) {}
+      setCariLoading(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchAntrean, antreanKosong]);
+
   // Render Step 2: Pilih Kursi/Lemari (KAI Style)
   if (selectedSantri) {
     const sakansForGender = dataLokasi.filter(s => !s.isLocked && (sakanGenderFilter === "BANAT" ? s.kategori === "BANAT" : s.kategori !== "BANAT"));
@@ -377,7 +402,7 @@ export default function MejaAsramaPage() {
         <div className="mb-8 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-gold-500/10">
           <div>
             <h1 className="text-3xl font-extrabold text-gold-500">Penempatan Asrama</h1>
-            <p className="text-gray-400 mt-1 font-medium">Pilih santri yang sudah terkonfirmasi pembayarannya untuk ditempatkan ke kamar.</p>
+            <p className="text-gray-400 mt-1 font-medium">Pilih santri yang sudah terkonfirmasi pembayarannya untuk ditempatkan ke kamar. Diurutkan berdasarkan waktu verifikasi pembayaran.</p>
           </div>
         </div>
 
@@ -413,6 +438,43 @@ export default function MejaAsramaPage() {
             </div>
           </div>
 
+          {/* Tahap 2: hasil pencarian global saat tidak ketemu di antrean */}
+          {searchAntrean.trim().length >= 3 && filteredAntrean.length === 0 && (
+            <div className="px-4 pt-4">
+              <div className="bg-dark-900 border border-blue-500/30 rounded-xl p-4">
+                <p className="text-sm font-bold text-blue-400 mb-3">
+                  {cariLoading ? "Mencari ke seluruh data santri..." : "Tidak ada di antrean — mungkin maksud:"}
+                </p>
+                {!cariLoading && hasilGlobal.length === 0 && (
+                  <p className="text-sm text-gray-500 italic">Tidak ditemukan juga di seluruh data. Coba kata kunci lain.</p>
+                )}
+                <div className="flex flex-col gap-2">
+                  {hasilGlobal.map((h: any) => (
+                    <button
+                      key={h.santriId}
+                      disabled={!h.riwayatId}
+                      onClick={() => {
+                        const item = antrean.find((a: any) => a.id === h.riwayatId);
+                        if (item) handlePilihSantri(item);
+                      }}
+                      className={`text-left bg-dark-800 border border-gold-500/10 rounded-lg px-4 py-2.5 flex flex-col md:flex-row md:items-center gap-1 md:gap-3 ${h.riwayatId ? "hover:border-gold-500/50 cursor-pointer transition-all" : "cursor-default"}`}
+                    >
+                      <span className="font-bold text-gray-100">{h.nama}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border w-fit ${h.programLabel === 'Turats' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' : h.programLabel === 'Reguler' ? 'text-blue-400 border-blue-500/40 bg-blue-500/10' : 'text-gray-500 border-gray-700'}`}>
+                        {h.programLabel}
+                      </span>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded w-fit ${h.statusBayar === 'Lunas' ? 'bg-green-600 text-white' : h.statusBayar === 'Belum lunas' ? 'bg-amber-400 text-black' : h.statusBayar === 'Menunggu verifikasi' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}>
+                        {h.statusBayar}
+                      </span>
+                      <span className="text-xs text-gray-400 md:ml-auto">{h.statusTempat}</span>
+                      {h.riwayatId && <span className="text-xs text-gold-500 font-black whitespace-nowrap">→ Tempatkan</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="p-4 overflow-x-auto">
             <table className="w-full text-sm text-left border-collapse">
               <thead className="bg-gold-500/10 text-gold-500 uppercase font-black text-xs">
@@ -443,7 +505,14 @@ export default function MejaAsramaPage() {
                       <td className="px-4 py-3 text-center text-gray-400 font-bold">{index + 1}</td>
                       <td className="px-4 py-3">
                         <p className="font-bold text-gray-200">{item.santri.nama}</p>
-                        <span className="text-[10px] font-black text-white bg-red-600 px-1.5 py-0.5 rounded shadow-sm tracking-widest mt-1 inline-block">Menunggu Kamar</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <span className="text-[10px] font-black text-white bg-red-600 px-1.5 py-0.5 rounded shadow-sm tracking-widest inline-block">Menunggu Kamar</span>
+                          {item.isLunas ? (
+                            <span className="text-[10px] font-black text-white bg-green-600 px-1.5 py-0.5 rounded shadow-sm tracking-widest inline-block">Lunas</span>
+                          ) : (
+                            <span className="text-[10px] font-black text-black bg-amber-400 px-1.5 py-0.5 rounded shadow-sm tracking-widest inline-block">! Belum Lunas</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-center text-gray-300 font-medium">
                         {item.santri.nis || '-'}
@@ -452,9 +521,14 @@ export default function MejaAsramaPage() {
                         {item.santri.kabupaten ? item.santri.kabupaten.toLowerCase() : '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded text-white ${item.santri.kategori === 'KSU' ? 'bg-purple-600' : item.santri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
-                          {item.santri.kategori}
-                        </span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`text-[10px] font-bold px-2 py-1 rounded text-white ${item.santri.kategori === 'KSU' ? 'bg-purple-600' : item.santri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
+                            {item.santri.kategori}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${item.programLabel === 'Turats' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' : item.programLabel === 'Reguler' ? 'text-blue-400 border-blue-500/40 bg-blue-500/10' : 'text-gray-500 border-gray-700 bg-dark-900'}`}>
+                            {item.programLabel || '-'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-center">
                         {item.santri.gender === 'BANAT' ? (

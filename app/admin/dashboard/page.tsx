@@ -57,6 +57,7 @@ export default function DashboardMuasisPage() {
   const [searchSakan, setSearchSakan] = useState("");
   const [searchSantri, setSearchSantri] = useState("");
   const [activeSakanId, setActiveSakanId] = useState<string>("all");
+  const [konflikKamar, setKonflikKamar] = useState<any[]>([]);
   const mainRef = useRef<HTMLDivElement>(null);
   const pusher = usePusher();
   const { hasAccess } = usePermissions();
@@ -68,9 +69,19 @@ export default function DashboardMuasisPage() {
     try {
       const res = await fetch("/api/sakan");
       if (res.ok) setDataSakan(await res.json());
+      const resKonflik = await fetch("/api/asrama/cek-ganda");
+      if (resKonflik.ok) setKonflikKamar(await resKonflik.json());
     } catch (error) {}
     if (!isBackground) setLoading(false);
   }, []);
+
+  // Lompat ke kamar yang bermasalah (dari kartu peringatan kamar ganda)
+  const lihatKamar = (sakanId: string, kamarId: string) => {
+    setActiveSakanId(sakanId);
+    setTimeout(() => {
+      document.getElementById(`kamar-${kamarId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+  };
 
   useEffect(() => {
     muatData();
@@ -358,7 +369,7 @@ export default function DashboardMuasisPage() {
                       const isKamarLocked = kamar.isLocked || sakan.isLocked;
 
                       return (
-                        <div key={kamar.id} className={`p-4 rounded-xl border shadow-sm transition-all ${isKamarLocked ? 'bg-dark-900 border-gray-800' : 'bg-dark-900/50 border-gold-500/10'}`}>
+                        <div key={kamar.id} id={`kamar-${kamar.id}`} className={`p-4 rounded-xl border shadow-sm transition-all ${isKamarLocked ? 'bg-dark-900 border-gray-800' : 'bg-dark-900/50 border-gold-500/10'}`}>
                           <div className="flex justify-between items-start border-b border-gold-500/10 pb-2 mb-3">
                             <div>
                               <h4 className={`font-bold text-lg flex items-center gap-2 ${isKamarLocked ? 'text-gray-600 line-through' : 'text-gold-400'}`}>
@@ -560,6 +571,36 @@ export default function DashboardMuasisPage() {
             )}
           </div>
         </div>
+
+        {/* Peringatan Kamar Ganda (satu lemari dihuni >1 santri) */}
+        {konflikKamar.length > 0 && (
+          <div className="bg-red-950/60 border-2 border-red-500/60 rounded-2xl p-5 mt-6 shadow-lg">
+            <h3 className="text-red-400 font-black text-lg flex items-center gap-2 mb-1">
+              ⚠️ {konflikKamar.length} Kamar Dihuni Lebih Dari Satu Santri
+            </h3>
+            <p className="text-red-300/80 text-sm mb-4">Segera pindahkan salah satu penghuni ke kamar lain.</p>
+            <div className="flex flex-col gap-2">
+              {konflikKamar.map((k: any) => (
+                <div key={k.lemari.id} className="flex flex-col md:flex-row md:items-center justify-between gap-2 bg-dark-900/70 border border-red-500/30 rounded-xl px-4 py-3">
+                  <div>
+                    <p className="font-bold text-gray-100">
+                      {k.lemari.kamar.sakan.nama} — Kamar {k.lemari.kamar.nama} — Lemari {k.lemari.nomor}
+                    </p>
+                    <p className="text-sm text-red-300 mt-0.5">
+                      {k.penghuni.map((p: any) => p.nama).join("  •  ")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => lihatKamar(k.lemari.kamar.sakan.id, k.lemari.kamar.id)}
+                    className="shrink-0 bg-red-600 hover:bg-red-500 text-white text-xs font-black px-4 py-2 rounded-lg transition-all active:scale-95"
+                  >
+                    Lihat Kamar →
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Ringkasan Kapasitas Tiap Sakan */}
         <div className="bg-dark-800 p-4 rounded-xl border border-gold-500/20 shadow-sm mt-6">

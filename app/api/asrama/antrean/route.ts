@@ -36,13 +36,37 @@ export async function GET() {
       },
       include: {
         santri: {
-          select: { id: true, nama: true, kategori: true, gender: true, nis: true, kabupaten: true }
+          select: {
+            id: true, nama: true, kategori: true, gender: true, nis: true, kabupaten: true,
+            program: { select: { kategoriProgram: true } },
+          }
         }
       },
-      orderBy: {
-        santri: { nama: 'asc' }
-      }
+      // Urut berdasarkan waktu ACC pembayaran (updatedAt riwayat = saat verifikasi lunas)
+      orderBy: { updatedAt: "asc" }
     });
+
+    // Ambil transaksi untuk label program (Reguler/Turats) tiap santri
+    const santriIds = antrean.map((r) => r.santriId);
+    const daftarTransaksi = santriIds.length > 0 ? await prisma.transaksiPendaftaran.findMany({
+      where: { santriId: { in: santriIds } },
+      include: { program: { select: { kategoriProgram: true } } },
+      orderBy: { createdAt: "desc" },
+    }) : [];
+
+    const labelProgram: Record<string, string> = {
+      REGULER: "Reguler",
+      TUROTS: "Turats",
+      "2MINGGU": "2 Minggu",
+    };
+
+    function getProgramLabel(santriId: string, kategoriOverride?: string | null): string {
+      if (kategoriOverride) return labelProgram[kategoriOverride] || kategoriOverride;
+      const trxTujuan = daftarTransaksi.find((t) => t.santriId === santriId && t.dufahTujuanId === dufahAktif.id);
+      const trx = trxTujuan || daftarTransaksi.find((t) => t.santriId === santriId);
+      const kat = trx?.program?.kategoriProgram;
+      return kat ? (labelProgram[kat] || kat) : "-";
+    }
 
     // Tempelkan keterangan histori kamar/sakan sebelumnya
     const antreanDenganHistori = await Promise.all(antrean.map(async (row) => {
@@ -74,7 +98,8 @@ export async function GET() {
 
       return {
         ...row,
-        keteranganSakanLama
+        keteranganSakanLama,
+        programLabel: getProgramLabel(row.santriId, row.santri.program?.kategoriProgram),
       };
     }));
 

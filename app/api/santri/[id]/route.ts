@@ -26,12 +26,14 @@ export async function PATCH(
       }
     });
 
-    // Kamar/lemari tetap dipertahankan agar jika daftar ulang di duf'ah depan, bisa lanjut di lemari yang sama.
-    // Namun tandai status riwayat bulan ini sebagai CHECKED_OUT agar sisa durasi tidak terhitung ganda.
+    // Saat nonaktif (check out): kamar LANGSUNG dikosongkan (lemariId dilepas)
+    // agar bisa ditempati santri lain. Flag isLocked TIDAK disentuh karena itu
+    // adalah kunci manual admin, bukan penanda okupansi.
+    // Status riwayat ditandai CHECKED_OUT agar sisa durasi tidak terhitung ganda.
     if (isAktif === false && dufahAktif) {
       await prisma.riwayatDufah.updateMany({
         where: { santriId: id, dufahId: dufahAktif.id },
-        data: { status: "CHECKED_OUT" }
+        data: { status: "CHECKED_OUT", lemariId: null }
       });
     } else if (isAktif === true && dufahAktif) {
       // Jika diaktifkan kembali, kembalikan CHECKED_OUT ke PRE_LIST
@@ -68,7 +70,7 @@ export async function PATCH(
     if (isAktif === false) {
       await sendGlobalNotification(
         "Santri Check Out 🚪",
-        `Santri a.n ${santriUpdate.nama} telah di-check out (Sisa durasi direset, data slot kamar tetap tersimpan).`,
+        `Santri a.n ${santriUpdate.nama} telah di-check out (Sisa durasi direset, kamar dikosongkan).`,
         "receive_notif_status_santri",
         "/admin/santri"
       );
@@ -91,7 +93,7 @@ export async function PATCH(
       aksi: "UPDATE",
       modul: "Santri",
       deskripsi: isAktif === false 
-        ? `Check Out santri a.n ${santriUpdate.nama} — Sisa durasi direset`
+        ? `Check Out santri a.n ${santriUpdate.nama} — Sisa durasi direset, kamar dikosongkan`
         : `Mengaktifkan kembali santri a.n ${santriUpdate.nama}`,
       namaUser: pelaku,
       userId: u?.id,
