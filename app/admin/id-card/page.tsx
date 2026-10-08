@@ -332,6 +332,30 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
     return cocokNama && cocokStatus;
   });
 
+  // Tahap 2 pencarian: jika tidak ketemu di daftar (bulan ini), cari fuzzy
+  // ke data dufah aktif (debounce 300ms). Klik hasil untuk koreksi kata kunci.
+  const [hasilGlobal, setHasilGlobal] = useState<any[]>([]);
+  const [cariLoading, setCariLoading] = useState(false);
+  const pencarianKosong = dataDitampilkan.length === 0;
+
+  useEffect(() => {
+    const q = keyword.trim();
+    if (!pencarianKosong || q.length < 3 || filterDufah !== "BULAN_INI") {
+      setHasilGlobal([]);
+      setCariLoading(false);
+      return;
+    }
+    setCariLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/asrama/cari-santri?q=${encodeURIComponent(q)}`);
+        if (res.ok) setHasilGlobal(await res.json());
+      } catch (error) {}
+      setCariLoading(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [keyword, pencarianKosong, filterDufah]);
+
   // Counter for sequential numbering
   let nomorBelum = 0;
 
@@ -387,6 +411,37 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
             </select>
           </div>
         </div>
+
+        {/* Tahap 2: hasil pencarian fuzzy saat tidak ketemu di daftar */}
+        {keyword.trim().length >= 3 && pencarianKosong && filterDufah === "BULAN_INI" && (
+          <div className="bg-dark-800 rounded-2xl shadow-sm border border-blue-500/30 p-5 mb-6">
+            <p className="text-sm font-bold text-blue-400 mb-3">
+              {cariLoading ? "Mencari ke data dufah aktif..." : "Tidak ada di daftar — mungkin maksud:"}
+            </p>
+            {!cariLoading && hasilGlobal.length === 0 && (
+              <p className="text-sm text-gray-500 italic">Tidak ditemukan juga di data dufah aktif. Coba kata kunci lain.</p>
+            )}
+            <div className="flex flex-col gap-2">
+              {hasilGlobal.map((h: any) => (
+                <button
+                  key={h.santriId}
+                  onClick={() => setKeyword(h.nama)}
+                  title="Klik untuk koreksi pencarian"
+                  className="text-left bg-dark-900 border border-gold-500/10 hover:border-gold-500/50 rounded-lg px-4 py-2.5 flex flex-col md:flex-row md:items-center gap-1 md:gap-3 transition-all cursor-pointer"
+                >
+                  <span className="font-bold text-gray-100">{h.nama}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border w-fit ${h.programLabel === 'Turats' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' : h.programLabel === 'Reguler' ? 'text-blue-400 border-blue-500/40 bg-blue-500/10' : 'text-gray-500 border-gray-700'}`}>
+                    {h.programLabel}
+                  </span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded w-fit ${h.statusBayar === 'Lunas' ? 'bg-green-600 text-white' : h.statusBayar === 'Belum lunas' ? 'bg-amber-400 text-black' : h.statusBayar === 'Menunggu verifikasi' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}>
+                    {h.statusBayar}
+                  </span>
+                  <span className="text-xs text-gray-400 md:ml-auto">{h.statusTempat}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="bg-dark-800 rounded-2xl shadow-sm border border-gold-500/20 overflow-hidden">
           <div className="overflow-x-auto">

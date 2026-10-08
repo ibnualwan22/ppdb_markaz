@@ -3,10 +3,12 @@ import { NextResponse } from "next/server";
 
 /**
  * GET /api/asrama/cari-santri?q=...
- * Pencarian global santri (tahap 2): dipakai saat pencarian di antrean
- * tidak menemukan hasil. Fuzzy via pg_trgm (toleran typo) + ILIKE.
- * Mengembalikan max 10 santri beserta status bayar & status penempatan,
- * agar admin paham KENAPA santri tidak ada di antrean.
+ * Pencarian tahap 2 (meja asrama & meja ID card): dipakai saat pencarian
+ * di antrean tidak menemukan hasil. Fuzzy via pg_trgm (toleran typo) + ILIKE.
+ *
+ * CAKUPAN DIBATASI: hanya santri dufah aktif — yang punya riwayat di dufah
+ * aktif ATAU transaksi yang menargetkan dufah aktif (alur meja keuangan).
+ * Tidak mencari ke seluruh master santri.
  */
 export async function GET(request: Request) {
   try {
@@ -15,13 +17,18 @@ export async function GET(request: Request) {
     if (q.length < 3) return NextResponse.json([]);
 
     const dufahAktif = await prisma.dufah.findFirst({ where: { isActive: true } });
+    if (!dufahAktif) return NextResponse.json([]);
+    const dufahAktifId = dufahAktif.id;
 
-    // Fuzzy search: operator % = similarity di atas threshold pg_trgm,
-    // ILIKE sebagai fallback untuk potongan nama.
+    // Fuzzy search dalam cakupan dufah aktif saja
     const hasil = await prisma.$queryRaw<{ id: string }[]>`
       SELECT s.id
       FROM "Santri" s
-      WHERE s.nama % ${q} OR s.nama ILIKE ${"%" + q + "%"}
+      WHERE (s.nama % ${q} OR s.nama ILIKE ${"%" + q + "%"})
+        AND (
+          EXISTS (SELECT 1 FROM "RiwayatDufah" r WHERE r."santriId" = s.id AND r."dufahId" = ${dufahAktifId})
+          OR EXISTS (SELECT 1 FROM "TransaksiPendaftaran" t WHERE t."santriId" = s.id AND t."dufahTujuanId" = ${dufahAktifId})
+        )
       ORDER BY similarity(s.nama, ${q}) DESC
       LIMIT 10
     `;
@@ -77,9 +84,7 @@ export async function GET(request: Request) {
       .filter((s): s is NonNullable<typeof s> => !!s)
       .map((s) => {
         const rw = s.riwayat[0];
-        const trxAktif = dufahAktif
-          ? s.transaksi.find((t) => t.dufahTujuanId === dufahAktif.id)
-          : undefined;
+        const trxAktif = s.transaksi.find((t) => t.dufahTujuanId === dufahAktifId);
         const trxTerbaru = s.transaksi[0];
         const katProgram =
           s.program?.kategoriProgram ||
@@ -101,22 +106,16 @@ export async function GET(request: Request) {
             statusTempat = "Menunggu kamar";
             riwayatId = rw.id;
           }
-        } else if (!s.isAktif) {
-          statusTempat = "Nonaktif";
         } else {
-          const trxPending = s.transaksi.find((t) =>
-            ["PENDING", "MENUNGGU"].includes(t.statusPembayaran)
-          );
-          if (trxPending) {
+          // Tanpa riwayat dufah aktif: pasti ada transaksi dufah aktif (jaminan query di atas)
+          const trx = trxAktif || trxTerbaru;
+          const pending = trx && ["PENDING", "MENUNGGU"].includes(trx.statusPembayaran);
+          if (pending) {
             statusBayar = "Menunggu verifikasi";
-            statusTempat = trxPending.dufahTujuan
-              ? `Terdaftar ${trxPending.dufahTujuan.nama}, menunggu verifikasi keuangan`
-              : "Terdaftar, menunggu verifikasi keuangan";
-          } else if (trxTerbaru?.dufahTujuan) {
-            statusTempat = `Terdaftar untuk ${trxTerbaru.dufahTujuan.nama}`;
-            statusBayar = "Lunas";
+            statusTempat = "Terdaftar, menunggu verifikasi keuangan";
           } else {
-            statusTempat = "Belum ada riwayat dufah aktif";
+            statusBayar = "Lunas";
+            statusTempat = "Sudah bayar, menunggu pembuatan riwayat";
           }
         }
 
