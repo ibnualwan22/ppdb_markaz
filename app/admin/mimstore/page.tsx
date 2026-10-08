@@ -77,6 +77,22 @@ function getLokasi(item: any): string {
   return `${sakan.nama} • Kamar ${kamarNama} • Lkr ${nomor}`;
 }
 
+// ── Helper: badge kategori program ─────────────────────────
+function labelKategoriProgram(kat?: string | null): string {
+  if (!kat) return "";
+  if (kat === "2MINGGU") return "2 Minggu";
+  return kat.charAt(0) + kat.slice(1).toLowerCase();
+}
+function warnaBadgeKategori(kat?: string | null): string {
+  switch (kat) {
+    case "TUROTS": return "text-amber-400 border-amber-500/40 bg-amber-500/10";
+    case "REGULER": return "text-blue-400 border-blue-500/40 bg-blue-500/10";
+    case "HUFADZ": return "text-emerald-400 border-emerald-500/40 bg-emerald-500/10";
+    case "2MINGGU": return "text-purple-400 border-purple-500/40 bg-purple-500/10";
+    default: return "text-gray-500 border-gray-700";
+  }
+}
+
 // ── Komponen Kartu Item di Modal ───────────────────────────
 function ModalItemCard({ item, copied, copy }: { item: any; copied: string | null; copy: (t: string, id: string) => void }) {
   const lokasi = getLokasi(item);
@@ -483,6 +499,11 @@ export default function MimStorePage() {
                       {item.santri.kategori && (
                         <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded text-white ${item.santri.kategori === 'KSU' ? 'bg-purple-600' : item.santri.kategori === 'LAMA' ? 'bg-orange-500' : 'bg-green-500'}`}>
                           {item.santri.kategori}
+                        </span>
+                      )}
+                      {item.santri.program?.kategoriProgram && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${warnaBadgeKategori(item.santri.program.kategoriProgram)}`}>
+                          {labelKategoriProgram(item.santri.program.kategoriProgram)}
                         </span>
                       )}
                       {item.nilaiTauzi !== null && item.nilaiTauzi !== undefined && (
