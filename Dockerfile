@@ -20,6 +20,13 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
+# Build args untuk NEXT_PUBLIC_* (di-inline Next.js saat build)
+ARG NEXT_PUBLIC_PUSHER_KEY
+ARG NEXT_PUBLIC_PUSHER_CLUSTER
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ARG NEXT_PUBLIC_SIAKAD_URL
+ARG NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+
 # Next.js telemetry can be disabled during the build testing
 ENV NEXT_TELEMETRY_DISABLED=1
 

@@ -15,7 +15,7 @@ services:
       - ppdb_network
 
   app:
-    build: .
+    image: ghcr.io/ibnualwan22/ppdb_markaz:latest
     container_name: ppdb_app
     restart: always
     ports:
