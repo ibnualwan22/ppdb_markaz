@@ -101,7 +101,7 @@ export async function PATCH(
               dufahId: dufahAktif.id,
               lemariId: newLemariId,
               status: newStatus,
-              isIdCardTaken: riwayat.isIdCardTaken, // ID card tidak perlu bikin ulang
+              isIdCardTaken: false, // Kartu ID berlaku per dufah: tiap dufah baru mulai dari belum ambil
               bulanKe: newBulanKe
             }
           });
