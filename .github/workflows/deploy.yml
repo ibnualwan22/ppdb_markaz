@@ -1,16 +1,48 @@
-name: Deploy to VPS
+name: Build & Deploy PPDB
 
 on:
   push:
     branches:
       - main
 
+env:
+  IMAGE: ghcr.io/ibnualwan22/ppdb_markaz
+
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Deploy application via SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login ke GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}:latest
+          build-args: |
+            NEXT_PUBLIC_PUSHER_KEY=2ad33a342f5d22404749
+            NEXT_PUBLIC_PUSHER_CLUSTER=ap1
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAADQmiXG-kG5fjOy2
+            NEXT_PUBLIC_SIAKAD_URL=https://siakad.markazarabiyah.site
+            NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=devfcmzyj
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy ke VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -19,4 +51,5 @@ jobs:
           script: |
             cd ~/ppdb_markaz
             git pull origin main
-            sudo docker compose up -d --build
+            docker compose pull app
+            docker compose up -d app
