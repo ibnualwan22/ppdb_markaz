@@ -78,6 +78,7 @@ export default function MasterSantriPage() {
   const [filterBulanKe, setFilterBulanKe] = useState("SEMUA");
   const [filterSakan, setFilterSakan] = useState("SEMUA");
   const [filterProgram, setFilterProgram] = useState("SEMUA");
+  const [daftarKategori, setDaftarKategori] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -120,6 +121,34 @@ export default function MasterSantriPage() {
     const res = await fetch("/api/program");
     if (res.ok) setDaftarProgram(await res.json());
   };
+
+  const muatDaftarKategori = async () => {
+    try {
+      const res = await fetch("/api/kategori-program");
+      if (res.ok) {
+        const data = await res.json();
+        setDaftarKategori((data || []).filter((k: any) => k.isActive));
+      }
+    } catch (e) { console.error("Gagal memuat kategori", e); }
+  };
+
+  // Label & warna badge kategori (dinamis dari master)
+  const labelKategori = (nama: string) =>
+    nama === "2MINGGU" ? "2 Minggu" : nama.charAt(0) + nama.slice(1).toLowerCase();
+  const badgeKategori: Record<string, string> = {
+    REGULER: "bg-blue-500/15 text-blue-400 border border-blue-500/30",
+    TUROTS: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
+    "2MINGGU": "bg-purple-500/15 text-purple-400 border border-purple-500/30",
+    HUFADZ: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
+  };
+  const warnaBadgeKategori = (nama: string) => badgeKategori[nama] || "bg-teal-500/15 text-teal-400 border border-teal-500/30";
+  const warnaTombolKategori: Record<string, string> = {
+    REGULER: "bg-blue-500 text-white",
+    TUROTS: "bg-amber-500 text-black",
+    "2MINGGU": "bg-purple-500 text-white",
+    HUFADZ: "bg-emerald-500 text-white",
+  };
+  const warnaAktifKategori = (nama: string) => warnaTombolKategori[nama] || "bg-teal-500 text-white";
 
   // Helper: Build query string dari semua filter aktif
   const buildQueryString = (page: number, mode?: string) => {
@@ -173,6 +202,7 @@ export default function MasterSantriPage() {
   useEffect(() => {
     muatDaftarDufah();
     muatDaftarProgram();
+    muatDaftarKategori();
   }, []);
 
   useEffect(() => {
@@ -955,31 +985,22 @@ export default function MasterSantriPage() {
 
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Program</label>
-              <div className="flex items-center bg-dark-900 border border-dark-900 rounded-xl overflow-hidden shadow-inner h-[46px]">
+              <div className="flex items-center bg-dark-900 border border-dark-900 rounded-xl overflow-hidden shadow-inner h-[46px] overflow-x-auto">
                 <button
                   onClick={() => setFilterProgram("SEMUA")}
-                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === 'SEMUA' ? 'bg-gold-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
+                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 whitespace-nowrap ${filterProgram === 'SEMUA' ? 'bg-gold-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
                 >
                   Semua
                 </button>
-                <button
-                  onClick={() => setFilterProgram("REGULER")}
-                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === 'REGULER' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
-                >
-                  Reguler
-                </button>
-                <button
-                  onClick={() => setFilterProgram("TUROTS")}
-                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === 'TUROTS' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
-                >
-                  Turots
-                </button>
-                <button
-                  onClick={() => setFilterProgram("2MINGGU")}
-                  className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 ${filterProgram === '2MINGGU' ? 'bg-purple-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
-                >
-                  2 Minggu
-                </button>
+                {daftarKategori.map((k: any) => (
+                  <button
+                    key={k.id}
+                    onClick={() => setFilterProgram(k.nama)}
+                    className={`px-3 py-2.5 text-sm font-bold transition-all flex-1 whitespace-nowrap ${filterProgram === k.nama ? warnaAktifKategori(k.nama) : 'text-gray-400 hover:text-gray-200'}`}
+                  >
+                    {labelKategori(k.nama)}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -1057,7 +1078,7 @@ export default function MasterSantriPage() {
                                 <div className="flex flex-col gap-1.5">
                                   <p className="text-sm font-bold text-emerald-400">{programDisplay.nama}</p>
                                   <div className="flex items-center gap-1.5">
-                                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${programDisplay.kategoriProgram === 'TUROTS' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : programDisplay.kategoriProgram === '2MINGGU' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'}`}>
+                                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${warnaBadgeKategori(programDisplay.kategoriProgram || 'REGULER')}`}>
                                       {programDisplay.kategoriProgram || 'REGULER'}
                                     </span>
                                     <span className="text-[10px] text-gray-500">{programDisplay.durasiBulan} Bln</span>
