@@ -32,7 +32,8 @@ export default function MejaKeuanganPage() {
   const [filterScope, setFilterScope] = useState("AKTIF"); // "AKTIF" atau "GLOBAL"
   const [filterLunas, setFilterLunas] = useState("ALL"); // "ALL", "LUNAS", "BELUM"
   const [filterKategori, setFilterKategori] = useState("ALL"); // "ALL", "BARU", "LAMA"
-  const [filterProgram, setFilterProgram] = useState("REGULER"); // "ALL", "REGULER", "TUROTS"
+  const [filterProgram, setFilterProgram] = useState("REGULER"); // "ALL" + nama kategori dari master
+  const [daftarKategori, setDaftarKategori] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
@@ -56,6 +57,11 @@ export default function MejaKeuanganPage() {
 
   useEffect(() => {
     muatData();
+    // Kategori program dinamis dari master (agar kategori baru otomatis muncul di filter)
+    fetch("/api/kategori-program")
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setDaftarKategori((data || []).filter((k: any) => k.isActive)))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -74,6 +80,17 @@ export default function MejaKeuanganPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filterScope, filterLunas, filterKategori, filterProgram]);
+
+  // Label & warna tombol filter kategori (dinamis dari master)
+  const labelKategori = (nama: string) =>
+    nama === "2MINGGU" ? "2 Minggu" : nama.charAt(0) + nama.slice(1).toLowerCase();
+  const warnaKategoriAktif: Record<string, string> = {
+    REGULER: "bg-blue-500 text-white",
+    TUROTS: "bg-amber-500 text-black",
+    "2MINGGU": "bg-purple-500 text-white",
+    HUFADZ: "bg-emerald-500 text-white",
+  };
+  const warnaAktifKategori = (nama: string) => warnaKategoriAktif[nama] || "bg-teal-500 text-white";
 
   const prosesVerifikasi = async (id: string, isKSU: boolean = false) => {
     if (!confirm(`Yakin ingin memverifikasi transaksi ini${isKSU ? ' sebagai KSU GRATIS' : ''}?`)) return;
@@ -722,32 +739,23 @@ export default function MejaKeuanganPage() {
             </select>
           </div>
 
-          {/* Toggle Program (Turots/Reguler/2Minggu) */}
-          <div className="flex items-center bg-dark-900 border border-gold-500/20 rounded-xl overflow-hidden flex-1 md:flex-none">
+          {/* Toggle Program (dinamis dari Master Kategori) */}
+          <div className="flex items-center bg-dark-900 border border-gold-500/20 rounded-xl overflow-hidden flex-1 md:flex-none flex-wrap">
             <button
               onClick={() => setFilterProgram("ALL")}
               className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === 'ALL' ? 'bg-gold-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
             >
               Semua
             </button>
-            <button
-              onClick={() => setFilterProgram("REGULER")}
-              className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === 'REGULER' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
-            >
-              Reguler
-            </button>
-            <button
-              onClick={() => setFilterProgram("TUROTS")}
-              className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === 'TUROTS' ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-gray-200'}`}
-            >
-              Turots
-            </button>
-            <button
-              onClick={() => setFilterProgram("2MINGGU")}
-              className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === '2MINGGU' ? 'bg-purple-500 text-white' : 'text-gray-400 hover:text-gray-200'}`}
-            >
-              2 Minggu
-            </button>
+            {daftarKategori.map((k: any) => (
+              <button
+                key={k.id}
+                onClick={() => setFilterProgram(k.nama)}
+                className={`px-4 py-2.5 text-sm font-bold transition-all ${filterProgram === k.nama ? warnaAktifKategori(k.nama) : 'text-gray-400 hover:text-gray-200'}`}
+              >
+                {labelKategori(k.nama)}
+              </button>
+            ))}
           </div>
 
           <div className="w-full lg:w-72 relative">
