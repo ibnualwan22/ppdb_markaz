@@ -62,12 +62,16 @@ export default function MasterLokasiPage() {
   const [nomorLemari, setNomorLemari] = useState("");
   const [kamarIdLemari, setKamarIdLemari] = useState("");
 
-  // State Modal Pindah Kamar
+  // State Modal Pindah Kamar (Denah)
   const [isModalPindahOpen, setIsModalPindahOpen] = useState(false);
   const [santriPindah, setSantriPindah] = useState<any>(null);
-  const [sakanTujuan, setSakanTujuan] = useState("");
-  const [kamarTujuan, setKamarTujuan] = useState("");
-  const [lemariTujuan, setLemariTujuan] = useState("");
+  const [sakanDenahAktif, setSakanDenahAktif] = useState("");
+  const [lemariTerpilih, setLemariTerpilih] = useState<any>(null);
+  const [sakanTerlarangId, setSakanTerlarangId] = useState<string | null>(null);
+
+  // State Pencarian Santri / Sakan
+  const [cariLokasi, setCariLokasi] = useState("");
+  const [highlightLemariId, setHighlightLemariId] = useState<string | null>(null);
 
   const pusher = usePusher();
 
@@ -184,34 +188,115 @@ export default function MasterLokasiPage() {
     });
   };
 
-  const bukaModalPindah = (riwayatId: string, namaSantri: string, gender: string) => {
-    setSantriPindah({ id: riwayatId, nama: namaSantri, gender: gender });
+  const bukaModalPindah = (riwayatId: string, namaSantri: string, gender: string, lokasiAsal?: { teks: string; sakanId?: string; kamarId?: string; lemariId?: string }) => {
+    const sakanTersedia = dataSakan.filter(s => s.kategori === gender && !s.isLocked);
+    setSantriPindah({ id: riwayatId, nama: namaSantri, gender: gender, lokasiAsal: lokasiAsal || null });
+    setSakanDenahAktif(sakanTersedia[0]?.id || "");
+    setLemariTerpilih(null);
+    setSakanTerlarangId(null);
     setIsModalPindahOpen(true);
+    // Tandai sakan yang wajib ditinggalkan santri ini (aturan 3 dufah),
+    // agar admin tidak memilihnya lalu ditolak sistem.
+    fetch("/api/asrama/mutasi-sakan")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        const item = data?.daftarMutasi?.find((d: any) => d.riwayatId === riwayatId && !d.sudahDimutasi);
+        if (item?.sakanLama) {
+          const s = dataSakan.find(x => x.nama === item.sakanLama);
+          if (s) setSakanTerlarangId(s.id);
+        }
+      })
+      .catch(() => {});
   };
 
   const eksekusiPindahKamar = async () => {
-    if (!lemariTujuan) return swalError("Pilih lemari tujuan!");
+    if (!lemariTerpilih?.id) return swalError("Pilih lemari tujuan di denah!");
     setLoading(true);
     const res = await fetch(`/api/riwayat/${santriPindah.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lemariIdBaru: lemariTujuan }),
+      body: JSON.stringify({ lemariIdBaru: lemariTerpilih.id }),
     });
 
     if (res.ok) {
       swalSuccess("Pindah Kamar Berhasil!");
       setIsModalPindahOpen(false);
-      setSakanTujuan(""); setKamarTujuan(""); setLemariTujuan("");
+      setSantriPindah(null);
+      setSakanDenahAktif(""); setLemariTerpilih(null); setSakanTerlarangId(null);
       muatData();
-    } else { swalError("Gagal memindahkan santri."); }
+    } else {
+      let pesan = "Gagal memindahkan santri.";
+      try { const d = await res.json(); if (d?.error) pesan = d.error; } catch (e) {}
+      swalError(pesan);
+    }
     setLoading(false);
   };
 
-  const sakanPindahDifilter = dataSakan.filter(s => s.kategori === santriPindah?.gender && !s.isLocked);
-  const sakanPindahTerpilih = sakanPindahDifilter.find(s => s.id === sakanTujuan);
-  const kamarPindahDifilter = sakanPindahTerpilih ? sakanPindahTerpilih.kamar.filter((k:any) => !k.isLocked) : [];
-  const kamarPindahTerpilih = kamarPindahDifilter.find((k:any) => k.id === kamarTujuan);
-  const lemariPindahTersedia = kamarPindahTerpilih ? kamarPindahTerpilih.lemari.filter((l:any) => !l.isLocked && (!l.penghuni || l.penghuni.length === 0)) : [];
+  // ---------- Helper Pencarian & Denah ----------
+  const normalisasi = (t: string) => (t || "").toLowerCase().replace(/\s+/g, " ").trim();
+  // Fuzzy ringan: cocok bila mengandung query, atau huruf query muncul berurutan (toleransi typo)
+  const cocokFuzzy = (teks: string, q: string) => {
+    const t = normalisasi(teks), k = normalisasi(q);
+    if (!k) return false;
+    if (t.includes(k)) return true;
+    let i = 0;
+    for (const ch of t) { if (ch === k[i]) i++; if (i === k.length) return true; }
+    return false;
+  };
+
+  const hitungKeterisian = (s: any) => {
+    let total = 0, terisi = 0;
+    (s.kamar || []).forEach((k: any) => {
+      if (k.isLocked) return;
+      (k.lemari || []).filter((l: any) => !l.isLocked).forEach((l: any) => {
+        total++;
+        if (l.penghuni && l.penghuni.length > 0) terisi++;
+      });
+    });
+    return { total, terisi, pct: total === 0 ? 0 : Math.round((terisi / total) * 100) };
+  };
+
+  // Ratakan semua penghuni aktif: nama -> lokasi lengkap
+  const semuaPenghuni: any[] = [];
+  dataSakan.forEach((s: any) => (s.kamar || []).forEach((k: any) => (k.lemari || []).forEach((l: any) =>
+    (l.penghuni || []).forEach((p: any) => semuaPenghuni.push({
+      riwayatId: p.id,
+      nama: p.santri?.nama || "-",
+      gender: s.kategori,
+      sakanId: s.id, sakanNama: s.nama,
+      kamarId: k.id, kamarNama: k.nama,
+      lemariId: l.id, lemariNomor: l.nomor,
+      bentrok: (l.penghuni || []).length > 1,
+      tanpaKamar: false,
+    }))
+  )));
+
+  const qCari = cariLokasi.trim();
+  const hasilSantri: any[] = qCari.length >= 2 ? [
+    ...semuaPenghuni.filter(p => cocokFuzzy(p.nama, qCari)),
+    ...santriTanpaKamar
+      .filter((it: any) => cocokFuzzy(it.santri?.nama || "", qCari))
+      .map((it: any) => ({
+        riwayatId: it.id, nama: it.santri?.nama || "-", gender: it.santri?.gender,
+        sakanNama: "Antrean (tanpa kamar)", tanpaKamar: true,
+      })),
+  ].slice(0, 20) : [];
+  const hasilSakan: any[] = qCari.length >= 2
+    ? dataSakan.filter(s => cocokFuzzy(s.nama, qCari)).slice(0, 10)
+    : [];
+
+  const lompatKe = (elId: string, idHighlight?: string) => {
+    const el = document.getElementById(elId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (idHighlight) {
+      setHighlightLemariId(idHighlight);
+      setTimeout(() => setHighlightLemariId(null), 2200);
+    }
+  };
+
+  // Sakan untuk tab denah modal pindah (sesuai gender santri, tidak dikunci)
+  const sakanDenah = dataSakan.filter(s => s.kategori === santriPindah?.gender && !s.isLocked);
+  const sakanDenahAktifObj = sakanDenah.find(s => s.id === sakanDenahAktif);
 
   // Group sakan by kategori
   const sakanBanin = dataSakan.filter(s => s.kategori !== "BANAT");
@@ -222,7 +307,7 @@ export default function MasterLokasiPage() {
     const headerColor = sakan.isLocked ? 'bg-dark-900' : isBanat ? 'bg-gradient-to-r from-rose-900 to-rose-800' : 'bg-dark-900 border-b border-gold-500/10';
 
     return (
-      <div className={`rounded-2xl shadow-sm border overflow-hidden ${sakan.isLocked ? 'bg-dark-900 border-gray-800 opacity-80' : 'bg-dark-800 border-gold-500/20 hover:border-gold-500/50'}`}>
+      <div id={`sakan-${sakan.id}`} className={`rounded-2xl shadow-sm border overflow-hidden scroll-mt-24 ${sakan.isLocked ? 'bg-dark-900 border-gray-800 opacity-80' : 'bg-dark-800 border-gold-500/20 hover:border-gold-500/50'}`}>
         <div className={`${headerColor} p-4 flex justify-between items-center text-gray-200`}>
           <div>
             <h3 className={`font-bold text-xl flex items-center gap-2 ${sakan.isLocked ? 'line-through text-gray-500' : 'text-gold-500'}`}>
@@ -268,8 +353,9 @@ export default function MasterLokasiPage() {
                         const isTerisi = lemari.penghuni && lemari.penghuni.length > 0;
                         
                         return (
-                          <div key={lemari.id} className={`flex flex-col border p-2 rounded relative group 
-                            ${lemari.isLocked ? 'bg-dark-900 border-gray-800 opacity-75' 
+                          <div key={lemari.id} id={`lemari-${lemari.id}`} className={`flex flex-col border p-2 rounded relative group scroll-mt-24 transition-shadow
+                            ${highlightLemariId === lemari.id ? 'shadow-[0_0_0_3px_rgba(212,175,55,0.9)] z-10'
+                            : lemari.isLocked ? 'bg-dark-900 border-gray-800 opacity-75' 
                             : isBentrok ? 'bg-red-900/20 border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]' 
                             : isTerisi ? 'bg-dark-800 border-gold-500/30' 
                             : 'bg-dark-900 border-gray-800 border-dashed hover:border-gold-500/50'}`}>
@@ -291,7 +377,10 @@ export default function MasterLokasiPage() {
                                   <div key={p.id} className="flex justify-between items-center bg-dark-900 px-1.5 py-1 rounded border border-gold-500/20">
                                     <p className="font-bold text-xs text-gray-200 truncate max-w-[100px]" title={p.santri.nama}>{p.santri.nama}</p>
                                     <button 
-                                      onClick={() => bukaModalPindah(p.id, p.santri.nama, sakan.kategori)}
+                                      onClick={() => bukaModalPindah(p.id, p.santri.nama, sakan.kategori, {
+                                        teks: `${sakan.nama} / Kamar ${kamar.nama} / Loker ${lemari.nomor}`,
+                                        sakanId: sakan.id, kamarId: kamar.id, lemariId: lemari.id
+                                      })}
                                       className="text-[10px] bg-gold-500/10 hover:bg-gold-500 hover:text-black text-gold-500 border border-gold-500/30 px-1.5 py-0.5 rounded transition shadow-sm font-bold flex items-center gap-0.5"
                                       title="Pindah Kamar"
                                     >
@@ -359,6 +448,72 @@ export default function MasterLokasiPage() {
       <div className="mb-6 bg-yellow-900/20 p-4 rounded-xl border border-yellow-500/30 flex items-center gap-3">
         <IconWarning />
         <p className="text-sm text-yellow-500 font-medium">Jika ada loker warna merah (Bentrok), klik tombol Pindah untuk memindahkan santri.</p>
+      </div>
+
+      {/* PENCARIAN SANTRI / SAKAN */}
+      <div className="mb-6 bg-dark-800 rounded-2xl border border-gold-500/20 p-4">
+        <input
+          type="text"
+          value={cariLokasi}
+          onChange={(e) => setCariLokasi(e.target.value)}
+          placeholder="Cari nama santri atau sakan... (min. 2 huruf)"
+          className="w-full p-3 border border-dark-900 bg-dark-900 text-gray-200 placeholder:text-gray-600 rounded-xl outline-none focus:ring-1 focus:ring-gold-500/50 shadow-inner"
+        />
+        {qCari.length >= 2 && (
+          <div className="mt-3 space-y-3 max-h-80 overflow-y-auto">
+            {hasilSakan.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {hasilSakan.map((s: any) => (
+                  <button
+                    key={s.id}
+                    onClick={() => lompatKe(`sakan-${s.id}`)}
+                    className="text-xs font-bold bg-gold-500/10 hover:bg-gold-500/20 text-gold-500 border border-gold-500/30 px-3 py-1.5 rounded-full transition"
+                  >
+                    {s.nama} ({s.kategori})
+                  </button>
+                ))}
+              </div>
+            )}
+            {hasilSantri.length > 0 ? (
+              <div className="space-y-1.5">
+                {hasilSantri.map((p: any) => (
+                  <div key={`${p.riwayatId}-${p.lemariId || "x"}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-dark-900 border border-gray-800 rounded-xl px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-gray-200 truncate flex items-center gap-2">
+                        {p.nama}
+                        {p.bentrok && <span className="text-[10px] font-black bg-red-600 text-white px-1.5 py-0.5 rounded">BENTROK</span>}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {p.tanpaKamar ? "Antrean (tanpa kamar)" : `${p.sakanNama} / Kamar ${p.kamarNama} / Loker ${p.lemariNomor}`}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      {!p.tanpaKamar && (
+                        <button
+                          onClick={() => lompatKe(`lemari-${p.lemariId}`, p.lemariId)}
+                          className="text-xs font-bold bg-dark-800 text-gray-300 border border-gray-700 hover:border-gold-500/50 px-3 py-1.5 rounded-lg transition"
+                        >
+                          Lihat
+                        </button>
+                      )}
+                      <button
+                        onClick={() => bukaModalPindah(p.riwayatId, p.nama, p.gender, p.tanpaKamar ? undefined : {
+                          teks: `${p.sakanNama} / Kamar ${p.kamarNama} / Loker ${p.lemariNomor}`,
+                          sakanId: p.sakanId, kamarId: p.kamarId, lemariId: p.lemariId
+                        })}
+                        className="text-xs font-black bg-gold-500 hover:bg-gold-400 text-black px-3 py-1.5 rounded-lg transition"
+                      >
+                        Pindah
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              hasilSakan.length === 0 && <p className="text-sm text-gray-500 italic px-1">Tidak ditemukan. Coba kata kunci lain.</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* SANTRI TANPA KAMAR SECTION */}
@@ -457,47 +612,106 @@ export default function MasterLokasiPage() {
         <div className="text-center py-20 text-gray-500 font-medium">Belum ada data Sakan.</div>
       )}
 
-      {/* MODAL PINDAH KAMAR */}
+      {/* MODAL PINDAH KAMAR (DENAH) */}
       {isModalPindahOpen && santriPindah && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl shadow-2xl border border-gold-500/20 w-full max-w-lg overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
-            <div className={`p-5 bg-dark-900 border-b border-gold-500/10`}>
+          <div className="bg-dark-800 rounded-2xl shadow-2xl border border-gold-500/20 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden" style={{ animation: 'scaleIn 0.2s ease-out' }}>
+            <div className="p-5 bg-dark-900 border-b border-gold-500/10 shrink-0">
               <h2 className="text-xl font-bold text-gold-500 flex items-center gap-2"><IconRefresh className="h-5 w-5" /> Pindah Lokasi Kamar</h2>
               <p className="text-gray-400 text-sm mt-1">Pilih kamar baru untuk: <strong className="text-gray-200">{santriPindah.nama}</strong></p>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Sakan Tujuan</label>
-                <select value={sakanTujuan} onChange={(e) => { setSakanTujuan(e.target.value); setKamarTujuan(""); setLemariTujuan(""); }} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 font-bold focus:ring-1 focus:ring-gold-500/50 text-gray-200">
-                  <option value="">-- Pilih Sakan --</option>
-                  {sakanPindahDifilter.map((s) => <option key={s.id} value={s.id}>{s.nama}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Kamar Tujuan</label>
-                <select value={kamarTujuan} onChange={(e) => { setKamarTujuan(e.target.value); setLemariTujuan(""); }} disabled={!sakanTujuan} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 text-gray-200">
-                  <option value="">-- Pilih Kamar --</option>
-                  {kamarPindahDifilter.map((k: any) => <option key={k.id} value={k.id}>Kamar {k.nama}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-1">Pilih Lemari (Yang Kosong)</label>
-                <select value={lemariTujuan} onChange={(e) => setLemariTujuan(e.target.value)} disabled={!kamarTujuan} className="w-full p-3 border border-dark-900 rounded-xl outline-none bg-dark-900 disabled:bg-dark-900/50 focus:ring-1 focus:ring-gold-500/50 text-gray-200">
-                  <option value="">-- Pilih Lemari --</option>
-                  {lemariPindahTersedia.map((l: any) => <option key={l.id} value={l.id}>Loker {l.nomor}</option>)}
-                </select>
-                {kamarTujuan && lemariPindahTersedia.length === 0 && <p className="text-xs text-red-500 mt-1 font-bold">Semua lemari di kamar ini penuh/dikunci!</p>}
-              </div>
+              {santriPindah.lokasiAsal && <p className="text-xs text-gray-500 mt-0.5">Lokasi saat ini: {santriPindah.lokasiAsal.teks}</p>}
             </div>
 
-            <div className="p-5 border-t border-gold-500/10 bg-dark-900/50 flex justify-end gap-3">
-              <button onClick={() => setIsModalPindahOpen(false)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
-              <button onClick={eksekusiPindahKamar} disabled={!lemariTujuan || loading} className={`px-6 py-2.5 bg-gold-500 hover:bg-gold-400 text-black font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]`}>
-                {loading ? "Memproses..." : "Konfirmasi Pindah"}
-              </button>
+            <div className="p-4 md:p-6 overflow-y-auto space-y-6">
+              {/* Legenda */}
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-xs font-bold bg-dark-900 text-gray-300 p-3 rounded-xl border border-gold-500/10">
+                <div className="flex items-center gap-2"><div className="w-5 h-5 rounded border border-gold-500 bg-dark-800"></div> Kosong</div>
+                <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-blue-600 border border-blue-500"></div> Dipilih</div>
+                <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-gray-700 border border-gray-600"></div> Terisi</div>
+                <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-500 flex items-center justify-center font-black">!</div> Booking</div>
+                <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-purple-600/30 border border-purple-500"></div> Posisi saat ini</div>
+              </div>
+
+              {/* Tab Sakan */}
+              <div className="flex overflow-x-auto hide-scrollbar border-b border-gold-500/10">
+                {sakanDenah.map((s: any) => {
+                  const info = hitungKeterisian(s);
+                  const isActive = s.id === sakanDenahAktif;
+                  const isTerlarang = s.id === sakanTerlarangId;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => { setSakanDenahAktif(s.id); setLemariTerpilih(null); }}
+                      className={`flex flex-col items-center py-3 px-5 min-w-[110px] whitespace-nowrap border-b-4 transition-colors ${isActive ? 'border-gold-500 bg-gold-500/10 text-gold-500 font-bold' : 'border-transparent text-gray-400 hover:bg-dark-900 hover:text-gray-200'}`}
+                    >
+                      <span className="text-sm uppercase flex items-center gap-1">{isTerlarang && <span title="Wajib mutasi dari sakan ini">⚠️</span>}{s.nama}</span>
+                      <span className="text-[10px] opacity-70 mt-0.5">{info.terisi}/{info.total} terisi ({info.pct}%)</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {sakanTerlarangId && sakanDenahAktif === sakanTerlarangId && (
+                <p className="text-xs text-red-400 font-bold bg-red-900/20 border border-red-500/30 rounded-xl p-3">
+                  ⚠️ {santriPindah.nama} wajib mutasi dari sakan ini (3 dufah berturut-turut). Pemindahan ke sakan ini akan ditolak sistem.
+                </p>
+              )}
+
+              {/* Denah Kamar */}
+              {sakanDenahAktifObj ? (
+                sakanDenahAktifObj.kamar.filter((k: any) => !k.isLocked && (k.lemari || []).some((l: any) => !l.isLocked)).map((kamar: any) => (
+                  <div key={kamar.id}>
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="h-[1px] flex-1 bg-gold-500/20"></div>
+                      <h3 className="text-base font-black text-gold-500 tracking-wider">Kamar {kamar.nama}</h3>
+                      <div className="h-[1px] flex-1 bg-gold-500/20"></div>
+                    </div>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-w-2xl mx-auto">
+                      {(kamar.lemari || []).filter((l: any) => !l.isLocked).map((lemari: any) => {
+                        const penghuni = lemari.penghuni?.[0];
+                        const isTerisi = !!penghuni;
+                        const isBooking = isTerisi && penghuni.isLunas === false;
+                        const isPosisiSaatIni = santriPindah?.lokasiAsal?.lemariId === lemari.id;
+                        const isSelected = lemariTerpilih?.id === lemari.id;
+                        const bisaDipilih = !isTerisi && !isPosisiSaatIni;
+                        let cls = "aspect-square rounded-xl border-2 flex items-center justify-center font-bold text-sm transition-all relative ";
+                        if (isPosisiSaatIni) cls += "bg-purple-600/20 border-purple-500 text-purple-300 cursor-not-allowed";
+                        else if (isBooking) cls += "bg-amber-500/10 border-amber-500/50 text-amber-500 cursor-not-allowed";
+                        else if (isTerisi) cls += "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-80";
+                        else if (isSelected) cls += "bg-blue-600 border-blue-500 text-white shadow-md scale-105 cursor-pointer";
+                        else cls += "bg-dark-900 border-gold-500/30 text-gold-500 hover:bg-gold-500/10 hover:border-gold-500/60 cursor-pointer";
+                        return (
+                          <button
+                            key={lemari.id}
+                            disabled={!bisaDipilih}
+                            onClick={() => setLemariTerpilih({ id: lemari.id, nomor: lemari.nomor, kamarNama: kamar.nama, sakanNama: sakanDenahAktifObj.nama })}
+                            className={cls}
+                            title={isPosisiSaatIni ? `Posisi saat ini: ${santriPindah.nama}` : isTerisi ? `${penghuni.santri?.nama}${isBooking ? " (Booking)" : ""}` : `Loker ${lemari.nomor} — kosong`}
+                          >
+                            {lemari.nomor}
+                            {isBooking && <span className="absolute -top-2 -right-2 w-5 h-5 bg-amber-500 text-black rounded-full text-xs font-black flex items-center justify-center">!</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-8">Tidak ada sakan tersedia.</p>
+              )}
+            </div>
+
+            <div className="p-4 md:p-5 border-t border-gold-500/10 bg-dark-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+              <p className="text-sm text-gray-400">
+                {lemariTerpilih ? (
+                  <>Pindah ke: <strong className="text-gold-500">{lemariTerpilih.sakanNama} / Kamar {lemariTerpilih.kamarNama} / Loker {lemariTerpilih.nomor}</strong></>
+                ) : "Pilih loker kosong pada denah."}
+              </p>
+              <div className="flex justify-end gap-3 shrink-0">
+                <button onClick={() => setIsModalPindahOpen(false)} className="px-5 py-2.5 text-gray-400 font-bold hover:bg-dark-900 rounded-xl transition">Batal</button>
+                <button onClick={eksekusiPindahKamar} disabled={!lemariTerpilih || loading} className={`px-6 py-2.5 bg-gold-500 hover:bg-gold-400 text-black font-bold rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]`}>
+                  {loading ? "Memproses..." : "Konfirmasi Pindah"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
