@@ -20,19 +20,40 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { nis, programId } = body;
+    const { nis, programId, isBeliAtribut = false, dataDiri } = body;
 
     if (!nis || !programId) {
       return NextResponse.json({ error: "Data 'nis' dan 'programId' wajib dikirim." }, { status: 400 });
     }
 
-    // 2. Cari Data Santri berdasarkan NIS
-    const santri = await prisma.santri.findUnique({
+    // 2. Cari Data Santri berdasarkan NIS; buatkan baru jika belum ada (upsert by NIS)
+    let santri = await prisma.santri.findUnique({
       where: { nis }
     });
 
     if (!santri) {
-      return NextResponse.json({ error: `Santri dengan NIS ${nis} tidak ditemukan.` }, { status: 404 });
+      const dd = dataDiri || {};
+      if (!dd.nama) {
+        return NextResponse.json({ error: `Santri dengan NIS ${nis} tidak ditemukan dan data diri tidak dikirim.` }, { status: 404 });
+      }
+      santri = await prisma.santri.create({
+        data: {
+          nis,
+          nama: dd.nama,
+          kategori: dd.kategori || "LAMA",
+          gender: dd.gender || "BANIN",
+          tempatLahir: dd.tempatLahir || null,
+          tanggalLahir: dd.tanggalLahir ? new Date(dd.tanggalLahir) : null,
+          kabupaten: dd.kabupaten || null,
+          desa: dd.desa || null,
+          kecamatan: dd.kecamatan || null,
+          provinsi: dd.provinsi || null,
+          detailAlamat: dd.detailAlamat || dd.alamat || null,
+          noWaSantri: dd.noWaSantri || null,
+          noWaOrtu: dd.noWaOrtu || dd.noWaWali || null,
+          namaOrtu: dd.namaOrtu || null,
+        },
+      });
     }
 
     // 3. Validasi Program
@@ -65,8 +86,9 @@ export async function POST(req: NextRequest) {
     // 5. Cek apakah santri masih memiliki sisa paket (Klaim)
     const isKlaimPaket = santri.batasAktifDufah !== null && santri.batasAktifDufah >= targetDufah.id;
 
-    // Jika klaim paket, tagihan otomatis 0. Jika tidak, asumsikan potong 100k karena pendaftar lama tidak perlu atribut.
-    const nominalProgram = isKlaimPaket ? 0 : Math.max(0, program.harga - 100000);
+    // Jika klaim paket, tagihan otomatis 0. Jika beli atribut pakai harga penuh,
+    // jika tidak beli atribut potong 100k (flat, sesuai aturan daftar ulang santri lama).
+    const nominalProgram = isKlaimPaket ? 0 : (isBeliAtribut ? program.harga : Math.max(0, program.harga - 100000));
     const kodeUnik = isKlaimPaket ? 0 : Math.floor(Math.random() * 900) + 100; // 100-999
     const totalTagihan = nominalProgram + kodeUnik;
     const noKwitansi = generateInvoiceNumber(targetDufah.id);
@@ -161,7 +183,7 @@ export async function POST(req: NextRequest) {
     await logActivity({
       aksi: "CREATE",
       modul: "Integrasi API",
-      deskripsi: `Pendaftaran via Endpoint SIAKAD a.n ${santri.nama} — Program: ${program.nama}`,
+      deskripsi: `Pendaftaran via Endpoint SIAKAD a.n ${santri.nama} — Program: ${program.nama} — Atribut: ${isBeliAtribut ? "Ya" : "Tidak"}`,
       namaUser: `Sistem SIAKAD`,
       targetId: santri.id,
     });
