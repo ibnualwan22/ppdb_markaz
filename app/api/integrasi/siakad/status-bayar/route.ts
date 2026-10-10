@@ -20,8 +20,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ data: { pending: null } });
     }
 
+    // Tentukan dufah target (logika sama seperti pendaftaran): yang sedang buka pendaftaran.
+    // Hanya tagihan PENDING untuk periode ini yang relevan; tagihan basi periode lalu diabaikan.
+    const allDufahs = await prisma.dufah.findMany({ orderBy: { id: 'desc' } });
+    const now = new Date();
+    let targetDufah = allDufahs.find(df => {
+      if (!df.tanggalBuka || !df.tanggalTutup) return false;
+      return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
+    });
+    if (!targetDufah) {
+      targetDufah = (await prisma.dufah.findFirst({ where: { isActive: true } })) || undefined;
+      if (!targetDufah) targetDufah = allDufahs[0];
+    }
+
     const pending = await prisma.transaksiPendaftaran.findFirst({
-      where: { santriId: santri.id, statusPembayaran: "PENDING" },
+      where: {
+        santriId: santri.id,
+        statusPembayaran: "PENDING",
+        dufahTujuanId: targetDufah?.id,
+      },
       include: { program: true, dufahTujuan: true },
       orderBy: { createdAt: "desc" },
     });
