@@ -8,7 +8,7 @@ function generateInvoiceNumber(dufahId: number) {
   const date = new Date();
   const dateString = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
   const randomStr = Math.floor(1000 + Math.random() * 9000); 
-  return `INV-${dufahId}-${dateString}-${randomStr}`;
+  return `RENEW-${dufahId}-${dateString}-${randomStr}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -94,6 +94,27 @@ export async function POST(req: NextRequest) {
     const noKwitansi = generateInvoiceNumber(targetDufah.id);
     const statusPembayaran = isKlaimPaket ? "KLAIM_PAKET" : "PENDING";
     const waktuLunas = isKlaimPaket ? new Date() : null;
+
+    // 5b. Anti-duplikat: tolak jika santri sudah punya tagihan PENDING untuk dufah tujuan ini
+    const existingPending = await prisma.transaksiPendaftaran.findFirst({
+      where: {
+        santriId: santri.id,
+        dufahTujuanId: targetDufah.id,
+        statusPembayaran: "PENDING",
+      },
+      include: { program: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (existingPending) {
+      return NextResponse.json({
+        error: "Santri sudah memiliki tagihan daftar ulang yang menunggu pembayaran untuk periode ini.",
+        data: {
+          transaksi: existingPending,
+          santri: { id: santri.id, nama: santri.nama, nis: santri.nis },
+          program: { id: existingPending.program.id, nama: existingPending.program.nama },
+        },
+      }, { status: 409 });
+    }
 
     // 6. Simpan Transaksi menggunakan Prisma Transaction
     const transaksi = await prisma.$transaction(async (tx) => {
