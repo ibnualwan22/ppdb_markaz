@@ -173,6 +173,8 @@ export async function GET(req: NextRequest) {
         },
         logikaSistem: {
            butuhDaftarUlang,
+           // true bila santri punya kuota aktif mencakup dufah target -> halaman Siakad tampil mode "Pemilihan Program"
+           klaimTersedia: !butuhDaftarUlang,
            statusKoneksi,
            pesan: butuhDaftarUlang ? "Batas durasi telah/akan habis. Silakan mendaftar ulang untuk periode ini." : "Masa aktif masih berlaku, Anda hanya butuh klaim kelas gratis untuk periode ini."
         }
