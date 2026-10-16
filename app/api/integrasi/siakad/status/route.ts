@@ -133,6 +133,14 @@ export async function GET(req: NextRequest) {
        sisaKuota = santri.batasAktifDufah - targetDufahDaftar.id + 1;
     }
 
+    // SISA UNTUK TAMPILAN: dihitung terhadap dufah yang sedang berjalan (bukan target pendaftaran),
+    // agar kartu "Masa Aktif Asrama" tidak menampilkan 0 padahal santri masih di dalam masa aktifnya.
+    // Logika daftar-ulang (butuhDaftarUlang) tetap memakai sisaKuota berbasis target pendaftaran.
+    let sisaBerjalan = santri.isCuti ? santri.saldoDufah : 0;
+    if (!santri.isCuti && santri.batasAktifDufah && currentActiveDufah && santri.batasAktifDufah >= currentActiveDufah.id) {
+       sisaBerjalan = santri.batasAktifDufah - currentActiveDufah.id + 1;
+    }
+
     // LOGIKA OTOMATIS: Menentukan apakah santri ini wajib daftar ulang atau masih punya kuota
     // Santri wajib daftar ulang (Bayar penuh) jika kuota 0 atau batasAktifDufah kurang dari target.
     const butuhDaftarUlang = sisaKuota <= 0;
@@ -166,7 +174,8 @@ export async function GET(req: NextRequest) {
         programAktif: santri.program ? santri.program.nama : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.nama : null),
         kategoriProgram: santri.program ? santri.program.kategoriProgram : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.kategoriProgram : null),
         masaAktif: {
-           sisaKoutaBulan: sisaKuota, 
+           sisaKoutaBulan: sisaKuota,
+           sisaBulanBerjalan: sisaBerjalan,
            berakhirPadaDufahId: santri.batasAktifDufah,
            berakhirPadaDufahNama: namaExpiredDufah || "Belum Ditentukan",
            dufahSekarangSistem: { id: currentActiveDufah?.id, nama: currentActiveDufah?.nama } 
