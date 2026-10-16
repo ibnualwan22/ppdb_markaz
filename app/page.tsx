@@ -802,6 +802,15 @@ export default function Home() {
               <h4 className="text-xl font-bold text-white mb-1 group-hover:text-gold-400">Program Turats</h4>
               <p className="text-sm text-gray-400 font-medium leading-relaxed">Fokus pembelajaran kutubut turats (Fathul Qorib, Ibnu Aqil, dll).</p>
             </Link>
+
+            <Link
+              href={`${categoryModal.target}?kategori=HUFADZ`}
+              onClick={() => setCategoryModal({ ...categoryModal, isOpen: false })}
+              className="block p-5 rounded-2xl border-2 border-white/5 bg-white/[0.02] hover:border-gold-500 hover:bg-gold-500/5 transition-all group"
+            >
+              <h4 className="text-xl font-bold text-white mb-1 group-hover:text-gold-400">Program Hufadz</h4>
+              <p className="text-sm text-gray-400 font-medium leading-relaxed">Fokus tahfidz Al-Qur'an.</p>
+            </Link>
           </div>
         </div>
       </div>
