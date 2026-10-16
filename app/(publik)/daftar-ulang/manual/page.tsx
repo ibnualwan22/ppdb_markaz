@@ -69,6 +69,7 @@ function DaftarUlangManualContent() {
   useEffect(() => {
     if (searchParams) {
       if(searchParams.get('kategori') === 'TUROTS') setActiveKategori('TUROTS');
+      else if(searchParams.get('kategori') === 'HUFADZ') setActiveKategori('HUFADZ');
       else setActiveKategori('REGULER');
     }
   }, [searchParams]);
@@ -442,7 +443,7 @@ function DaftarUlangManualContent() {
                 <span>&larr;</span> Kembali
               </button>
               <h2 className="text-2xl font-bold text-white border-b border-gold-500/10 pb-3 mb-6">
-                Pilih Program {activeKategori === 'TUROTS' ? 'Turats' : 'Reguler'}
+                Pilih Program {activeKategori === 'TUROTS' ? 'Turats' : activeKategori === 'HUFADZ' ? 'Hufadz' : 'Reguler'}
               </h2>
 
               {programs.length === 0 ? (
@@ -450,9 +451,8 @@ function DaftarUlangManualContent() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {programs.filter(p => {
-                    const isTurats = p.kategoriProgram === "TUROTS";
-                    if (activeKategori === "TUROTS" && !isTurats) return false;
-                    if (activeKategori === "REGULER" && isTurats) return false;
+                    const kat = p.kategoriProgram || "REGULER";
+                    if (kat !== activeKategori) return false;
                     return true;
                   }).map(p => {
                     const tgMulai = p.tanggalMulaiDefault || "10";
