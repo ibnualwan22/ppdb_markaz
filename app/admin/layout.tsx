@@ -283,7 +283,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           {/* Footer (Logout Button) */}
           <div className={`p-4 border-t border-gold-500/10 transition-all ${desktopCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
             <Link
-              href="https://bawwabah.markazarabiyah.site"
+              href="https://bawwabah.markazarabiyah.site/dashboard"
               title={desktopCollapsed ? "Bawwabah" : undefined}
               className={`flex items-center ${desktopCollapsed ? 'justify-center p-3' : 'gap-3 p-3 w-full'} rounded-xl text-sm font-semibold text-teal-300 hover:bg-teal-500/10 hover:text-teal-200 transition-all duration-200 mb-2`}
             >
