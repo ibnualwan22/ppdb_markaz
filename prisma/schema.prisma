@@ -260,3 +260,11 @@ model Rombongan {
   admin       User?                  @relation(fields: [diverifikasiOleh], references: [id])
   dufahTujuan Dufah?                 @relation(fields: [dufahTujuanId], references: [id], onDelete: SetNull)
 }
+
+// SSO Bawwabah -> PPDB: anti-replay token sekali pakai (tabel dibuat via
+// psql; deploy PPDB tidak menjalankan migrate, jadi file migrasi ini
+// hanya dokumentasi — JANGAN paksa insert baris history).
+model SsoConsumedToken {
+  jti        String   @id
+  consumedAt DateTime @default(now())
+}
