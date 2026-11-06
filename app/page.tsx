@@ -99,6 +99,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [targetDufah, setTargetDufah] = useState<any>(null);
+  // Semua dufah yang jendela pendaftarannya sedang aktif. Bila lebih dari
+  // satu (jarang), pengunjung memilih periodenya — default yang terbaru.
+  const [openDufahList, setOpenDufahList] = useState<any[]>([]);
   const [categoryModal, setCategoryModal] = useState<{ isOpen: boolean, target: string }>({ isOpen: false, target: '' });
 
   const navLinks = [
@@ -129,14 +132,19 @@ export default function Home() {
         try {
           const dufahData = await dufahRes.json();
           const now = new Date();
-          const target = dufahData.find((df: any) => {
+          // GET /api/dufah mengembalikan id menurun — openDufahs[0] adalah
+          // yang terbaru. Tepat 1 jendela aktif -> pakai itu langsung.
+          // Lebih dari 1 -> tampilkan pemilih periode (default terbaru).
+          // Tidak ada -> targetDufah null (pendaftaran belum dibuka).
+          const openDufahs = (Array.isArray(dufahData) ? dufahData : []).filter((df: any) => {
             if (!df.tanggalBuka || !df.tanggalTutup) return false;
             return now >= new Date(df.tanggalBuka) && now <= new Date(df.tanggalTutup);
           });
-          if (target) {
-            target.namaPeriodeLengkap = target.nama;
-          }
-          setTargetDufah(target || null);
+          openDufahs.forEach((df: any) => {
+            df.namaPeriodeLengkap = df.nama;
+          });
+          setOpenDufahList(openDufahs);
+          setTargetDufah(openDufahs.length > 0 ? openDufahs[0] : null);
         } catch { }
       } catch (error) {
         console.error("Failed to fetch public data:", error);
@@ -482,6 +490,25 @@ export default function Home() {
                 <div className="w-24 h-1 bg-gold-500 mx-auto mt-8 rounded-full"></div>
               </div>
             </FadeIn>
+
+            {/* Pemilih periode pendaftaran — hanya bila >1 jendela aktif
+                (jarang). Default yang terbaru; pilihan mengubah tanggal
+                mulai/tutup + label periode yang tampil di kartu program.
+                Pilihan final tetap ditanyakan lagi di formulir pendaftaran. */}
+            {openDufahList.length > 1 && (
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-widest mr-1">Periode Pendaftaran:</span>
+                {openDufahList.map((df: any) => (
+                  <button
+                    key={df.id}
+                    onClick={() => setTargetDufah(df)}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${targetDufah?.id === df.id ? "bg-gold-500 text-black border-gold-500" : "bg-white/5 text-gray-300 border-white/10 hover:border-gold-500/50"}`}
+                  >
+                    {df.namaPeriodeLengkap || df.nama}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {loading ? (
               <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible">

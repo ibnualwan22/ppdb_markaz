@@ -1,7 +1,12 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 
+// GET /api/dufah — daftar dufah (dipakai landing publik, formulir
+// pendaftaran/daftar-ulang, dan halaman admin). Tetap terbuka (GET).
+//
+// POST /api/dufah (buat dufah manual) DIHAPUS — rancangan PPDB-pendaftaran
+// (6 Nov 2026): nama dufah dibuat di Bawwabah; baris PPDB dibuat otomatis
+// lewat POST /api/bawwabah/dufah saat draf dibuat di Bawwabah.
 
 export async function GET() {
   try {
@@ -11,27 +16,5 @@ export async function GET() {
     return NextResponse.json(daftarDufah);
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { nama, tanggalBuka, tanggalTutup } = body;
-
-    const dufahBaru = await prisma.dufah.create({
-      data: {
-        nama,
-        isActive: false, // Default selalu false sampai diaktifkan manual
-        tanggalBuka: tanggalBuka ? new Date(`${tanggalBuka}+07:00`) : null,
-        tanggalTutup: tanggalTutup ? new Date(`${tanggalTutup}+07:00`) : null,
-      }
-    });
-
-    await notifySiakadWebhook();
-
-    return NextResponse.json(dufahBaru, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Gagal membuat Duf'ah baru" }, { status: 500 });
   }
 }

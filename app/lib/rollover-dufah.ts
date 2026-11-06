@@ -18,9 +18,9 @@ export interface RolloverHasil {
 }
 
 /**
- * Logika rollover dufah — SATU eksekutor yang dipakai baik oleh endpoint
- * Bawwabah (POST /api/bawwabah/rollover) maupun tombol "Set Aktif" lama
- * (PATCH /api/dufah/[id]/active), supaya keduanya tidak bisa menyimpang.
+ * Logika rollover dufah — SATU eksekutor yang dipakai oleh endpoint
+ * Bawwabah (POST /api/bawwabah/rollover). Tombol "Set Aktif" lama
+ * (PATCH /api/dufah/[id]/active) sudah dihapus — aktivasi hanya dari Bawwabah.
  *
  * HARUS dipanggil di dalam `prisma.$transaction` oleh pemanggil — semua
  * baca/tulis memakai client transaksi (tx) yang diberikan, kecuali

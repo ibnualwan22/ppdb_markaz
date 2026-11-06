@@ -77,6 +77,11 @@ model Dufah {
   nama                 String
   isActive             Boolean                @default(false)
   isTahunBaru          Boolean                @default(false)
+  // Id periode Bawwabah (p-<cuid>) yang melahirkan baris ini. Diisi saat
+  // Bawwabah membuat draf (POST /api/bawwabah/dufah); idempotensi endpoint
+  // itu memakai kolom ini. NULL untuk baris lama (buatan manual sebelum
+  // rancangan PPDB-pendaftaran) — kecuali Duf'ah 95 (backfill).
+  bawwabahPeriodId     String?                @unique
   tanggalBuka          DateTime?
   tanggalTutup         DateTime?
   riwayat              RiwayatDufah[]
