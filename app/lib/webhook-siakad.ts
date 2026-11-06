@@ -8,8 +8,9 @@ export const notifySiakadWebhook = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-webhook-secret': process.env.PPDB_WEBHOOK_SECRET || 'rahasia-webhook-siakad',
-        'Authorization': 'Bearer markaz-arabiyah-revalidate-2026-!@#$' // Untuk backward compatibility jika perlu
+        // Secret wajib di env (PPDB_WEBHOOK_SECRET). Tidak ada lagi nilai
+        // fallback / token hardcoded di jalur webhook (Fase 7).
+        'x-webhook-secret': process.env.PPDB_WEBHOOK_SECRET || '',
       },
       body: JSON.stringify({ action: 'sync_all' })
     }).catch(err => {

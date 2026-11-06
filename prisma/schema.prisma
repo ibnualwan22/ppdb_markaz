@@ -83,6 +83,7 @@ model Dufah {
   transaksiPendaftaran TransaksiPendaftaran[]
   programKhusus        Program[]              @relation("ProgramKhusus")
   Rombongan            Rombongan[]
+  rolloverLogs         RolloverLog[]
 }
 
 model RiwayatDufah {
@@ -267,4 +268,20 @@ model Rombongan {
 model SsoConsumedToken {
   jti        String   @id
   consumedAt DateTime @default(now())
+}
+
+// Rollover Bawwabah -> PPDB (Fase 7): kunci idempotensi + jejak aktivasi
+// dufah yang dipicu Bawwabah. Tabel dibuat via psql; deploy PPDB tidak
+// menjalankan migrate, jadi file migrasi ini hanya dokumentasi — JANGAN
+// paksa insert baris history.
+model RolloverLog {
+  id             Int      @id @default(autoincrement())
+  dufahId        Int
+  idempotencyKey String   @unique
+  triggeredBy    String   @default("bawwabah")
+  status         String   @default("RUNNING")
+  startedAt      DateTime @default(now())
+  finishedAt     DateTime?
+  summary        Json?
+  dufah          Dufah    @relation(fields: [dufahId], references: [id])
 }

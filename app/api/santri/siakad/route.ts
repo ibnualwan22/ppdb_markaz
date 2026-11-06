@@ -20,8 +20,16 @@ export async function GET(request: Request) {
     // 1. AUTENTIKASI SEDERHANA
     // ==========================================
     const apiKey = searchParams.get("key");
-    const validKey = process.env.SIAKAD_API_KEY || "markaz-siakad-api-2026";
-    
+    // Fase 7: kunci fallback hardcoded DIHAPUS — SIAKAD_API_KEY wajib ada
+    // di env (sudah terisi; nilai yang sama dipakai Siakad + Bawwabah).
+    const validKey = process.env.SIAKAD_API_KEY;
+    if (!validKey) {
+      return NextResponse.json(
+        { error: "SIAKAD_API_KEY belum dikonfigurasi" },
+        { status: 500 }
+      );
+    }
+
     if (apiKey !== validKey) {
       return NextResponse.json(
         { error: "Unauthorized. Sertakan parameter ?key=YOUR_API_KEY" },
