@@ -23,21 +23,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Santri dengan NIS ${nis} tidak ditemukan.` }, { status: 404 });
     }
 
+    const pendingList = await prisma.transaksiPendaftaran.findMany({
+      where: { santriId: santri.id, statusPembayaran: "PENDING" },
+      select: { dufahTujuanId: true },
+    });
+    const dufahIds = [...new Set(pendingList.map((t) => t.dufahTujuanId).filter((id): id is number => id !== null))];
+
     const deleted = await prisma.transaksiPendaftaran.deleteMany({
       where: { santriId: santri.id, statusPembayaran: "PENDING" },
     });
 
+    // Hapus juga riwayat booking (belum lunas) untuk dufah tujuan yang
+    // dibatalkan, agar santri tidak tertinggal di data sakan/antrean
+    // setelah batal daftar ulang. Riwayat yang sudah lunas (ACC) tidak tersentuh.
+    let riwayatDihapus = 0;
+    if (dufahIds.length > 0) {
+      const hapusRiwayat = await prisma.riwayatDufah.deleteMany({
+        where: { santriId: santri.id, dufahId: { in: dufahIds }, isLunas: false },
+      });
+      riwayatDihapus = hapusRiwayat.count;
+    }
+
     await logActivity({
       aksi: "DELETE",
       modul: "Integrasi API",
-      deskripsi: `Santri membatalkan ${deleted.count} tagihan PENDING daftar ulang via SIAKAD a.n ${santri.nama} (NIS: ${santri.nis})`,
+      deskripsi: `Santri membatalkan ${deleted.count} tagihan PENDING daftar ulang via SIAKAD a.n ${santri.nama} (NIS: ${santri.nis}) — riwayat booking dihapus: ${riwayatDihapus}`,
       namaUser: `Sistem SIAKAD`,
       targetId: santri.id,
     });
 
     return NextResponse.json({
       message: `${deleted.count} tagihan dibatalkan.`,
-      data: { cancelledCount: deleted.count },
+      data: { cancelledCount: deleted.count, riwayatBookingDihapus: riwayatDihapus },
     });
   } catch (error: any) {
     console.error("Error batalkan SIAKAD:", error);

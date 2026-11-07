@@ -32,7 +32,9 @@ export async function GET() {
       where: {
         dufahId: { in: relevantDufahIds },
         lemariId: null,
-        santri: { isAktif: true },
+        // Tanpa filter isAktif: santri booking (PENDING) pasca-rollover
+        // berstatus nonaktif sampai ACC lunas; riwayat dufah aktif
+        // sudah cukup sebagai bukti booking.
       },
       include: {
         santri: {

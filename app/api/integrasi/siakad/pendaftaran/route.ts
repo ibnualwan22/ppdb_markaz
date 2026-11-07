@@ -132,8 +132,11 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      // Jika Klaim Paket, lunas otomatis -> buatkan riwayat dufah
-      if (isKlaimPaket) {
+      // Booking: buatkan riwayat dufah untuk dufah tujuan, baik klaim
+      // (lunas otomatis) maupun renew berbayar (PENDING) — agar santri
+      // terdeteksi sebagai booking/belum lunas di asrama (data sakan &
+      // antrean), sama seperti route renew admin.
+      {
         const existingRiwayat = await tx.riwayatDufah.findUnique({
           where: { santriId_dufahId: { santriId: santri.id, dufahId: targetDufah.id as number } }
         });
@@ -176,15 +179,17 @@ export async function POST(req: NextRequest) {
               status: statusBaru,
               isIdCardTaken: false,
               bulanKe: bulanKeBaru,
-              isLunas: true
+              isLunas: isKlaimPaket
             }
           });
 
           // Sync the Santri's program override to their newly claimed program
-          await tx.santri.update({
-            where: { id: santri.id },
-            data: { programId: program.id }
-          });
+          if (isKlaimPaket) {
+            await tx.santri.update({
+              where: { id: santri.id },
+              data: { programId: program.id }
+            });
+          }
         }
       }
 
