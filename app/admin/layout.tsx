@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { PusherProvider } from "../providers/PusherProvider";
 import { signOut, useSession } from "next-auth/react";
 import GlobalNotification from "../components/GlobalNotification";
+import { adminMenuSections } from "@/lib/permissionMenu";
 
 // SVG Icon Components
 const IconChart = () => (
@@ -81,33 +82,36 @@ const IconCreditCard = () => (
   </svg>
 );
 
-const menuItems = [
-  { href: "/admin/", label: "Halaman Utama", icon: <IconChart />, permission: "view_dashboard" },
-  { href: "/admin/dashboard", label: "Dashboard Muasis", icon: <IconHome />, permission: "view_dashboard" },
-  { href: "/admin/pendaftaran", label: "Meja Keuangan", icon: <IconCreditCard />, permission: "view_keuangan" },
-  { href: "/admin/asrama", label: "Meja Asrama", icon: <IconBed />, permission: "view_asrama" },
-  { href: "/admin/asrama/mutasi", label: "Mutasi Sakan", icon: <IconChart />, permission: "view_asrama" },
-  { href: "/admin/asrama/mutasi-kategori", label: "Mutasi Kategori", icon: <IconChart />, permission: "view_asrama" },
-  { href: "/admin/id-card", label: "Meja ID Card", icon: <IconIdCard />, permission: "view_idcard" },
-  { href: "/admin/mimstore", label: "Mim Store", icon: <IconStore />, permission: "view_mimstore" },
-];
+// Ikon tiap menu berdasarkan href. Href, label, dan permission menu
+// didefinisikan di lib/permissionMenu.ts (sumber tunggal, dipakai juga
+// halaman Manajemen Role agar tulisannya sama dengan sidebar).
+const iconByHref: Record<string, ReactNode> = {
+  "/admin/": <IconChart />,
+  "/admin/dashboard": <IconHome />,
+  "/admin/pendaftaran": <IconCreditCard />,
+  "/admin/asrama": <IconBed />,
+  "/admin/asrama/mutasi": <IconChart />,
+  "/admin/asrama/mutasi-kategori": <IconChart />,
+  "/admin/id-card": <IconIdCard />,
+  "/admin/mimstore": <IconStore />,
+  "/admin/master": <IconCog />,
+  "/admin/master/program": <IconGradCap />,
+  "/admin/master/kategori-program": <IconGradCap />,
+  "/admin/master/pengajar": <IconUserCircle />,
+  "/admin/dufah": <IconCalendar />,
+  "/admin/santri": <IconGradCap />,
+  "/admin/santri/tanpa-nis": <IconUserCircle />,
+  "/admin/akun": <IconUser />,
+  "/admin/role": <IconShield />,
+  "/admin/activity-log": (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+  ),
+  "/admin/profil": <IconUserCircle />,
+};
 
-const masterItems = [
-  { href: "/admin/master", label: "Master Lokasi", icon: <IconCog />, permission: "manage_asrama" },
-  { href: "/admin/master/program", label: "Master Program", icon: <IconGradCap />, permission: "view_program" },
-  { href: "/admin/master/kategori-program", label: "Master Kategori", icon: <IconGradCap />, permission: "view_program" },
-  { href: "/admin/master/pengajar", label: "Dewan Asatidz", icon: <IconUserCircle />, permission: "view_program" },
-  { href: "/admin/dufah", label: "Manajemen Duf'ah", icon: <IconCalendar />, permission: "manage_dufah" },
-  { href: "/admin/santri", label: "Master Santri", icon: <IconGradCap />, permission: "view_santri" },
-  { href: "/admin/santri/tanpa-nis", label: "Santri Tanpa NIS", icon: <IconUserCircle />, permission: "view_santri" },
-];
-
-const authItems = [
-  { href: "/admin/akun", label: "Manajemen Akun", icon: <IconUser />, permission: "manage_users" },
-  { href: "/admin/role", label: "Manajemen Role", icon: <IconShield />, permission: "manage_roles" },
-  { href: "/admin/activity-log", label: "Log Aktivitas", icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>, permission: "view_activity_log" },
-  { href: "/admin/profil", label: "Profil Saya", icon: <IconUserCircle />, permission: null }, // Semua user punya akses profil
-];
+const menuItems = adminMenuSections[0].items.map((item) => ({ ...item, icon: iconByHref[item.href] }));
+const masterItems = adminMenuSections[1].items.map((item) => ({ ...item, icon: iconByHref[item.href] }));
+const authItems = adminMenuSections[2].items.map((item) => ({ ...item, icon: iconByHref[item.href] }));
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

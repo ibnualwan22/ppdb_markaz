@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Protect } from "@/components/Protect"
+import { groupPermissionsForForm, getMenuLabelsForPermissions } from "@/lib/permissionMenu"
 import Swal from "sweetalert2"
 import { useRouter } from "next/navigation"
 
@@ -187,19 +188,19 @@ export default function RoleManagementPage() {
                 </div>
                 
                 <div className="flex-1 mb-6">
-                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-3">Hak Akses:</p>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-3">Menu yang bisa dibuka:</p>
                   <div className="flex flex-wrap gap-2">
                     {role.nama === "Super Admin" ? (
                       <span className="px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded-md border border-red-500/20">All Access</span>
                     ) : (
-                      role.permissions.slice(0, 5).map(perm => (
-                        <span key={perm} className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded-md border border-blue-500/20">
-                          {perm}
+                      getMenuLabelsForPermissions(role.permissions).slice(0, 5).map((label) => (
+                        <span key={label} className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded-md border border-blue-500/20">
+                          {label}
                         </span>
                       ))
                     )}
-                    {role.permissions.length > 5 && (
-                      <span className="px-2 py-1 bg-gray-800 text-gray-400 text-xs rounded-md border border-gray-700">+{role.permissions.length - 5} lainnya</span>
+                    {role.nama !== "Super Admin" && getMenuLabelsForPermissions(role.permissions).length > 5 && (
+                      <span className="px-2 py-1 bg-gray-800 text-gray-400 text-xs rounded-md border border-gray-700">+{getMenuLabelsForPermissions(role.permissions).length - 5} menu lainnya</span>
                     )}
                   </div>
                 </div>
@@ -238,22 +239,31 @@ export default function RoleManagementPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-3">Pilih Hak Akses (Permissions)</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[40vh] overflow-y-auto pr-2">
-                      {permissionsList.filter(p => p.namaAksi !== 'all_access').map((perm) => (
-                        <label key={perm.id} className={`flex items-start p-3 rounded-xl border cursor-pointer transition-colors ${formData.permissionIds.includes(perm.id) ? 'bg-gold-500/10 border-gold-500/50' : 'bg-dark-900 border-white/5 hover:border-gold-500/30'}`}>
-                          <div className="flex items-center h-5">
-                            <input
-                              type="checkbox"
-                              checked={formData.permissionIds.includes(perm.id)}
-                              onChange={() => handleCheckboxChange(perm.id)}
-                              className="w-4 h-4 text-gold-500 bg-dark-800 border-gray-600 rounded focus:ring-gold-500 focus:ring-2"
-                            />
+                    <p className="text-xs text-gray-500 mb-3">Dikelompokkan sesuai menu di sidebar — tiap hak akses menunjukkan menu yang dibukanya.</p>
+                    <div className="space-y-5 max-h-[40vh] overflow-y-auto pr-2">
+                      {groupPermissionsForForm(permissionsList).map((group) => (
+                        <div key={group.section}>
+                          <p className="text-[11px] font-bold text-gold-600/80 uppercase tracking-widest mb-2 px-1">{group.section}</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {group.items.map(({ permission: perm, menus }) => (
+                              <label key={perm.id} className={`flex items-start p-3 rounded-xl border cursor-pointer transition-colors ${formData.permissionIds.includes(perm.id) ? 'bg-gold-500/10 border-gold-500/50' : 'bg-dark-900 border-white/5 hover:border-gold-500/30'}`}>
+                                <div className="flex items-center h-5">
+                                  <input
+                                    type="checkbox"
+                                    checked={formData.permissionIds.includes(perm.id)}
+                                    onChange={() => handleCheckboxChange(perm.id)}
+                                    className="w-4 h-4 text-gold-500 bg-dark-800 border-gray-600 rounded focus:ring-gold-500 focus:ring-2"
+                                  />
+                                </div>
+                                <div className="ml-3 text-sm flex flex-col justify-center">
+                                  <span className={`font-medium ${formData.permissionIds.includes(perm.id) ? 'text-gold-400' : 'text-gray-300'}`}>{perm.namaAksi}</span>
+                                  {perm.deskripsi && <span className="text-gray-500 text-xs mt-0.5">{perm.deskripsi}</span>}
+                                  <span className="text-gold-500/70 text-xs mt-0.5">Menu: {menus.length > 0 ? menus.join(" · ") : "—"}</span>
+                                </div>
+                              </label>
+                            ))}
                           </div>
-                          <div className="ml-3 text-sm flex flex-col justify-center">
-                            <span className={`font-medium ${formData.permissionIds.includes(perm.id) ? 'text-gold-400' : 'text-gray-300'}`}>{perm.namaAksi}</span>
-                            {perm.deskripsi && <span className="text-gray-500 text-xs mt-0.5">{perm.deskripsi}</span>}
-                          </div>
-                        </label>
+                        </div>
                       ))}
                     </div>
                   </div>
