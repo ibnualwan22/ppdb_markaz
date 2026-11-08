@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { sendGlobalNotification, emitDataUpdate, logActivity } from "@/app/lib/pusherServer";
 import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
+import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
 
 async function generateNIS(tx: any, dufah: any, tanggalLahir: Date) {
   const dufahNumberMatch = dufah.nama.match(/\d+/);
@@ -137,15 +138,22 @@ export async function POST(
             });
 
             if (previousDufah && lastRiwayatEver.dufahId === previousDufah.id) {
-              // TIDAK TERPUTUS
-              const batasMaksimal = 3;
+              // TIDAK TERPUTUS: warisi kamar, KECUALI wajib mutasi sakan
+              // (3 dufah berturut-turut di sakan yang sama — helper bersama).
+              // JANGAN pakai bulanKe % 3: bulanKe itu total bulan santri,
+              // bukan lama di kamar saat ini.
               const durasiBerjalan = lastRiwayatEver.bulanKe || 1;
-              if (durasiBerjalan % batasMaksimal !== 0) {
-                 previousLemariId = lastRiwayatEver.lemariId;
-                 newBulanKe = durasiBerjalan + 1;
+              newBulanKe = durasiBerjalan + 1;
+              // KSU tidak pernah wajib mutasi (lemari selalu dipertahankan),
+              // sama seperti rollover & daftar-ulang.
+              const wajibMutasi =
+                santriDb?.kategori === "KSU"
+                  ? false
+                  : (await cekWajibMutasiSakan(transaksi.santriId, targetDufahId)).wajibMutasi;
+              if (!wajibMutasi) {
+                previousLemariId = lastRiwayatEver.lemariId;
               } else {
-                 previousLemariId = null;
-                 newBulanKe = durasiBerjalan + 1;
+                previousLemariId = null;
               }
             } else {
               // TERPUTUS! (Bolong Duf'ah)

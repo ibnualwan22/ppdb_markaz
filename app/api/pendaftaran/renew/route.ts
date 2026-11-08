@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/app/lib/rateLimit";
+import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
 
 
 function generateInvoiceNumber(dufahId: number) {
@@ -84,21 +85,25 @@ export async function POST(request: Request) {
       });
     }
 
-    const batasMaksimal = 3;
+    // Aturan mutasi sakan: 3 dufah berturut-turut di sakan yang sama
+    // (helper bersama). JANGAN pakai bulanKe % 3: bulanKe itu total
+    // bulan santri sejak masuk, bukan lama di kamar saat ini.
     let lemariBaru = null;
     let statusBaru = "PRE_LIST";
     let bulanKeBaru = 1;
 
     if (riwayatBulanLalu && riwayatBulanLalu.lemariId) {
       const durasiBerjalan = riwayatBulanLalu.bulanKe;
-      if (durasiBerjalan % batasMaksimal !== 0) {
+      bulanKeBaru = durasiBerjalan + 1;
+      // KSU tidak pernah wajib mutasi (lemari selalu dipertahankan),
+      // sama seperti rollover & daftar-ulang.
+      const wajibMutasi =
+        santri.kategori === "KSU"
+          ? false
+          : (await cekWajibMutasiSakan(santriId, finalDufahTujuanId)).wajibMutasi;
+      if (!wajibMutasi) {
         lemariBaru = riwayatBulanLalu.lemariId;
         statusBaru = "ASSIGNED";
-        bulanKeBaru = durasiBerjalan + 1;
-      } else {
-        lemariBaru = null;
-        statusBaru = "PRE_LIST";
-        bulanKeBaru = durasiBerjalan + 1;
       }
     }
 

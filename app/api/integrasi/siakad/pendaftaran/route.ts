@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkPermission } from "@/lib/checkPermission";
 import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
 import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
+import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
 
 function generateInvoiceNumber(dufahId: number) {
   const date = new Date();
@@ -155,19 +156,25 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          const batasMaksimal = 3;
+          // Aturan mutasi sakan: 3 dufah berturut-turut di sakan yang sama
+          // (helper bersama). JANGAN pakai bulanKe % 3: bulanKe itu total
+          // bulan santri sejak masuk, bukan lama di kamar saat ini.
           let lemariBaru = null;
           let statusBaru = "PRE_LIST";
           let bulanKeBaru = 1;
 
           if (riwayatBulanLalu && riwayatBulanLalu.lemariId) {
             const durasiBerjalan = riwayatBulanLalu.bulanKe;
-            if (durasiBerjalan % batasMaksimal !== 0) {
+            bulanKeBaru = durasiBerjalan + 1;
+            // KSU tidak pernah wajib mutasi (lemari selalu dipertahankan),
+            // sama seperti rollover & daftar-ulang.
+            const wajibMutasi =
+              santri.kategori === "KSU"
+                ? false
+                : (await cekWajibMutasiSakan(santri.id, targetDufah.id as number)).wajibMutasi;
+            if (!wajibMutasi) {
               lemariBaru = riwayatBulanLalu.lemariId;
               statusBaru = "ASSIGNED";
-              bulanKeBaru = durasiBerjalan + 1;
-            } else {
-              bulanKeBaru = durasiBerjalan + 1;
             }
           }
 
