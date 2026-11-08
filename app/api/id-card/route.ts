@@ -79,10 +79,12 @@ export async function GET(request: Request) {
 
     const riwayatWithAtribut = allRiwayat.map(d => {
       const txs = transaksiList.filter(t => t.santriId === d.santri.id && t.dufahTujuanId === d.dufahId);
+      // Transaksi terakhir yang sama dipakai untuk atribut DAN program,
+      // supaya keduanya selalu merujuk ke pendaftaran yang sama.
+      const tx = txs.length > 0 ? txs.sort((a, b) => b.id.localeCompare(a.id))[0] : null;
       let isBeliAtribut = true;
 
-      if (txs.length > 0) {
-        const tx = txs.sort((a, b) => b.id.localeCompare(a.id))[0];
+      if (tx) {
         if (tx.statusPembayaran === "KLAIM_PAKET") {
           isBeliAtribut = false;
         } else if (tx.program && tx.nominalProgram < tx.program.harga) {
@@ -100,7 +102,8 @@ export async function GET(request: Request) {
 
       return {
         ...d,
-        isBeliAtribut
+        isBeliAtribut,
+        program: tx?.program ?? null,
       };
     });
 

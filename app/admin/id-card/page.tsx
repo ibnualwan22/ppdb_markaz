@@ -450,6 +450,7 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                 <tr>
                   <th className="p-4 text-gold-600 font-bold text-center w-32">NIS</th>
                   <th className="p-4 text-gold-600 font-bold">Nama Santri</th>
+                  <th className="p-4 text-gold-600 font-bold">Program</th>
                   <th className="p-4 text-gold-600 font-bold">Lokasi Sakan / Kamar</th>
                   <th className="p-4 text-gold-600 font-bold text-center">Status</th>
                   <th className="p-4 text-gold-600 font-bold text-center">Aksi</th>
@@ -457,14 +458,14 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
               </thead>
               <tbody>
                 {loading && dataGabungan.length === 0 ? (
-                  <tr><td colSpan={5} className="p-10 text-center text-gray-500 font-medium">
+                  <tr><td colSpan={6} className="p-10 text-center text-gray-500 font-medium">
                     <div className="flex items-center justify-center gap-3">
                       <div className="w-6 h-6 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin"></div>
                       Memuat antrean...
                     </div>
                   </td></tr>
                 ) : dataDitampilkan.length === 0 ? (
-                  <tr><td colSpan={5} className="p-10 text-center text-gray-500 italic font-medium">Data santri tidak ditemukan.</td></tr>
+                  <tr><td colSpan={6} className="p-10 text-center text-gray-500 italic font-medium">Data santri tidak ditemukan.</td></tr>
                 ) : (
                   dataDitampilkan.map((item) => {
                     if (!item.isIdCardTaken) nomorBelum++;
@@ -488,6 +489,9 @@ Wassalamu'alaikum warahmatullahi wabarakatuh`;
                               <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-red-500/20 text-red-400 border border-red-500/30">TIDAK ADA ATRIBUT BARU</span>
                             )}
                           </div>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-bold text-gray-200">{item.program?.nama || '-'}</p>
                         </td>
                         <td className="p-4">
                           <p className="font-bold text-gold-400">{item.lemari.kamar.sakan.nama}</p>
