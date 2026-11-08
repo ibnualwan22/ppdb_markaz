@@ -22,6 +22,9 @@ const TIDAK_WAJIB: HasilCekMutasi = {
  *   (santri sempat nonaktif) tidak dihitung sebagai streak.
  * - Ketiganya harus sudah ditempati (lemariId tidak null).
  * - Ketiganya harus di sakanId yang sama.
+ * - Sakan Turats dikecualikan: santri di sakan Turats tidak pernah
+ *   wajib mutasi (tinggal di situ sampai dipindah manual ke sakan
+ *   non-Turats).
  */
 export async function cekWajibMutasiSakan(
   santriId: string,
@@ -52,6 +55,11 @@ export async function cekWajibMutasiSakan(
 
   const semuaSama = sakanIds.every((id) => id === sakanIds[0]);
   if (!semuaSama) return TIDAK_WAJIB;
+
+  // Sakan Turats: tidak ada aturan rotasi — santri tinggal di situ
+  // selamanya sampai dipindah manual ke sakan non-Turats.
+  const sakanLama = tigaTerakhir[0].lemari?.kamar?.sakan;
+  if (sakanLama?.isTurats) return TIDAK_WAJIB;
 
   return {
     wajibMutasi: true,

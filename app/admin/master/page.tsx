@@ -57,6 +57,7 @@ export default function MasterLokasiPage() {
   // State Form Tambah
   const [namaSakan, setNamaSakan] = useState("");
   const [kategoriSakan, setKategoriSakan] = useState("BANIN");
+  const [isTuratsSakan, setIsTuratsSakan] = useState(false);
   const [namaKamar, setNamaKamar] = useState("");
   const [sakanIdKamar, setSakanIdKamar] = useState("");
   const [nomorLemari, setNomorLemari] = useState("");
@@ -103,8 +104,8 @@ export default function MasterLokasiPage() {
 
   const tambahSakan = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
-    const res = await fetch("/api/sakan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nama: namaSakan, kategori: kategoriSakan }) });
-    if (res.ok) { setNamaSakan(""); muatData(); } setLoading(false);
+    const res = await fetch("/api/sakan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nama: namaSakan, kategori: kategoriSakan, isTurats: isTuratsSakan }) });
+    if (res.ok) { setNamaSakan(""); setIsTuratsSakan(false); muatData(); } setLoading(false);
   };
   const tambahKamar = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
@@ -178,6 +179,26 @@ export default function MasterLokasiPage() {
     
     try {
       await fetch(`/api/${jenis}/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isLocked: !statusKunciSaatIni }) }); 
+    } catch (error) {
+      console.error(error);
+      await muatData(); // Revert on failure
+    }
+
+    requestAnimationFrame(() => {
+      if (scrollContainer) scrollContainer.scrollTop = scrollTop;
+    });
+  };
+  const toggleTurats = async (id: string, statusSaatIni: boolean) => {
+    const scrollContainer = mainRef.current?.closest('main');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+
+    // Optimistic Update: Update UI instan tanpa menunggu loading
+    setDataSakan(prevData => prevData.map((s) => (
+      s.id === id ? { ...s, isTurats: !statusSaatIni } : s
+    )));
+
+    try {
+      await fetch(`/api/sakan/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isTurats: !statusSaatIni }) });
     } catch (error) {
       console.error(error);
       await muatData(); // Revert on failure
@@ -313,11 +334,14 @@ export default function MasterLokasiPage() {
             <h3 className={`font-bold text-xl flex items-center gap-2 ${sakan.isLocked ? 'line-through text-gray-500' : 'text-gold-500'}`}>
               {sakan.isLocked && <IconLock className="h-4 w-4 text-gray-500" />} {sakan.nama}
             </h3>
-            <span className="text-xs font-bold bg-dark-800 text-gold-500 border border-gold-500/20 px-2 py-0.5 rounded uppercase">{sakan.kategori || "BANIN"}</span>
+            <span className="text-xs font-bold bg-dark-800 text-gold-500 border border-gold-500/20 px-2 py-0.5 rounded uppercase">{sakan.kategori || "BANIN"}</span>{sakan.isTurats && <span className="text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded uppercase ml-1">Turats</span>}
           </div>
           <div className="flex gap-1">
             <button onClick={() => toggleLock('sakan', sakan.id, sakan.isLocked)} className={`text-xs px-2 py-1 rounded font-bold flex items-center gap-1 border ${sakan.isLocked ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' : 'bg-dark-800 text-gray-400 border-gray-700 hover:bg-dark-900'}`}>
               {sakan.isLocked ? <><IconUnlock className="h-3 w-3" /> Buka</> : <><IconLock className="h-3 w-3" /> Kunci</>}
+            </button>
+            <button onClick={() => toggleTurats(sakan.id, !!sakan.isTurats)} className={`text-xs px-2 py-1 rounded font-bold border ${sakan.isTurats ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-dark-800 text-gray-400 border-gray-700 hover:bg-dark-900'}`}>
+              {sakan.isTurats ? 'Turats ✓' : 'Turats'}
             </button>
             <button onClick={() => aksiData('sakan', 'edit', sakan.id, sakan.nama, sakan.kategori)} className="text-xs bg-dark-800 text-gray-400 border border-gray-700 hover:bg-dark-900 px-2 py-1 rounded flex items-center gap-1"><IconEdit className="h-3 w-3" /></button>
             <button onClick={() => aksiData('sakan', 'hapus', sakan.id, sakan.nama)} className="text-xs bg-red-900/20 text-red-500 border border-red-900/30 hover:bg-red-900/50 px-2 py-1 rounded flex items-center gap-1"><IconTrash className="h-3 w-3" /></button>
@@ -423,6 +447,10 @@ export default function MasterLokasiPage() {
             <option value="BANIN">Putra (BANIN)</option>
             <option value="BANAT">Putri (BANAT)</option>
           </select>
+          <label className="flex items-center gap-2 mb-3 px-1 text-sm font-bold text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={isTuratsSakan} onChange={(e) => setIsTuratsSakan(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+            Sakan Turats (penghuni tidak kena aturan rotasi 3 dufah)
+          </label>
           <button type="submit" disabled={loading} className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] active:scale-95">Simpan Sakan</button>
         </form>
         <form onSubmit={tambahKamar} className="bg-dark-800 p-5 rounded-2xl shadow-sm border border-gold-500/20">

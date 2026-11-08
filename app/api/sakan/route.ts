@@ -36,12 +36,13 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama, kategori } = body; 
+    const { nama, kategori, isTurats } = body; 
 
     const sakanBaru = await prisma.sakan.create({
-      data: { 
-        nama, 
-        kategori: kategori || "BANIN" 
+      data: {
+        nama,
+        kategori: kategori || "BANIN",
+        isTurats: isTurats === true
       }
     });
 

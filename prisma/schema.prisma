@@ -13,6 +13,7 @@ model Sakan {
   nama      String
   kategori  String   @default("BANIN")
   isLocked  Boolean  @default(false)
+  isTurats  Boolean  @default(false)
   createdAt DateTime @default(now())
   kamar     Kamar[]
 }
