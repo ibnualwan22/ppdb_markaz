@@ -1077,8 +1077,9 @@ export default function MejaKeuanganPage() {
                         )}
                       </td>
                       <td className="px-4 py-4 text-center">
-                        {t.statusPembayaran === "PENDING" && (
+                        {(t.statusPembayaran === "PENDING" || t.statusPembayaran === "PAID") && (
                           <div className="flex gap-2 justify-center">
+                            {t.statusPembayaran === "PENDING" && (<>
                             {((session?.user as any)?.permissions?.includes("verify_pendaftaran") || (session?.user as any)?.permissions?.includes("all_access")) && (
                               <button
                                 onClick={() => prosesVerifikasi(t.id, false)}
@@ -1104,6 +1105,7 @@ export default function MejaKeuanganPage() {
                                 KSU
                               </button>
                             )}
+                            </>)}
                             <button
                               onClick={() => {
                                 generateRegistrationPdf({
@@ -1118,7 +1120,7 @@ export default function MejaKeuanganPage() {
                                   swalError("Gagal", "Gagal membuat invoice");
                                 });
                               }}
-                              title="Download Invoice"
+                              title={t.statusPembayaran === "PAID" ? "Download Kwitansi" : "Download Invoice"}
                               className="bg-gold-600 hover:bg-gold-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
                             >
                               ↓ Inv

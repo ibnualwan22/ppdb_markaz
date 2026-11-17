@@ -97,7 +97,11 @@ export const generateRegistrationPdf = async (data: {
       const brown: [number, number, number] = [60, 40, 10];
 
       const noKwitansi = data.transaksi?.noKwitansi ?? data.noKwitansi ?? `KWM-${Date.now()}`;
-      const tanggalInvoice = formatTanggal(new Date());
+      // Pelunasan (PAID): tanggal = tanggal lunas; tagihan: tanggal hari ini.
+      const isLunas = data.transaksi?.statusPembayaran === "PAID";
+      const tanggalInvoice = formatTanggal(
+        isLunas && data.transaksi?.waktuLunas ? new Date(data.transaksi.waktuLunas) : new Date()
+      );
       const totalTagihan = data.transaksi.totalTagihan as number;
       const diskon = (data.transaksi.diskon ?? 0) as number;
       const subtotal = totalTagihan + diskon;
@@ -121,10 +125,22 @@ export const generateRegistrationPdf = async (data: {
       doc.text("Berbasis Multiple Intelligences", textX, 21);
       doc.text("Jl. Cempaka No.32, Pare, Kediri, Jawa Timur", textX, 26);
 
-      // INVOICE title (kanan)
+      // Judul (kanan): INVOICE untuk tagihan, KWITANSI untuk pelunasan.
+      // Sebelumnya judul tidak pernah digambar (hanya set font).
       doc.setFont("helvetica", "bold");
       doc.setFontSize(24);
       doc.setTextColor(...gold);
+      doc.text(isLunas ? "KWITANSI" : "INVOICE", pageW - marginR, 21, { align: "right" });
+      if (isLunas) {
+        // Stempel LUNAS di bawah judul
+        doc.setDrawColor(34, 197, 94);
+        doc.setLineWidth(0.7);
+        doc.setFillColor(220, 252, 231);
+        doc.roundedRect(pageW - marginR - 30, 23.5, 30, 7, 1, 1, "FD");
+        doc.setFontSize(10);
+        doc.setTextColor(22, 163, 74);
+        doc.text("LUNAS", pageW - marginR - 15, 28.5, { align: "center" });
+      }
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(...dark);
@@ -253,8 +269,8 @@ export const generateRegistrationPdf = async (data: {
 
       y = (doc as any).lastAutoTable.finalY + 5;
 
-      // ── KODE UNIK ─────────────────────────────────────────────────
-      if (data.transaksi.kodeUnik) {
+      // ── KODE UNIK (tagihan saja; pelunasan tidak perlu) ───────────
+      if (!isLunas && data.transaksi.kodeUnik) {
         doc.setFontSize(8);
         doc.setFont("helvetica", "italic");
         doc.setTextColor(120, 100, 50);
@@ -295,8 +311,11 @@ export const generateRegistrationPdf = async (data: {
       doc.setTextColor(...dark);
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.text("No. Rek : 055501001108569", marginL, y + 6);
-      doc.text("A/N Markaz Arabiyah", marginL, y + 11);
+      // Pelunasan: nomor rekening tidak ditampilkan.
+      if (!isLunas) {
+        doc.text("No. Rek : 055501001108569", marginL, y + 6);
+      }
+      doc.text("A/N Markaz Arabiyah", marginL, y + (isLunas ? 6 : 11));
 
       // Stempel dan Tanda tangan (kanan)
       const sigX = pageW - marginR - 65;
