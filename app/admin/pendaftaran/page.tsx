@@ -35,6 +35,7 @@ export default function MejaKeuanganPage() {
   const [filterProgram, setFilterProgram] = useState("REGULER"); // "ALL" + nama kategori dari master
   const [daftarKategori, setDaftarKategori] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedRombonganId, setExpandedRombonganId] = useState<string | null>(null);
   const itemsPerPage = 50;
 
   const pusher = usePusher();
@@ -395,6 +396,42 @@ export default function MejaKeuanganPage() {
     if (!noWa) return swalError("Error", "Nomor WA tidak tersedia");
     const pesan = `Assalamu'alaikum, Bapak/Ibu wali dari santri *${nama}*.\n\nKami dari Admin Markaz Arabiyah menginformasikan bahwa tagihan pendaftaran sebesar *Rp ${new Intl.NumberFormat('id-ID').format(tagihan)}* masih berstatus PENDING. Mohon segera melunasi ke rekening BRI 0555-01-001108-569 agar ananda bisa segera diproses kamar asramanya.\n\nJazakumullah khairan.`;
     window.open(`https://wa.me/${noWa}?text=${encodeURIComponent(pesan)}`, '_blank');
+  };
+
+  // Normalisasi nomor WA ke format internasional (62...) untuk wa.me.
+  // (Fungsi formatWa yang sama sudah ada di handler import Excel; ini versi
+  // level komponen agar bisa dipakai tombol-tombol di tabel.)
+  const formatWaNumber = (wa: string | number | null | undefined) => {
+    if (!wa) return "";
+    let f = wa.toString().replace(/\D/g, "");
+    if (f.startsWith("0")) f = "62" + f.substring(1);
+    return f;
+  };
+
+  // Nama lembaga dari kategori program (terverifikasi dari DB 24 Nov 2026:
+  // KategoriProgram aktif = HUFADZ, REGULER, TUROTS, 2MINGGU).
+  const namaLembagaDariKategori = (kategori: string | null | undefined) => {
+    const k = (kategori || "").toUpperCase();
+    if (k.includes("HUFAD")) return "Markaz Hufadz";
+    if (k.includes("TUROT") || k.includes("TURAT")) return "Markaz Turats";
+    return "Markaz Arabiyah"; // REGULER, 2MINGGU, dan kategori tak dikenal
+  };
+
+  // Pengingat konfirmasi pembayaran ke nomor WA santri sendiri (bukan wali),
+  // lewat wa.me langsung tanpa gateway.
+  const handleKonfirmasiWa = (noWaSantri: string | number | null | undefined, nama: string, kategoriProgram: string | null | undefined) => {
+    const noWa = formatWaNumber(noWaSantri);
+    if (!noWa) return swalError("Error", "Nomor WA santri tidak tersedia");
+    const lembaga = namaLembagaDariKategori(kategoriProgram);
+    const pesan = `Assalamu'alaikum warahmatullahi wabarakatuh. 😊\n\nIzin mengonfirmasi, Kak. Berdasarkan data pendaftaran Program ${lembaga}, nama Kakak *${nama}* telah tercantum dalam daftar peserta pendaftar.\n\nKami ingin memastikan apakah Kakak sudah melakukan pembayaran biaya pendaftaran. Jika sudah, mohon berkenan mengirimkan bukti pembayaran kepada admin agar dapat segera kami verifikasi dan proses lebih lanjut.\n\nTerima kasih atas konfirmasinya, Kak. Syukran wa baarakallahu fiikum. 🙌🏻☺️`;
+    window.open(`https://wa.me/${noWa}?text=${encodeURIComponent(pesan)}`, '_blank');
+  };
+
+  // Kategori program santri daftar ulang (baris daftar ulang tidak membawa
+  // program; dicari dari transaksi santri yang sama, fallback Arabiyah).
+  const kategoriSantri = (santriId: string) => {
+    const t = transaksi.find((x: any) => x.santriId === santriId);
+    return t?.program?.kategoriProgram || "";
   };
 
   const activeDufah = allDufah.find(d => d.isActive);
@@ -899,6 +936,13 @@ export default function MejaKeuanganPage() {
                               ✕ Batal
                             </button>
                           )}
+                          <button
+                            onClick={() => handleKonfirmasiWa(d.santri?.noWaSantri, d.santri?.nama, kategoriSantri(d.santriId))}
+                            title="Kirim pengingat konfirmasi pembayaran ke WA santri"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
+                          >
+                            WA Santri
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -936,7 +980,8 @@ export default function MejaKeuanganPage() {
                 </thead>
                 <tbody>
                   {filteredRombongan.map((r, index) => (
-                    <tr key={r.id} className="border-b border-gray-800 hover:bg-dark-900/50 transition-colors">
+                    <React.Fragment key={r.id}>
+                    <tr className="border-b border-gray-800 hover:bg-dark-900/50 transition-colors">
                       <td className="px-4 py-4 text-center font-bold text-gray-400">{index + 1}</td>
                       <td className="px-4 py-4 text-xs font-mono text-gray-400">{new Date(r.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-4 font-bold text-white">
@@ -987,10 +1032,44 @@ export default function MejaKeuanganPage() {
                                 ✕ Hapus
                               </button>
                             )}
+                            {(r.transaksi?.some((t: any) => t.statusPembayaran === "PENDING")) && (
+                              <button
+                                onClick={() => setExpandedRombonganId(expandedRombonganId === r.id ? null : r.id)}
+                                title="Lihat anggota rombongan yang belum lunas"
+                                className="bg-dark-900 hover:bg-dark-700 text-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm border border-gold-500/20"
+                              >
+                                {expandedRombonganId === r.id ? "▴ Tutup" : "▾ Anggota"}
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>
                     </tr>
+                    {expandedRombonganId === r.id && r.transaksi?.filter((t: any) => t.statusPembayaran === "PENDING").map((t: any) => (
+                      <tr key={t.id} className="border-b border-gray-800 bg-dark-900/40">
+                        <td className="px-4 py-3 text-center"></td>
+                        <td className="px-4 py-3 text-xs font-mono text-gray-400">{new Date(t.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                        <td className="px-4 py-3 font-bold text-white">
+                          <span className="text-gray-500 font-normal">↳ Anggota:</span> {t.santri?.nama}
+                          <div className="text-xs text-gold-500 mt-0.5">{t.program?.nama || "-"}</div>
+                        </td>
+                        <td className="px-4 py-3 text-center"></td>
+                        <td className="px-4 py-3 text-right font-mono text-sm">{new Intl.NumberFormat('id-ID').format(t.totalTagihan || 0)}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-md text-xs font-bold border border-red-500/30">PENDING</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleKonfirmasiWa(t.santri?.noWaSantri, t.santri?.nama, t.program?.kategoriProgram)}
+                            title="Kirim pengingat konfirmasi pembayaran ke WA santri"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm mx-auto"
+                          >
+                            WA Santri
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
@@ -1094,6 +1173,13 @@ export default function MejaKeuanganPage() {
                               className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
                             >
                               WA
+                            </button>
+                            <button
+                              onClick={() => handleKonfirmasiWa(t.santri.noWaSantri, t.santri.nama, t.program?.kategoriProgram)}
+                              title="Kirim pengingat konfirmasi pembayaran ke WA santri"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1"
+                            >
+                              WA Santri
                             </button>
                             {((session?.user as any)?.permissions?.includes("bypass_ksu") || (session?.user as any)?.permissions?.includes("all_access")) && (
                               <button
