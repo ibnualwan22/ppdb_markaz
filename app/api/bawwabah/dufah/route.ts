@@ -121,6 +121,19 @@ export async function POST(request: Request) {
     }
 
     // --- Buat baris (isActive=false — aktivasi tetap lewat rollover). ---
+    // Otomatis selang-seling akbarnasBulan (1 <-> 2) dari duf'ah sebelumnya jika tidak dikirim eksplisit.
+    let resolvedAkbarnasBulan =
+      body.akbarnasBulan === 1 || body.akbarnasBulan === 2
+        ? (body.akbarnasBulan as number)
+        : null;
+    if (!resolvedAkbarnasBulan) {
+      const latest = await prisma.dufah.findFirst({
+        orderBy: { id: "desc" },
+        select: { akbarnasBulan: true },
+      });
+      resolvedAkbarnasBulan = latest?.akbarnasBulan === 1 ? 2 : 1;
+    }
+
     let dibuat;
     try {
       dibuat = await prisma.dufah.create({
@@ -128,6 +141,7 @@ export async function POST(request: Request) {
           nama: nama.trim(),
           isActive: false,
           isTahunBaru,
+          akbarnasBulan: resolvedAkbarnasBulan,
           tanggalBuka: new Date(tanggalBuka),
           tanggalTutup: new Date(tanggalTutup),
           bawwabahPeriodId: bawwabahPeriodId.trim(),

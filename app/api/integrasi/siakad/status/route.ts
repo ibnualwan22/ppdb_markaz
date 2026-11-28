@@ -1,6 +1,10 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { checkPermission } from "@/lib/checkPermission";
+import {
+  isAkbarnasProgramName,
+  isAkbarnasBulan2OnlyProgram,
+  computeDaftarUlangPricing,
+} from "@/lib/akbarnas-daftar-ulang";
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,50 +37,76 @@ export async function GET(req: NextRequest) {
       select: { id: true, nama: true, harga: true, durasiBulan: true, kategoriProgram: true, tanggalMulaiDefault: true, tanggalTutupDefault: true }
     });
 
+    const targetAkbarnasBulan = targetDufahDaftar?.akbarnasBulan ?? 1;
     const formatterId = new Intl.NumberFormat('id-ID');
-    const programTersedia = programs.map(p => {
-      const tgMulai = p.tanggalMulaiDefault || "10";
-      const tgTutup = p.tanggalTutupDefault || "06";
 
-      let displayMulai = tgMulai;
-      let displayTutup = tgTutup;
+    const buildProgramTersedia = (sisaKuota: number, santriIsAkbarnasBulan1: boolean) => {
+      return programs
+        .filter((p) => {
+          if (isAkbarnasBulan2OnlyProgram(p.nama)) return false;
+          // Saat Duf'ah tujuan = Bulan 2, program Akbarnas HANYA muncul bagi santri Akbarnas Bulan 1
+          if (targetAkbarnasBulan === 2 && isAkbarnasProgramName(p.nama)) {
+            return santriIsAkbarnasBulan1;
+          }
+          return true;
+        })
+        .map(p => {
+          const tgMulai = p.tanggalMulaiDefault || "10";
+          const tgTutup = p.tanggalTutupDefault || "06";
 
-      if (targetDufahDaftar && targetDufahDaftar.tanggalBuka) {
-        if (/^\d+$/.test(tgMulai.trim())) {
-          const d = new Date(targetDufahDaftar.tanggalBuka);
-          d.setMonth(d.getMonth() + 1);
-          // Menggunakan Intl.DateTimeFormat agar konsisten di semua lingkungan Node
-          const formatterBln = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
-          displayMulai = `${tgMulai.trim()} ${formatterBln.format(d)}`;
-        }
-        if (/^\d+$/.test(tgTutup.trim())) {
-          const d = new Date(targetDufahDaftar.tanggalBuka);
-          d.setMonth(d.getMonth() + 1 + p.durasiBulan);
-          const formatterBln = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
-          displayTutup = `${tgTutup.trim()} ${formatterBln.format(d)}`;
-        }
-      }
+          let displayMulai = tgMulai;
+          let displayTutup = tgTutup;
 
-      return {
-        id: p.id,
-        nama: p.nama,
-        harga: p.harga,
-        hargaFormatted: `Rp ${formatterId.format(p.harga)}`,
-        durasiBulan: p.durasiBulan,
-        durasiBulanFormatted: `${p.durasiBulan} BULAN`,
-        kategoriProgram: p.kategoriProgram,
-        tglProgramFormatted: `${displayMulai} - ${displayTutup}`
-      };
-    });
+          if (targetDufahDaftar && targetDufahDaftar.tanggalBuka) {
+            if (/^\d+$/.test(tgMulai.trim())) {
+              const d = new Date(targetDufahDaftar.tanggalBuka);
+              d.setMonth(d.getMonth() + 1);
+              const formatterBln = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
+              displayMulai = `${tgMulai.trim()} ${formatterBln.format(d)}`;
+            }
+            if (/^\d+$/.test(tgTutup.trim())) {
+              const d = new Date(targetDufahDaftar.tanggalBuka);
+              d.setMonth(d.getMonth() + 1 + p.durasiBulan);
+              const formatterBln = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
+              displayTutup = `${tgTutup.trim()} ${formatterBln.format(d)}`;
+            }
+          }
+
+          const pricing = computeDaftarUlangPricing({
+            program: p,
+            sisaKuota,
+            isBeliAtribut: false,
+            targetAkbarnasBulan,
+            santriIsAkbarnasBulan1,
+          });
+
+          return {
+            id: p.id,
+            nama: p.nama,
+            harga: p.harga,
+            hargaFormatted: `Rp ${formatterId.format(p.harga)}`,
+            durasiBulan: p.durasiBulan,
+            requiredBulan: pricing.requiredBulan,
+            durasiBulanFormatted: `${pricing.requiredBulan} BULAN`,
+            kategoriProgram: p.kategoriProgram,
+            tglProgramFormatted: `${displayMulai} - ${displayTutup}`,
+            mode: pricing.mode,
+            bisaKlaimGratis: pricing.bisaKlaimGratis,
+            kekuranganBulan: pricing.kekuranganBulan,
+            tarifPerBulan: pricing.tarifPerBulan,
+            nominalTanpaAtribut: pricing.nominalTanpaAtribut,
+            nominalDenganAtribut: pricing.nominalDenganAtribut,
+          };
+        });
+    };
 
     if (!nis) {
-      // Jika dipanggil tanpa NIS, kembalikan hanya info portal umum
       return NextResponse.json({
         message: "Informasi portal pendaftaran berhasil diambil.",
         data: null,
         meta: {
            informasiPendaftaranBuka: targetDufahDaftar,
-           programTersedia
+           programTersedia: buildProgramTersedia(0, false)
         }
       }, { status: 200 });
     }
@@ -162,6 +192,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const programAktifNama = santri.program
+      ? santri.program.nama
+      : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.nama : null);
+
+    const santriIsAkbarnasBulan1 =
+      isAkbarnasProgramName(programAktifNama) &&
+      (currentActiveDufah?.akbarnasBulan === 1 || (targetAkbarnasBulan === 2 && sisaKuota > 0));
+
+    const programTersedia = buildProgramTersedia(sisaKuota, santriIsAkbarnasBulan1);
+
     return NextResponse.json({
       message: "Data status santri berhasil diambil.",
       data: {
@@ -171,21 +211,22 @@ export async function GET(req: NextRequest) {
         isAktif: santri.isAktif,
         kategoriSiswa: santri.kategori,
         noWaWali: formattedWaWali, // Nomor WA Wali Santri dengan format internasional
-        programAktif: santri.program ? santri.program.nama : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.nama : null),
+        programAktif: programAktifNama,
         kategoriProgram: santri.program ? santri.program.kategoriProgram : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.kategoriProgram : null),
+        santriIsAkbarnasBulan1,
         masaAktif: {
            sisaKoutaBulan: sisaKuota,
            sisaBulanBerjalan: sisaBerjalan,
            berakhirPadaDufahId: santri.batasAktifDufah,
            berakhirPadaDufahNama: namaExpiredDufah || "Belum Ditentukan",
-           dufahSekarangSistem: { id: currentActiveDufah?.id, nama: currentActiveDufah?.nama } 
+           dufahSekarangSistem: { id: currentActiveDufah?.id, nama: currentActiveDufah?.nama, akbarnasBulan: currentActiveDufah?.akbarnasBulan ?? 1 } 
         },
         logikaSistem: {
            butuhDaftarUlang,
            // true bila santri punya kuota aktif mencakup dufah target -> halaman Siakad tampil mode "Pemilihan Program"
            klaimTersedia: !butuhDaftarUlang,
            statusKoneksi,
-           pesan: butuhDaftarUlang ? "Batas durasi telah/akan habis. Silakan mendaftar ulang untuk periode ini." : "Masa aktif masih berlaku, Anda hanya butuh klaim kelas gratis untuk periode ini."
+           pesan: butuhDaftarUlang ? "Batas durasi telah/akan habis. Silakan mendaftar ulang untuk periode ini." : `Masa aktif masih tersisa ${sisaKuota} bulan. Program ≤ ${sisaKuota} bulan gratis diklaim; program berdurasi lebih panjang akan dihitung kekurangannya.`
         }
       },
       meta: {

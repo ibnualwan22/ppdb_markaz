@@ -18,7 +18,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { nama, tanggalBuka, tanggalTutup } = body;
+    const { nama, tanggalBuka, tanggalTutup, akbarnasBulan } = body;
 
     if (nama !== undefined) {
       return NextResponse.json(
@@ -27,7 +27,11 @@ export async function PATCH(
       );
     }
 
-    const data: { tanggalBuka?: Date | null; tanggalTutup?: Date | null } = {};
+    const data: {
+      tanggalBuka?: Date | null;
+      tanggalTutup?: Date | null;
+      akbarnasBulan?: number;
+    } = {};
     if (tanggalBuka !== undefined) {
       // Konversi string dari frontend menjadi format Date yang dipahami database
       data.tanggalBuka = tanggalBuka ? new Date(`${tanggalBuka}+07:00`) : null;
@@ -35,9 +39,12 @@ export async function PATCH(
     if (tanggalTutup !== undefined) {
       data.tanggalTutup = tanggalTutup ? new Date(`${tanggalTutup}+07:00`) : null;
     }
+    if (akbarnasBulan !== undefined) {
+      data.akbarnasBulan = Number(akbarnasBulan) === 2 ? 2 : 1;
+    }
     if (Object.keys(data).length === 0) {
       return NextResponse.json(
-        { error: "Tidak ada yang diubah — kirim tanggalBuka dan/atau tanggalTutup" },
+        { error: "Tidak ada yang diubah — kirim tanggalBuka, tanggalTutup, atau akbarnasBulan" },
         { status: 400 }
       );
     }

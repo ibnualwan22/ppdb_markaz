@@ -4,6 +4,11 @@ import { checkPermission } from "@/lib/checkPermission";
 import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
 import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
 import { cekWajibMutasiSakan } from "@/app/lib/mutasi-sakan";
+import {
+  isAkbarnasProgramName,
+  isAkbarnasBulan2OnlyProgram,
+  computeDaftarUlangPricing,
+} from "@/lib/akbarnas-daftar-ulang";
 
 function generateInvoiceNumber(dufahId: number) {
   const date = new Date();
@@ -29,7 +34,15 @@ export async function POST(req: NextRequest) {
 
     // 2. Cari Data Santri berdasarkan NIS; buatkan baru jika belum ada (upsert by NIS)
     let santri = await prisma.santri.findUnique({
-      where: { nis }
+      where: { nis },
+      include: {
+        program: { select: { nama: true } },
+        transaksi: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { program: { select: { nama: true } } },
+        },
+      },
     });
 
     if (!santri) {
@@ -53,6 +66,14 @@ export async function POST(req: NextRequest) {
           noWaSantri: dd.noWaSantri || null,
           noWaOrtu: dd.noWaOrtu || dd.noWaWali || null,
           namaOrtu: dd.namaOrtu || null,
+        },
+        include: {
+          program: { select: { nama: true } },
+          transaksi: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { program: { select: { nama: true } } },
+          },
         },
       });
     }
@@ -84,12 +105,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tidak ada periode Duf'ah yang valid di sistem saat ini." }, { status: 400 });
     }
 
-    // 5. Cek apakah santri masih memiliki sisa paket (Klaim)
-    const isKlaimPaket = santri.batasAktifDufah !== null && santri.batasAktifDufah >= targetDufah.id;
+    const currentActiveDufah = allDufahs.find(df => df.isActive === true) || allDufahs[0];
 
-    // Jika klaim paket, tagihan otomatis 0. Jika beli atribut pakai harga penuh,
-    // jika tidak beli atribut potong 100k (flat, sesuai aturan daftar ulang santri lama).
-    const nominalProgram = isKlaimPaket ? 0 : (isBeliAtribut ? program.harga : Math.max(0, program.harga - 100000));
+    // 5. Hitung sisa kuota untuk target Duf'ah & cek kelayakan Akbarnas Bulan 2
+    let sisaKuota = santri.isCuti ? santri.saldoDufah : 0;
+    if (!santri.isCuti && santri.batasAktifDufah !== null && santri.batasAktifDufah >= targetDufah.id) {
+      sisaKuota = santri.batasAktifDufah - targetDufah.id + 1;
+    }
+
+    const programAktifNama = santri.program?.nama || santri.transaksi?.[0]?.program?.nama || null;
+    const santriIsAkbarnasBulan1 =
+      isAkbarnasProgramName(programAktifNama) &&
+      (currentActiveDufah?.akbarnasBulan === 1 || (targetDufah.akbarnasBulan === 2 && sisaKuota > 0));
+
+    // Proteksi Akbarnas Bulan 2: hanya santri Akbarnas Bulan 1 yang boleh memilih Akbarnas saat target Bulan 2
+    if (
+      isAkbarnasBulan2OnlyProgram(program.nama) ||
+      (targetDufah.akbarnasBulan === 2 && isAkbarnasProgramName(program.nama) && !santriIsAkbarnasBulan1)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Program Akbarnas pada periode Bulan 2 hanya dibuka bagi santri yang sebelumnya berada di Akbarnas Bulan 1.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Hitung mode (KLAIM / KEKURANGAN / PENUH) & nominal akurat
+    const pricing = computeDaftarUlangPricing({
+      program,
+      sisaKuota,
+      isBeliAtribut: Boolean(isBeliAtribut),
+      targetAkbarnasBulan: targetDufah.akbarnasBulan,
+      santriIsAkbarnasBulan1,
+    });
+
+    const isKlaimPaket = pricing.mode === "KLAIM";
+    const nominalProgram = isKlaimPaket ? 0 : pricing.nominalFinal;
     const kodeUnik = isKlaimPaket ? 0 : Math.floor(Math.random() * 900) + 100; // 100-999
     const totalTagihan = nominalProgram + kodeUnik;
     const noKwitansi = generateInvoiceNumber(targetDufah.id);
@@ -128,6 +181,8 @@ export async function POST(req: NextRequest) {
           nominalProgram,
           kodeUnik,
           totalTagihan,
+          jumlahBulanBayar: isKlaimPaket ? 0 : pricing.jumlahBulanBayar,
+          isBeliAtribut: isKlaimPaket ? false : Boolean(isBeliAtribut),
           statusPembayaran,
           waktuLunas
         }
@@ -228,9 +283,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "Transaksi pendaftaran berhasil dibuat, menunggu pembayaran.",
+      message: isKlaimPaket
+        ? "Program berhasil diaktifkan menggunakan sisa kuota."
+        : "Transaksi pendaftaran berhasil dibuat, menunggu pembayaran.",
       data: {
         transaksi,
+        pricing,
         santri: { id: santri.id, nama: santri.nama, nis: santri.nis },
         program: { id: program.id, nama: program.nama }
       }

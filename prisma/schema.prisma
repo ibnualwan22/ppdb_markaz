@@ -78,6 +78,7 @@ model Dufah {
   nama                 String
   isActive             Boolean                @default(false)
   isTahunBaru          Boolean                @default(false)
+  akbarnasBulan        Int                    @default(1) // 1 = Akbarnas Bulan 1 (buka umum), 2 = Akbarnas Bulan 2 (khusus lanjutan)
   // Id periode Bawwabah (p-<cuid>) yang melahirkan baris ini. Diisi saat
   // Bawwabah membuat draf (POST /api/bawwabah/dufah); idempotensi endpoint
   // itu memakai kolom ini. NULL untuk baris lama (buatan manual sebelum
@@ -206,6 +207,8 @@ model TransaksiPendaftaran {
   nominalProgram   Float
   kodeUnik         Int
   totalTagihan     Float
+  jumlahBulanBayar Int?       // Jika terisi (bayar kekurangan durasi), verifikasi menambah tepat sejumlah bulan ini
+  isBeliAtribut    Boolean    @default(false)
   statusPembayaran String     @default("PENDING")
   diverifikasiOleh String?
   createdAt        DateTime   @default(now())

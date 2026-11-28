@@ -106,10 +106,14 @@ export async function POST(
         // KSU diberi batas +12 bulan dari target pendaftarannya
         newBatasAktif = targetDufahId + 12; 
       } else {
-        // Jika santri mati (batasAktif < targetDufahId), mulai dari target dufah tersebut.
-        // Jika masih aktif, tambahkan ke batas aktif lama.
+        // Jika santri membayar kekurangan durasi (jumlahBulanBayar terisi), tambahkan TEPAT jumlah bulan yang dibayar.
+        // Jika daftar baru / paket penuh (jumlahBulanBayar null), tambahkan penuh durasiBulan program.
+        const tambahanBulan =
+          transaksi.jumlahBulanBayar && transaksi.jumlahBulanBayar > 0
+            ? transaksi.jumlahBulanBayar
+            : transaksi.program.durasiBulan;
         const startDufah = currentBatas < targetDufahId ? targetDufahId : currentBatas + 1;
-        newBatasAktif = startDufah + transaksi.program.durasiBulan - 1;
+        newBatasAktif = startDufah + tambahanBulan - 1;
       }
 
       // 5. Update Santri
@@ -125,7 +129,9 @@ export async function POST(
       });
 
       // 6. Buat Riwayat Duf'ah untuk dufah tujuan jika belum ada
-      const isBeliAtribut = transaksi.nominalProgram >= transaksi.program.harga;
+      const isBeliAtribut =
+        Boolean(transaksi.isBeliAtribut) ||
+        transaksi.nominalProgram >= transaksi.program.harga;
 
       const cekRiwayat = await tx.riwayatDufah.findUnique({
         where: {

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/app/lib/rateLimit";
 import { emitDataUpdate, sendGlobalNotification, logActivity } from "@/app/lib/pusherServer";
 import { notifySiakadWebhook } from "@/app/lib/webhook-siakad";
+import { isAkbarnasProgramName, isAkbarnasBulan2OnlyProgram } from "@/lib/akbarnas-daftar-ulang";
 
 
 function generateInvoiceNumber(dufahId: number) {
@@ -90,6 +91,20 @@ export async function POST(request: Request) {
 
     if (!targetDufah) {
       return NextResponse.json({ error: "Pendaftaran saat ini sedang ditutup. Tidak ada periode Duf'ah yang buka." }, { status: 400 });
+    }
+
+    // Proteksi server-side: Akbarnas Bulan 2 tidak dibuka untuk pendaftaran umum
+    if (
+      isAkbarnasBulan2OnlyProgram(program.nama) ||
+      (targetDufah.akbarnasBulan === 2 && isAkbarnasProgramName(program.nama))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Program Akbarnas tidak dibuka untuk pendaftaran umum pada periode Bulan 2. Khusus santri Akbarnas Bulan 1 silakan mendaftar ulang melalui Portal Santri SIAKAD.",
+        },
+        { status: 403 }
+      );
     }
 
     const finalDufahTujuanId = targetDufah.id;

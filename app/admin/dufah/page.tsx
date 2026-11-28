@@ -169,7 +169,38 @@ export default function ManajemenDufahPage() {
               ) : (
                 dataDufah.map((dufah) => (
                   <tr key={dufah.id} className={`border-b border-gold-500/5 hover:bg-dark-900/50 transition ${dufah.isActive ? 'bg-green-900/10' : ''}`}>
-                    <td className="p-4 font-bold text-lg text-gray-200">{dufah.nama}</td>
+                    <td className="p-4 font-bold text-lg text-gray-200">
+                      <div>{dufah.nama}</div>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={async () => {
+                          const next = dufah.akbarnasBulan === 2 ? 1 : 2;
+                          setLoading(true);
+                          const res = await fetch(`/api/dufah/${dufah.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ akbarnasBulan: next }),
+                          });
+                          if (res.ok) {
+                            swalSuccess("Diperbarui", `${dufah.nama} diset ke Akbarnas Bulan ${next}`);
+                            muatData();
+                          } else {
+                            swalError("Gagal mengubah bulan Akbarnas");
+                          }
+                          setLoading(false);
+                        }}
+                        className={`mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition ${
+                          dufah.akbarnasBulan === 2
+                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25"
+                            : "bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25"
+                        }`}
+                        title="Klik untuk ganti Akbarnas Bulan 1 / Bulan 2"
+                      >
+                        Akbarnas: Bulan {dufah.akbarnasBulan === 2 ? 2 : 1}
+                        {dufah.akbarnasBulan === 2 ? " (Tutup Umum)" : " (Buka Umum)"}
+                      </button>
+                    </td>
                     <td className="p-4">
                       <p className="text-sm"><span className="text-green-500 font-bold">Buka:</span> {dufah.tanggalBuka ? `${new Date(dufah.tanggalBuka).getDate().toString().padStart(2, '0')}/${(new Date(dufah.tanggalBuka).getMonth() + 1).toString().padStart(2, '0')}/${new Date(dufah.tanggalBuka).getFullYear()} ${new Date(dufah.tanggalBuka).getHours().toString().padStart(2, '0')}:${new Date(dufah.tanggalBuka).getMinutes().toString().padStart(2, '0')}` : '-'}</p>
                       <p className="text-sm"><span className="text-red-500 font-bold">Tutup:</span> {dufah.tanggalTutup ? `${new Date(dufah.tanggalTutup).getDate().toString().padStart(2, '0')}/${(new Date(dufah.tanggalTutup).getMonth() + 1).toString().padStart(2, '0')}/${new Date(dufah.tanggalTutup).getFullYear()} ${new Date(dufah.tanggalTutup).getHours().toString().padStart(2, '0')}:${new Date(dufah.tanggalTutup).getMinutes().toString().padStart(2, '0')}` : '-'}</p>
