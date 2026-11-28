@@ -138,6 +138,7 @@ export async function jalankanRolloverDufah(
             status: newStatus,
             isIdCardTaken: false, // Kartu ID berlaku per dufah: tiap dufah baru mulai dari belum ambil
             bulanKe: newBulanKe,
+            programId: riwayat.programId ?? riwayat.santri.programId ?? null,
           },
         });
         riwayatBaru++;
@@ -179,6 +180,21 @@ export async function jalankanRolloverDufah(
           }
         }
       }
+    }
+  }
+
+  // 7. Sinkronkan Santri.programId global dari RiwayatDufah Duf'ah yang baru diaktifkan
+  //    (agar pilihan program daftar ulang / klaim untuk Duf'ah ini langsung berlaku saat rollover)
+  const riwayatAktifDenganProgram = await tx.riwayatDufah.findMany({
+    where: { dufahId: dufahAktif.id, programId: { not: null } },
+    select: { santriId: true, programId: true },
+  });
+  for (const r of riwayatAktifDenganProgram) {
+    if (r.programId) {
+      await tx.santri.update({
+        where: { id: r.santriId },
+        data: { programId: r.programId },
+      });
     }
   }
 

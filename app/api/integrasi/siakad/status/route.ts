@@ -126,14 +126,25 @@ export async function GET(req: NextRequest) {
         expiredDufahId: true,
         noWaOrtu: true,
         program: {
-          select: { id: true, nama: true, kategoriProgram: true }
+          select: { id: true, nama: true, kategoriProgram: true, siakadProgramNama: true }
         },
+        riwayat: currentActiveDufah
+          ? {
+              where: { dufahId: currentActiveDufah.id },
+              take: 1,
+              select: {
+                program: {
+                  select: { id: true, nama: true, kategoriProgram: true, siakadProgramNama: true },
+                },
+              },
+            }
+          : false,
         transaksi: {
           orderBy: { createdAt: 'desc' },
           take: 1,
           select: {
             program: {
-              select: { nama: true, kategoriProgram: true }
+              select: { nama: true, kategoriProgram: true, siakadProgramNama: true }
             }
           }
         }
@@ -192,9 +203,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const programAktifNama = santri.program
-      ? santri.program.nama
-      : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.nama : null);
+    // Prioritaskan program dari RiwayatDufah Duf'ah berjalan -> fallback Santri.program -> transaksi terakhir
+    const activeRiwayatProgram = Array.isArray((santri as any).riwayat)
+      ? (santri as any).riwayat[0]?.program ?? null
+      : null;
+    const resolvedProgramObj =
+      activeRiwayatProgram ||
+      santri.program ||
+      (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program : null);
+
+    const programAktifNama = resolvedProgramObj?.nama ?? null;
+    const siakadProgramNama = resolvedProgramObj?.siakadProgramNama ?? null;
+    const resolvedKategoriProgram = resolvedProgramObj?.kategoriProgram ?? null;
 
     const santriIsAkbarnasBulan1 =
       isAkbarnasProgramName(programAktifNama) &&
@@ -212,7 +232,8 @@ export async function GET(req: NextRequest) {
         kategoriSiswa: santri.kategori,
         noWaWali: formattedWaWali, // Nomor WA Wali Santri dengan format internasional
         programAktif: programAktifNama,
-        kategoriProgram: santri.program ? santri.program.kategoriProgram : (santri.transaksi && santri.transaksi.length > 0 ? santri.transaksi[0].program.kategoriProgram : null),
+        siakadProgramNama,
+        kategoriProgram: resolvedKategoriProgram,
         santriIsAkbarnasBulan1,
         masaAktif: {
            sisaKoutaBulan: sisaKuota,

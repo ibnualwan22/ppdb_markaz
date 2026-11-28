@@ -115,13 +115,16 @@ model RiwayatDufah {
   waktuAmbilKartu      DateTime?
   nilaiTauzi           Int?
   kelasRekomendasi     String?
+  programId            String?
   dufah                Dufah     @relation(fields: [dufahId], references: [id], onDelete: Cascade)
   lemari               Lemari?   @relation(fields: [lemariId], references: [id])
   santri               Santri    @relation(fields: [santriId], references: [id], onDelete: Cascade)
+  program              Program?  @relation("RiwayatProgram", fields: [programId], references: [id], onDelete: SetNull)
 
   @@unique([santriId, dufahId])
   @@index([dufahId])
   @@index([status])
+  @@index([programId])
 }
 
 model User {
@@ -187,6 +190,7 @@ model Program {
   id                  String                 @id @default(uuid())
   nama                String
   kategoriProgram     String                 @default("REGULER")
+  siakadProgramNama   String?                // Mapping eksplisit ke nama_indo Program SIAKAD (null = paket durasi / ditentukan via Tauzi')
   harga               Float
   durasiBulan         Int                    @default(1)
   isActive            Boolean                @default(true)
@@ -197,6 +201,7 @@ model Program {
   targetDufah         Dufah?                 @relation("ProgramKhusus", fields: [targetDufahId], references: [id])
   transaksi           TransaksiPendaftaran[]
   santriAktif         Santri[]               @relation("SantriProgram")
+  riwayatDufah        RiwayatDufah[]         @relation("RiwayatProgram")
 }
 
 model TransaksiPendaftaran {

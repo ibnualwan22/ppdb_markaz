@@ -116,7 +116,9 @@ export async function POST(
         newBatasAktif = startDufah + tambahanBulan - 1;
       }
 
-      // 5. Update Santri
+      // 5. Update Santri (hanya timpa programId global jika target = Duf'ah aktif atau santri belum punya program,
+      //    supaya daftar ulang untuk Duf'ah depan tidak merusak program Duf'ah berjalan!)
+      const shouldUpdateGlobalProgram = targetDufahId === dufahAktif.id || !santriDb?.programId;
       const santriUpdate = await tx.santri.update({
         where: { id: transaksi.santriId },
         data: {
@@ -124,11 +126,11 @@ export async function POST(
           batasAktifDufah: newBatasAktif,
           isAktif: true,
           kategori: isKSU ? "KSU" : santriDb?.kategori,
-          programId: transaksi.programId
+          ...(shouldUpdateGlobalProgram ? { programId: transaksi.programId } : {}),
         }
       });
 
-      // 6. Buat Riwayat Duf'ah untuk dufah tujuan jika belum ada
+      // 6. Buat Riwayat Duf'ah untuk dufah tujuan jika belum ada (selalu simpan programId per Duf'ah!)
       const isBeliAtribut =
         Boolean(transaksi.isBeliAtribut) ||
         transaksi.nominalProgram >= transaksi.program.harga;
@@ -171,23 +173,25 @@ export async function POST(
             lemariId: previousLemariId,
             status: previousLemariId ? "ASSIGNED" : "PRE_LIST", // Langsung ASSIGNED jika kamar lanjut
             bulanKe: newBulanKe,
-          // Jika TIDAK beli atribut, berarti sudah punya. Kita set true agar tidak muncul di tagihan Mims Store.
-          // Namun khusus untuk Malzamah dan Ta'birot, semua santri lama tetap berhak mengambil setiap bulan/dufah baru.
-          isDresscodeTaken: !isBeliAtribut,
-          isToteBagTaken: !isBeliAtribut,
-          isPinTaken: !isBeliAtribut,
-          isSongkokKhimarTaken: !isBeliAtribut,
-          isMalzamahTaken: false,
-          isTabirotTaken: false
+            programId: transaksi.programId,
+            // Jika TIDAK beli atribut, berarti sudah punya. Kita set true agar tidak muncul di tagihan Mims Store.
+            // Namun khusus untuk Malzamah dan Ta'birot, semua santri lama tetap berhak mengambil setiap bulan/dufah baru.
+            isDresscodeTaken: !isBeliAtribut,
+            isToteBagTaken: !isBeliAtribut,
+            isPinTaken: !isBeliAtribut,
+            isSongkokKhimarTaken: !isBeliAtribut,
+            isMalzamahTaken: false,
+            isTabirotTaken: false
           }
         });
       } else {
-        // Jika riwayat sudah ada, pastikan isLunas diubah menjadi true setelah diverifikasi.
+        // Jika riwayat sudah ada, pastikan isLunas diubah menjadi true & programId diperbarui setelah diverifikasi.
         // Dan jika dia beli atribut, reset statusnya jadi false agar ditagih lagi.
         await tx.riwayatDufah.update({
           where: { id: cekRiwayat.id },
           data: {
             isLunas: true,
+            programId: transaksi.programId,
             ...(isBeliAtribut ? {
               isDresscodeTaken: false,
               isToteBagTaken: false,

@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama, harga, durasiBulan, isActive, kategoriProgram, tanggalMulaiDefault, tanggalTutupDefault, targetDufahId } = body;
+    const { nama, harga, durasiBulan, isActive, kategoriProgram, siakadProgramNama, tanggalMulaiDefault, tanggalTutupDefault, targetDufahId } = body;
 
     if (!nama || harga === undefined || durasiBulan === undefined) {
       return NextResponse.json(
@@ -31,8 +31,9 @@ export async function POST(request: Request) {
 
     const newProgram = await prisma.program.create({
       data: {
-        nama,
+        nama: String(nama).trim(),
         kategoriProgram: kategoriProgram || "REGULER",
+        siakadProgramNama: siakadProgramNama ? String(siakadProgramNama).trim() : null,
         harga: parseFloat(harga),
         durasiBulan: parseInt(durasiBulan),
         isActive: isActive !== undefined ? isActive : true,

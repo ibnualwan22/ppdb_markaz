@@ -241,17 +241,26 @@ export async function POST(req: NextRequest) {
               status: statusBaru,
               isIdCardTaken: false,
               bulanKe: bulanKeBaru,
-              isLunas: isKlaimPaket
+              isLunas: isKlaimPaket,
+              programId: program.id,
             }
           });
+        } else {
+          await tx.riwayatDufah.update({
+            where: { id: existingRiwayat.id },
+            data: {
+              programId: program.id,
+              ...(isKlaimPaket ? { isLunas: true } : {}),
+            },
+          });
+        }
 
-          // Sync the Santri's program override to their newly claimed program
-          if (isKlaimPaket) {
-            await tx.santri.update({
-              where: { id: santri.id },
-              data: { programId: program.id }
-            });
-          }
+        // Hanya ubah Santri.programId global jika targetDufah sedang aktif (jangan timpa Duf'ah berjalan saat daftar untuk Duf'ah depan!)
+        if (isKlaimPaket && targetDufah.isActive) {
+          await tx.santri.update({
+            where: { id: santri.id },
+            data: { programId: program.id }
+          });
         }
       }
 
